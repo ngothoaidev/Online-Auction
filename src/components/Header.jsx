@@ -1,14 +1,21 @@
 import React, {useState} from "react";
-
+// import '../styles/global.css';
 import { categories } from "../data/mockData";
 
 
-export default function Header({currentUser, setCurrentPage, onLogout}){
+export default function Header({currentUser, setCurrentPage, onLogout, darkMode, toggleDarkMode}) {
+    const darkText = "text-[var(--gray-text)]";
+    const lightText = "text-[var(--light-gold)]";
+    const darkColor = "bg-[var(--primary-dark)]";
+    const lightColor = "bg-[var(--light-gold)]";
+    const darkBorder = "border-[var(--gray-border)]";
+    const lightBorder = "border-[var(--light-gold)]";
     // const [mobileMenuOpen, setMobileMenuOpen] = useState(false);     // For mobile menu toggle
     const [categoryMenu, openCategoryMenu] = useState(false);
     const [userMenu, openUserMenu] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
-
+    const [hoveredCategory, setHoveredCategory] = useState(null);
+    // const [darkMode, setDarkMode] = useState(false);
     const handleSearch = (e) => {
         e.preventDefault();
         if(searchQuery.trim()){
@@ -17,9 +24,21 @@ export default function Header({currentUser, setCurrentPage, onLogout}){
     };
 
     return (
-    <header className="sticky top-0 z-50 bg-(--secondary-dark) border-b border-(--gray-border) shadow-lg">
+    <header className={`sticky top-0 z-50 ${darkMode ? darkColor : lightColor} border-b ${darkMode ? darkBorder : lightBorder} shadow-lg`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
+          {/* Dark Mode Toggle */}
+          <div>
+            <button onClick={toggleDarkMode} className="p-2 rounded-lg hover:bg-[var(--primary-dark)] transition-colors">
+              {darkMode ? (
+                // <Sun className="w-6 h-6 text-[var(--primary-gold)]" />
+                <span>🌞</span>
+              ) : (
+                // <Moon className="w-6 h-6 text-[var(--primary-gold)]" />
+                <span>🌜</span>
+              )}
+            </button>
+          </div>
           {/* Logo */}
           <div className="flex items-center gap-8">
             <button 
@@ -28,60 +47,67 @@ export default function Header({currentUser, setCurrentPage, onLogout}){
             >
               {/* <Gavel className="w-8 h-8 text-[var(--primary-gold)]" /> */}
               <div className="hidden sm:block">
-                <div className="text-xl font-bold text-[var(--primary-gold)] tracking-tight" style={{ fontFamily: 'Playfair Display, serif' }}>
+                <div className={`text-xl font-bold ${darkMode ? darkText : lightText} tracking-tight`} style={{ fontFamily: 'Playfair Display, serif' }}>
                   AUCTION HOUSE
                 </div>
-                <div className="text-xs text-[var(--gray-text)] -mt-1">Premium Marketplace</div>
+                <div className={`text-xs ${darkMode ? darkText : lightText} -mt-1`}>Premium Marketplace</div>
               </div>
             </button>
 
             {/* Desktop Categories */}
             <div className="hidden lg:block relative">
               <button
-                onClick={() => openCategoryMenu(!categoryMenu)}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[var(--primary-dark)] hover:bg-opacity-80 transition-all"
+                onMouseEnter={() => openCategoryMenu(true)}
+                onMouseLeave={() => openCategoryMenu(false)}
+                className={`flex items-center h-16 gap-2 px-4 py-2 rounded-lg ${darkMode ? darkColor : lightColor} hover:bg-opacity-80 transition-all`}
               >
                 <span>Categories</span>
-                {/* <ChevronDown className={`w-4 h-4 transition-transform ${categoryMenuOpen ? 'rotate-180' : ''}`} /> */}
-              </button>
 
-            {/* 
-                Category Dropdown
-                Buggy part: Cannot toggle subcategory properly.
-                Possible fix: Using absolute/relative positioning for subcategory menu.
-                Expected: When hovering over a category, its subcategories should appear in its left side.
-            */}
-              {categoryMenu && (
-                <div className="absolute top-full left-0 mt-2 w-64 bg-[var(--secondary-dark)] rounded-lg shadow-xl border border-[var(--gray-border)] overflow-hidden">
+                {/* <ChevronDown className={`w-4 h-4 transition-transform ${categoryMenuOpen ? 'rotate-180' : ''}`} /> */}
+
+                {categoryMenu && (
+                <div className={`absolute top-full left-0 w-64 ${darkMode ? darkColor : lightColor}  rounded-bl-lg rounded-br-lg shadow-xl border ${darkMode ? darkBorder : lightBorder} overflow-visible`}>
                   {categories.map((category) => (
-                    <>
-                    <div key={category.id} className="group">
+                    <div 
+                      key={category.id} 
+                      className="relative"
+                      onMouseEnter={() => setHoveredCategory(category.id)}
+                      onMouseLeave={() => {setHoveredCategory(null); console.log('leave');}}
+                    >
                         <button
-                            onClick={() => { setCurrentPage('listProducts');
-                              openCategoryMenu(false); }}
-                            className="w-full text-left px-4 py-3 hover:bg-[var(--primary-dark)] transition-colors flex items-center justify-between"
-                        >
-                        <span>{category.name}</span>
-                        {/* <ChevronDown className="w-4 h-4 -rotate-90" /> */}
-                        </button>
-                    </div>
-                    <div className="ml-2 w-56 bg-[var(--secondary-dark)] rounded-lg shadow-xl border border-[var(--gray-border)]">
-                        {category.subcategories.map((sub) => (
-                        <button
-                            key={sub.id}
                             onClick={() => { 
-                            setCurrentPage('listProducts');
-                            openCategoryMenu(false); }}
-                            className="w-full text-left px-4 py-2 hover:bg-[var(--primary-dark)] transition-colors text-sm"
+                              setCurrentPage('listProducts');
+                              openCategoryMenu(false); 
+                            }}
+                            className={`w-full text-left px-4 py-3 ${darkMode ? darkColor : lightColor} hover:bg-[var(--primary-dark)] transition-colors flex items-center justify-between`}
                         >
-                            {sub.name}
+                          <span>{category.name}</span>
+                          <span className="text-xs">›</span>
                         </button>
-                        ))}
+                        
+                        {/* Subcategory menu - shows on hover to the right */}
+                        {hoveredCategory === category.id && (
+                          <div className={`absolute left-full top-0 w-56 ${darkMode ? darkColor : lightColor} rounded-lg shadow-xl border ${darkMode ? darkBorder : lightBorder}`}>
+                            {category.subcategories.map((sub) => (
+                              <button
+                                key={sub.id}
+                                onClick={() => { 
+                                  setCurrentPage('listProducts');
+                                  openCategoryMenu(false); 
+                                }}
+                                className={`w-full text-left px-4 py-2 hover:bg-[var(--primary-dark)] transition-colors text-sm ${darkMode ? darkColor : lightColor}`}
+                              >
+                                {sub.name}
+                              </button>
+                            ))}
+                          </div>
+                        )}
                     </div>
-                    </>
                   ))}
                 </div>
               )}
+
+              </button>
             </div>
           </div>
 
@@ -110,12 +136,12 @@ export default function Header({currentUser, setCurrentPage, onLogout}){
                   <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[var(--primary-gold)] to-[var(--light-gold)] flex items-center justify-center">
                     {/* <User className="w-5 h-5 text-[var(--primary-dark)]" /> */}
                   </div>
-                  <span className="hidden xl:block">{currentUser.name}</span>
+                  <span className="hidden lg:block">{currentUser.name}</span>
                   {/* <ChevronDown className={`w-4 h-4 transition-transform ${userMenuOpen ? 'rotate-180' : ''}`} /> */}
                 </button>
 
                 {userMenu && (
-                  <div className="absolute top-full right-0 mt-2 w-56 bg-[var(--secondary-dark)] rounded-lg shadow-xl border border-[var(--gray-border)] overflow-hidden">
+                  <div className="absolute top-full right-0 mt-2 w-56 bg-[var(--secondary-dark)]  rounded-b-lg shadow-xl border border-[var(--gray-border)] overflow-hidden">
                     <div className="px-4 py-3 border-b border-[var(--gray-border)]">
                       <div className="font-semibold">{currentUser.name}</div>
                       <div className="text-sm text-[var(--gray-text)]">{currentUser.email}</div>
