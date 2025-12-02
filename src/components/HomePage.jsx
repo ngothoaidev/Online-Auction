@@ -76,7 +76,7 @@ const Section = ({ title, icon: Icon, items, highlightColor = "blue" }) => {
                 style={{ transform: `translateX(-${currentSlide * (100 / itemsToShow)}%)` }}
             >
                 {items.map((item) => (
-                <div key={item.id} className="min-w-80% md:min-w-[50%] lg:min-w-[20%] px-3 shrink-0 box-border">
+                <div key={item.id} className="w-80% md:w-[50%] lg:w-[20%] px-3 shrink-0 box-border">
                     <AuctionCard item={item} />
                 </div>
                 ))}
