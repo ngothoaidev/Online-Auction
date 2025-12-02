@@ -1,271 +1,150 @@
-export const categories = [
-  { id: 'electronics',
-    name: 'Electronics',
-    subcategories: [
-      { id: 'mobile', name: 'Mobile Phones' },
-      { id: 'laptops', name: 'Laptops' },
-      { id: 'cameras', name: 'Cameras' },
-      { id: 'audio', name: 'Audio Equipment' },
-    ], },
-  { id: 'fashion',
-    name: 'Fashion',
-    subcategories: [
-      { id: 'shoes', name: 'Shoes' },
-      { id: 'watches', name: 'Watches' },
-      { id: 'bags', name: 'Bags & Accessories' },
-      { id: 'jewelry', name: 'Jewelry' },
-    ], },
-  { id: 'collectibles',
-    name: 'Collectibles',
-    subcategories: [
-      { id: 'art', name: 'Art' },
-      { id: 'coins', name: 'Coins' },
-      { id: 'stamps', name: 'Stamps' },
-      { id: 'antiques', name: 'Antiques' },
-    ], },
-  { id: 'home',
-    name: 'Home & Garden',
-    subcategories: [
-      { id: 'furniture', name: 'Furniture' },
-      { id: 'decor', name: 'Decor' },
-      { id: 'tools', name: 'Tools' },
-      { id: 'appliances', name: 'Appliances' },
-    ], },
+// --- 1. Helper Data & Constants ---
+const CATEGORIES_REF = [
+  { id: 'electronics', subs: ['mobile', 'laptops', 'cameras', 'audio'] },
+  { id: 'fashion', subs: ['shoes', 'watches', 'bags', 'jewelry'] },
+  { id: 'collectibles', subs: ['art', 'coins', 'stamps', 'antiques'] },
+  { id: 'home', subs: ['furniture', 'decor', 'tools', 'appliances'] }
 ];
 
-export const currentUser = { id: 'user1',
-  name: 'John Smith',
-  email: 'john@example.com',
-  role: 'seller',
-  rating: { positive: 48,
-    negative: 2, }, };
+const ADJECTIVES = ['Vintage', 'Brand New', 'Refurbished', 'Rare', 'Limited Edition', 'Custom', 'Antique', 'Professional', 'Lightly Used', 'Premium'];
+const BRANDS = {
+  electronics: ['Apple', 'Sony', 'Samsung', 'Dell', 'Canon', 'Bose', 'Nintendo'],
+  fashion: ['Nike', 'Gucci', 'Rolex', 'Adidas', 'Louis Vuitton', 'Casio', 'Zara'],
+  collectibles: ['Picasso', 'Roman', 'Ming Dynasty', 'US Mint', 'Royal Mail', 'Victorian'],
+  home: ['IKEA', 'Dyson', 'Herman Miller', 'KitchenAid', 'Bosch', 'Makita']
+};
 
+const SAMPLE_IMAGES = {
+  electronics: ['laptop-modern', 'smartphone-modern', 'camera-vintage'],
+  fashion: ['fashion-luxury', 'sneakers-modern', 'watch-classic'],
+  collectibles: ['painting-abstract', 'coin-rare', 'stamp-collection'],
+  home: ['furniture-classic', 'decor-modern', 'tools-power']
+};
+
+const Q_AND_A = [
+  { q: "Is the price negotiable?", a: "Sorry, this is an auction format only." },
+  { q: "Do you ship internationally?", a: "Yes, we ship via FedEx Global." },
+  { q: "Is there a warranty?", a: "The manufacturer warranty is still valid for 6 months." },
+  { q: "Can I see more photos?", a: "I have uploaded all available angles." },
+  { q: "Does it come with original box?", a: "Yes, original packaging included." }
+];
+
+// --- 2. Utility Functions ---
+const getRandomInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+const getRandomItem = (arr) => arr[Math.floor(Math.random() * arr.length)];
+const generateId = (prefix, index) => `${prefix}${index + 100}`; // e.g., p101, p102
 const now = new Date();
 
-export const products = [
-  
-  { id: 'p2',
-    title: 'MacBook Pro 16" M3 Max 2024',
-    description: `<p>Brand new sealed MacBook Pro 16-inch with M3 Max chip.</p>
-    <p><strong>Configuration:</strong></p>
-    <ul>
-      <li>M3 Max chip with 16-core CPU</li>
-      <li>40-core GPU</li>
-      <li>64GB unified memory</li>
-      <li>2TB SSD storage</li>
-      <li>Space Black finish</li>
-    </ul>`,
-    images: ['laptop-modern', 'laptop-modern', 'laptop-modern'],
-    startingPrice: 2500,
-    currentPrice: 3200,
-    buyNowPrice: 4200,
-    biddingStep: 50,
-    sellerId: 's2',
-    sellerName: 'TechDeals Pro',
-    sellerRating: { positive: 234, negative: 1 },
-    highestBidderId: 'b2',
-    highestBidderName: 'm***8',
-    category: 'electronics',
-    subcategory: 'laptops',
-    startDate: new Date(now.getTime() - 5 * 24 * 60 * 60 * 1000),
-    endDate: new Date(now.getTime() + 1.5 * 24 * 60 * 60 * 1000),
-    totalBids: 38,
-    autoExtend: true,
-    status: 'active',
-    watchers: ['user1'],
-    badges: ['ending-soon', 'high-bids'], },
-  { id: 'p3',
-    title: 'Original Picasso Sketch 1952',
-    description: `<p>Rare original sketch by Pablo Picasso from 1952.</p>
-    <p>Authenticated by leading art experts. Includes certificate of authenticity and provenance documentation.</p>
-    <p>Dimensions: 12" x 16"</p>`,
-    images: ['painting-abstract', 'painting-abstract', 'painting-abstract'],
-    startingPrice: 25000,
-    currentPrice: 45000,
-    biddingStep: 1000,
-    sellerId: 's3',
-    sellerName: 'Fine Arts Gallery',
-    sellerRating: { positive: 89, negative: 0 },
-    highestBidderId: 'b3',
-    highestBidderName: 'a***2',
-    category: 'collectibles',
-    subcategory: 'art',
-    startDate: new Date(now.getTime() - 4 * 24 * 60 * 60 * 1000),
-    endDate: new Date(now.getTime() + 5 * 24 * 60 * 60 * 1000),
-    totalBids: 23,
-    autoExtend: false,
-    status: 'active',
-    watchers: ['user2'],
-    badges: ['hot'], },
-  { id: 'p4',
-    title: 'Sony A7R V Full Frame Camera',
-    description: `<p>Professional full-frame mirrorless camera with AI processing.</p>
-    <ul>
-      <li>61MP full-frame sensor</li>
-      <li>8K video recording</li>
-      <li>AI-based autofocus</li>
-      <li>In-body stabilization</li>
-    </ul>
-    <p>Gently used, in pristine condition. Includes original box and accessories.</p>`,
-    images: ['camera-vintage', 'camera-vintage', 'camera-vintage'],
-    startingPrice: 2800,
-    currentPrice: 3100,
-    biddingStep: 50,
-    sellerId: 's2',
-    sellerName: 'TechDeals Pro',
-    sellerRating: { positive: 234, negative: 1 },
-    highestBidderId: 'b4',
-    highestBidderName: 'c***9',
-    category: 'electronics',
-    subcategory: 'cameras',
-    startDate: new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000),
-    endDate: new Date(now.getTime() + 4 * 24 * 60 * 60 * 1000),
-    totalBids: 15,
-    autoExtend: true,
-    status: 'active',
-    watchers: [],
-    badges: [], },
-  { id: 'p5',
-    title: 'Louis Vuitton Limited Edition Handbag',
-    description: `<p>Exclusive Louis Vuitton limited edition handbag from 2023 collection.</p>
-    <p>Only 500 pieces made worldwide. Brand new with tags, dust bag, and authenticity card.</p>`,
-    images: ['fashion-luxury', 'fashion-luxury', 'fashion-luxury'],
-    startingPrice: 3500,
-    currentPrice: 4200,
-    buyNowPrice: 6000,
-    biddingStep: 100,
-    sellerId: 's4',
-    sellerName: 'Luxury Boutique',
-    sellerRating: { positive: 178, negative: 2 },
-    highestBidderId: 'b5',
-    highestBidderName: 'l***4',
-    category: 'fashion',
-    subcategory: 'bags',
-    startDate: new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000),
-    endDate: new Date(now.getTime() + 6 * 24 * 60 * 60 * 1000),
-    totalBids: 28,
-    autoExtend: true,
-    status: 'active',
-    watchers: ['user1'],
-    badges: ['high-bids'], },
-  { id: 'p6',
-    title: 'iPhone 15 Pro Max 1TB Titanium',
-    description: `<p>Latest iPhone 15 Pro Max in Natural Titanium.</p>
-    <ul>
-      <li>1TB storage</li>
-      <li>Titanium body</li>
-      <li>AppleCare+ included (2 years)</li>
-      <li>Unlocked, works with all carriers</li>
-    </ul>
-    <p>Brand new, sealed in box.</p>`,
-    images: ['smartphone-modern', 'smartphone-modern', 'smartphone-modern'],
-    startingPrice: 1000,
-    currentPrice: 1350,
-    buyNowPrice: 1600,
-    biddingStep: 25,
-    sellerId: 's2',
-    sellerName: 'TechDeals Pro',
-    sellerRating: { positive: 234, negative: 1 },
-    highestBidderId: 'b6',
-    highestBidderName: 's***1',
-    category: 'electronics',
-    subcategory: 'mobile',
-    startDate: new Date(now.getTime() - 1 * 24 * 60 * 60 * 1000),
-    endDate: new Date(now.getTime() + 0.8 * 24 * 60 * 60 * 1000),
-    totalBids: 54,
-    autoExtend: true,
-    status: 'active',
-    watchers: ['user1', 'user2', 'user3'],
-    badges: ['ending-soon', 'hot', 'high-bids'], },
-  { id: 'p7',
-    title: 'Antique Victorian Writing Desk',
-    description: `<p>Beautiful Victorian-era writing desk from 1880s.</p>
-    <p>Solid mahogany construction with original brass hardware. Recently restored by professional craftsman.</p>
-    <p>Dimensions: 48"W x 24"D x 30"H</p>`,
-    images: ['furniture-classic', 'furniture-classic', 'furniture-classic'],
-    startingPrice: 1200,
-    currentPrice: 1850,
-    biddingStep: 50,
-    sellerId: 's5',
-    sellerName: 'Antique Treasures',
-    sellerRating: { positive: 145, negative: 5 },
-    highestBidderId: 'b7',
-    highestBidderName: 'd***3',
-    category: 'home',
-    subcategory: 'furniture',
-    startDate: new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000),
-    endDate: new Date(now.getTime() + 0.5 * 24 * 60 * 60 * 1000),
-    totalBids: 12,
-    autoExtend: false,
-    status: 'active',
-    watchers: [],
-    badges: ['ending-soon'], },
-  { id: 'p8',
-    title: 'Limited Edition Nike Air Jordan 1 Retro',
-    description: `<p>Rare limited edition Air Jordan 1 Retro in original colorway.</p>
-    <p>Size: US 10.5</p>
-    <p>Condition: Deadstock (never worn), original box and accessories included.</p>`,
-    images: ['sneakers-modern', 'sneakers-modern', 'sneakers-modern'],
-    startingPrice: 400,
-    currentPrice: 650,
-    buyNowPrice: 900,
-    biddingStep: 25,
-    sellerId: 's6',
-    sellerName: 'Sneaker Vault',
-    sellerRating: { positive: 312, negative: 4 },
-    highestBidderId: 'b8',
-    highestBidderName: 'k***7',
-    category: 'fashion',
-    subcategory: 'shoes',
-    startDate: new Date(now.getTime() - 30 * 60 * 1000),
-    endDate: new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000),
-    totalBids: 31,
-    autoExtend: true,
-    status: 'active',
-    watchers: ['user1'],
-    badges: ['new', 'high-bids'], },
-];
+// --- 3. Generators ---
 
-export const bids = [
-  { id: 'bid1',
-    productId: 'p1',
-    bidderId: 'b1',
-    bidderName: 'j***5',
-    amount: 12500,
-    timestamp: new Date(now.getTime() - 2 * 60 * 60 * 1000),
-    status: 'active', },
-  { id: 'bid2',
-    productId: 'p2',
-    bidderId: 'b2',
-    bidderName: 'm***8',
-    amount: 3200,
-    timestamp: new Date(now.getTime() - 1 * 60 * 60 * 1000),
-    status: 'active', },
-];
+export const generateProducts = (count = 100) => {
+  return Array.from({ length: count }, (_, i) => {
+    const catObj = getRandomItem(CATEGORIES_REF);
+    const category = catObj.id;
+    const subcategory = getRandomItem(catObj.subs);
+    const brand = getRandomItem(BRANDS[category] || ['Generic']);
+    const adj = getRandomItem(ADJECTIVES);
+    
+    // Pricing Math
+    const startingPrice = getRandomInt(50, 5000);
+    const currentPrice = startingPrice + getRandomInt(0, 500);
+    const buyNowPrice = Math.floor(currentPrice * 1.5);
+    
+    // Dates (Mix of active and ending soon)
+    const isEndingSoon = Math.random() > 0.8;
+    const daysAgo = getRandomInt(1, 7);
+    const daysLeft = isEndingSoon ? (getRandomInt(1, 24) / 24) : getRandomInt(1, 10);
+    
+    const startDate = new Date(now.getTime() - daysAgo * 24 * 60 * 60 * 1000);
+    const endDate = new Date(now.getTime() + daysLeft * 24 * 60 * 60 * 1000);
 
-export const questions = [
-  { id: 'q1',
-    productId: 'p1',
-    askerId: 'user1',
-    askerName: 'John S.',
-    question: 'Does this watch come with the original box and papers?',
-    answer: 'Yes, it comes with the certificate of authenticity and service records. The original box is not available.',
-    timestamp: new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000),
-    answeredAt: new Date(now.getTime() - 1.5 * 24 * 60 * 60 * 1000), },
-  { id: 'q2',
-    productId: 'p1',
-    askerId: 'user2',
-    askerName: 'Sarah M.',
-    question: 'What is the size of the watch case?',
-    answer: '40mm case diameter, which is standard for this vintage model.',
-    timestamp: new Date(now.getTime() - 1 * 24 * 60 * 60 * 1000),
-    answeredAt: new Date(now.getTime() - 20 * 60 * 60 * 1000), },
-];
+    return {
+      id: generateId('p', i),
+      title: `${adj} ${brand} ${subcategory.charAt(0).toUpperCase() + subcategory.slice(1)}`,
+      description: `<p>This is a <strong>${adj.toLowerCase()}</strong> item from ${brand}. Great condition.</p><ul><li>Authentic ${brand}</li><li>Fast Shipping</li></ul>`,
+      images: [getRandomItem(SAMPLE_IMAGES[category]), getRandomItem(SAMPLE_IMAGES[category])],
+      startingPrice,
+      currentPrice,
+      buyNowPrice,
+      biddingStep: startingPrice > 1000 ? 50 : 10,
+      sellerId: generateId('s', getRandomInt(1, 20)),
+      sellerName: `${brand} Reseller`,
+      sellerRating: { positive: getRandomInt(50, 500), negative: getRandomInt(0, 10) },
+      highestBidderId: generateId('b', getRandomInt(1, 50)),
+      highestBidderName: `user${getRandomInt(100, 999)}`,
+      category,
+      subcategory,
+      startDate,
+      endDate,
+      totalBids: getRandomInt(0, 45),
+      autoExtend: Math.random() > 0.5,
+      status: 'active',
+      watchers: Array.from({length: getRandomInt(0, 5)}, () => generateId('u', getRandomInt(1, 100))),
+      badges: isEndingSoon ? ['ending-soon'] : (currentPrice > 2000 ? ['high-bids'] : []),
+    };
+  });
+};
 
-export const topBidders = [
-  { id: 1, name: '****Khoa', rating: 98, won: 45, avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=100', rank: 1 },
-  { id: 2, name: '****Minh', rating: 96, won: 38, avatar: 'https://images.unsplash.com/photo-1599566150163-29194dcaad36?auto=format&fit=crop&q=80&w=100', rank: 2 },
-  { id: 3, name: '****Linh', rating: 95, won: 32, avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=100', rank: 3 },
-  { id: 4, name: '****Tuan', rating: 92, won: 28, avatar: 'https://images.unsplash.com/photo-1527980965255-d3b416303d12?auto=format&fit=crop&q=80&w=100', rank: 4 },
-  { id: 5, name: '****Thao', rating: 90, won: 25, avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&q=80&w=100', rank: 5 },
-];
+export const generateBids = (count = 100, products) => {
+  return Array.from({ length: count }, (_, i) => {
+    const product = getRandomItem(products);
+    return {
+      id: generateId('bid', i),
+      productId: product.id,
+      bidderId: generateId('u', getRandomInt(1, 200)),
+      bidderName: `bidder${getRandomInt(100, 999)}`,
+      amount: product.currentPrice - getRandomInt(10, 100), // Historical bid
+      timestamp: new Date(now.getTime() - getRandomInt(1, 300) * 60 * 1000),
+      status: 'active',
+    };
+  });
+};
+
+export const generateQuestions = (count = 100, products) => {
+  return Array.from({ length: count }, (_, i) => {
+    const qa = getRandomItem(Q_AND_A);
+    const product = getRandomItem(products);
+    return {
+      id: generateId('q', i),
+      productId: product.id,
+      askerId: generateId('u', getRandomInt(1, 200)),
+      askerName: `User ${getRandomInt(1, 500)}`,
+      question: qa.q,
+      answer: qa.a,
+      timestamp: new Date(now.getTime() - getRandomInt(1, 5) * 24 * 60 * 60 * 1000),
+      answeredAt: new Date(now.getTime() - getRandomInt(1, 20) * 60 * 60 * 1000),
+    };
+  });
+};
+
+export const generateTopBidders = (count = 100) => {
+  return Array.from({ length: count }, (_, i) => ({
+    id: i + 1,
+    name: `****User${getRandomInt(1000, 9999)}`,
+    rating: getRandomInt(80, 100),
+    won: getRandomInt(1, 150),
+    avatar: `https://i.pravatar.cc/150?u=${i}`,
+    rank: i + 1
+  }));
+};
+
+// --- 4. Execution (Generate the Data) ---
+
+// Generate 100 Products
+export const products = generateProducts(100);
+
+// Generate 150 Bids (linked to those products)
+export const bids = generateBids(150, products);
+
+// Generate 100 Questions (linked to those products)
+export const questions = generateQuestions(100, products);
+
+// Generate 100 Top Bidders
+export const topBidders = generateTopBidders(100);
+
+// Keep existing static categories
+export const categories = CATEGORIES_REF.map(c => ({
+    id: c.id,
+    name: c.id.charAt(0).toUpperCase() + c.id.slice(1),
+    subcategories: c.subs.map(s => ({ id: s, name: s.charAt(0).toUpperCase() + s.slice(1) }))
+}));
