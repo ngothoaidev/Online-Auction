@@ -4,7 +4,6 @@ import {
   Menu, 
   X, 
   ChevronDown, 
-  Filter, 
   User, 
   LogOut, 
   Heart, 
@@ -55,11 +54,10 @@ export default function Header({ darkMode, toggleTheme }) {
       <header className="sticky top-0 z-50 w-full bg-[#2A2038] shadow-2xl border-b border-white/5 font-sans">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-20">
-
             {/* LEFT: Logo & Categories (Desktop) */}
             <div className="flex items-center gap-8">
               {/* Logo */}
-              <div className="flex-shrink-0 cursor-pointer group">
+              <div className="shrink-0 cursor-pointer group">
                 <h1 className="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
                   <span className="text-[#E0B84C]">AURUM</span> AUCTIONS
                 </h1>
@@ -213,7 +211,7 @@ export default function Header({ darkMode, toggleTheme }) {
         Full screen slide-over
       */}
       {isMobileMenuOpen && (
-        <div className="fixed inset-0 z-[60] lg:hidden">
+        <div className="fixed inset-0 z-60 lg:hidden">
           {/* Backdrop */}
           <div 
             className="absolute inset-0 bg-black/60 backdrop-blur-sm"

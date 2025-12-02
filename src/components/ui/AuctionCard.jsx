@@ -76,7 +76,7 @@ export default function AuctionCard({ item }) {
   return (
     <div key={item.id} className="bg-[#2A2038] rounded-xl overflow-hidden border border-white/5 hover:border-[#E0B84C]/50 transition-all group hover:-translate-y-1 shadow-lg">
       {/* Image Area */}
-      <div className="relative aspect-square overflow-hidden bg-gray-100 dark:bg-gray-700">
+      <div className="relative aspect-4/3 overflow-hidden bg-gray-100 dark:bg-gray-700">
         <img 
           src={item.images?.[0]} 
           alt={item.name} 
