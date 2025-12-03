@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { 
   Search, 
   Menu, 
@@ -34,6 +35,8 @@ export default function Header({ darkMode, toggleTheme }) {
   // Mock Auth State (Toggle this via the UI demo controls below)
   const [isLoggedIn, setIsLoggedIn] = useState(true);
 
+  const navigate = useNavigate();
+
   // Toggle scrolling lock when mobile menu is open
   useEffect(() => {
     if (isMobileMenuOpen) {
@@ -58,9 +61,9 @@ export default function Header({ darkMode, toggleTheme }) {
             <div className="flex items-center gap-8">
               {/* Logo */}
               <div className="shrink-0 cursor-pointer group">
-                <h1 className="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
+                <Link to="/" className="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
                   <span className="text-[#E0B84C]">AURUM</span> AUCTIONS
-                </h1>
+                </Link>
                 <div className="h-0.5 w-0 group-hover:w-full bg-[#E0B84C] transition-all duration-300"></div>
               </div>
 
@@ -76,17 +79,24 @@ export default function Header({ darkMode, toggleTheme }) {
                   <div className="flex flex-col gap-6 p-6">
                     {categories.map((cat) => (
                       <div className="group/item relative" key={cat.id}>
-                        <a href="#" className="px-4 py-2 rounded-lg hover:bg-blue-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 flex justify-between items-center transition-colors">
-                          {cat.name}
-                          {cat.subcategories.length > 0 && <ArrowRight className="w-3 h-3 text-gray-400" />}
-                        </a>
+                        <Link 
+                          // to={`/search?category=${cat.name}`}
+                          to="/search"
+                          className="px-4 py-2 rounded-lg hover:bg-blue-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 flex justify-between items-center transition-colors">
+                            {cat.name}
+                            {cat.subcategories.length > 0 && <ArrowRight className="w-3 h-3 text-gray-400" />}
+                        </Link>
                         {cat.subcategories.length > 0 && (
                           <div className="hidden group-hover/item:block absolute left-full top-0 w-48 pl-1">
                             <div className="bg-white dark:bg-gray-800 shadow-xl rounded-lg border border-gray-100 dark:border-gray-700 py-2">
                               {cat.subcategories.map((sub, sIdx) => (
-                                <a key={sIdx} href="#" className="block px-4 py-2 hover:bg-blue-50 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 text-sm transition-colors">
+                                <Link 
+                                  key={sIdx} 
+                                  // to={`/search?category=${cat.name}&subcategory=${sub}`}
+                                  to="/search"
+                                  className="block px-4 py-2 hover:bg-blue-50 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 text-sm transition-colors">
                                   {sub.name}
-                                </a>
+                                </Link>
                               ))}
                             </div>
                           </div>
@@ -99,23 +109,29 @@ export default function Header({ darkMode, toggleTheme }) {
             </div>
 
             {/* CENTER: Search Bar (Desktop) */}
-            <div className="hidden md:flex flex-1 max-w-md mx-8 relative group">
-              <input 
-                type="text" 
-                placeholder="Search for items, artists, or brands..." 
-                className="w-full bg-[#1A1225] text-gray-200 border border-white/10 rounded-full py-2.5 pl-12 pr-12 focus:outline-none focus:border-[#E0B84C] focus:ring-1 focus:ring-[#E0B84C] transition-all placeholder-gray-500 text-sm"
-              />
-              <Search className="absolute left-4 top-2.5 text-gray-500 group-focus-within:text-[#E0B84C] transition-colors" size={18} />
-              {/* <button className="absolute right-3 top-2 text-gray-500 hover:text-[#E0B84C] p-0.5 rounded-full hover:bg-white/5 transition-colors" title="Filters">
-                <Filter size={18} />
-              </button> */}
+            <div className="flex-1 max-w-2xl hidden md:flex">
+              <div className="relative w-full bg-[#1A1225] border border-white/10 rounded-full py-2.5 px-5 md:flex justify-center items-center gap-4 focus:outline-none focus:border-[#E0B84C] focus:ring-1 focus:ring-[#E0B84C] transition-all">
+                <input 
+                  type="text" 
+                  placeholder="Search for items, artists, or brands..." 
+                  className="w-full text-gray-200 outline-none placeholder-gray-500 text-sm"
+                />
+                <button 
+                  onClick={() => navigate('/search')}
+                  className="p-1.5 rounded-full transition-colors"
+                >
+                  <Search className="text-gray-500 group-hover:text-[#E0B84C] transition-colors" size={18} />
+                </button>
+              </div>
             </div>
 
             {/* RIGHT: User Actions */}
             <div className="flex items-center gap-4">
               
               {/* Mobile Search Trigger (Visible only on small screens) */}
-              <button className="md:hidden text-gray-300 hover:text-[#E0B84C]">
+              <button
+                onClick={() => navigate('/search')} 
+                className="md:hidden text-gray-300 hover:text-[#E0B84C]">
                 <Search size={24} />
               </button>
 
@@ -162,18 +178,18 @@ export default function Header({ darkMode, toggleTheme }) {
                           <p className="text-sm text-white font-medium">John Doe</p>
                           <p className="text-xs text-gray-400 truncate">john.doe@example.com</p>
                         </div>
-                        <a href="#" className="flex items-center gap-3 px-4 py-3 text-sm text-gray-300 hover:bg-white/5 hover:text-[#E0B84C] transition-colors">
+                        <Link to="\" className="flex items-center gap-3 px-4 py-3 text-sm text-gray-300 hover:bg-white/5 hover:text-[#E0B84C] transition-colors">
                           <User size={16} /> Profile
-                        </a>
-                        <a href="#" className="flex items-center gap-3 px-4 py-3 text-sm text-gray-300 hover:bg-white/5 hover:text-[#E0B84C] transition-colors">
+                        </Link>
+                        <Link to="\" className="flex items-center gap-3 px-4 py-3 text-sm text-gray-300 hover:bg-white/5 hover:text-[#E0B84C] transition-colors">
                           <Gavel size={16} /> My Bids
-                        </a>
-                        <a href="#" className="flex items-center gap-3 px-4 py-3 text-sm text-gray-300 hover:bg-white/5 hover:text-[#E0B84C] transition-colors">
+                        </Link>
+                        <Link to="\" className="flex items-center gap-3 px-4 py-3 text-sm text-gray-300 hover:bg-white/5 hover:text-[#E0B84C] transition-colors">
                           <Heart size={16} /> Watchlist
-                        </a>
+                        </Link>
                         <div className="border-t border-white/5 mt-1 pt-1">
                           <button 
-                            onClick={() => setIsLoggedIn(false)}
+                            onClick={() => {setIsLoggedIn(false); setIsUserDropdownOpen(false); navigate('/');}}
                             className="w-full flex items-center gap-3 px-4 py-3 text-sm text-[#C0341D] hover:bg-white/5 transition-colors text-left"
                           >
                             <LogOut size={16} /> Logout
@@ -186,10 +202,14 @@ export default function Header({ darkMode, toggleTheme }) {
               ) : (
                 /* GUEST STATE */
                 <div className="hidden sm:flex items-center gap-3">
-                  <button className="text-white hover:text-[#E0B84C] font-medium text-sm transition-colors px-3 py-2">
+                  <button
+                    onClick={() => navigate("\login")}
+                    className="text-white hover:text-[#E0B84C] font-medium text-sm transition-colors px-3 py-2">
                     Log In
                   </button>
-                  <button className="bg-gradient-to-r from-[#E0B84C] to-[#B88A20] hover:brightness-110 text-[#1A1225] font-bold text-sm px-5 py-2.5 rounded-full shadow-lg transition-all transform hover:-translate-y-0.5">
+                  <button
+                    onClick={() => navigate("\login")}
+                    className="bg-gradient-to-r from-[#E0B84C] to-[#B88A20] hover:brightness-110 text-[#1A1225] font-bold text-sm px-5 py-2.5 rounded-full shadow-lg transition-all transform hover:-translate-y-0.5">
                     Register
                   </button>
                 </div>

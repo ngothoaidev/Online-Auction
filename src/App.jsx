@@ -1,9 +1,12 @@
 import { useState } from 'react'
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { products as initialProducts, bids as initialBids, questions as initialQuestions } from './data/mockData.js';
 import Header from './components/Header.jsx';
 import Footer from './components/Footer.jsx';
 import HomePage from './components/HomePage.jsx';
-import ListProduct from './components/ListProduct.jsx';
+import ProductDetail from './components/ProductDetail.jsx';
+import ListProducts from './components/ListProducts.jsx';
+import Login from './components/AuthPage.jsx';
 
 function App() {
   const initialUser = {
@@ -26,34 +29,25 @@ function App() {
     setDarkMode(!darkMode);
   }
 
-  const handleNavigate = (page, productId) => {
-    setCurrentPage(page);
-    if (productId) {
-      setSelectedProductId(productId);
-    }
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  const handleLogout = () => {
-    setCurrentUser(null);
-    handleNavigate('home');
-  };
-
-
   return (
-    <div className='min-h-screen flex flex-col bg-[#1A1225] text-white'>
-      <Header currentUser={currentUser} setCurrentPage={handleNavigate} onLogout={handleLogout} darkMode={darkMode} toggleTheme={toggleDarkMode} />
-      {/* Main Content based on currentPage */}
-      <main>
-        {currentPage === 'home' && (
-          <HomePage  />
-        )}
-        {currentPage === 'listproduct' && (
-          <ListProduct />
-        )}
-      </main>
-      <Footer />
-    </div>
+    <Router>
+      <div className={darkMode ? "dark" : ""}>
+        <div className="min-h-screen bg-gray-50 dark:bg-gray-900 font-sans text-gray-900 dark:text-gray-100 transition-colors duration-300 flex flex-col">
+          <Header darkMode={darkMode} toggleTheme={toggleDarkMode} />
+          
+          <main className="grow">
+            <Routes>
+              <Route path="/" element={<HomePage />} />
+              <Route path="/search" element={<ListProducts />} />
+              <Route path="/product/:id" element={<ProductDetail />} />
+              <Route path="/login" element={<Login />} />
+            </Routes>
+          </main>
+
+          <Footer />
+        </div>
+      </div>
+    </Router>
   )
 }
 
