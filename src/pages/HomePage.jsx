@@ -195,7 +195,9 @@ export default function HomePage({ darkMode, toggleDarkMode }) {
     return (
         <>
         <Header darkMode={darkMode} toggleTheme={toggleDarkMode} />
-        <div className="min-h-screen bg-[#1A1225] text-white">
+        <div className="min-h-screen transition-colors duration-300" 
+              style={{ backgroundColor: "var(--bg-soft)", color: "var(--text)" }}
+>
             {/* Hero Section */}
             <Hero />
 

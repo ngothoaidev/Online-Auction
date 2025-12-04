@@ -56,7 +56,9 @@ export default function Header({ darkMode, toggleTheme }) {
       */}
       <header 
       // className="sticky top-0 z-50 w-full bg-[#2A2038] shadow-2xl border-b border-white/5 font-sans">
-      className="bg-white/90 dark:bg-stone-900/90 backdrop-blur-md shadow-md sticky top-0 z-50 transition-colors duration-300 border-b border-stone-200/50 dark:border-stone-800/50">
+      className=" backdrop-blur-md shadow-md sticky top-0 z-50 transition-colors duration-300 border-b"
+      style={{ backgroundColor: "var(--bg-soft)", color: "var(--text)" }}
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-20">
             {/* LEFT: Logo & Categories (Desktop) */}
@@ -110,7 +112,10 @@ export default function Header({ darkMode, toggleTheme }) {
 
             {/* CENTER: Search Bar (Desktop) */}
             <div className="max-w-2xl hidden md:flex flex-1 mx-8">
-              <div className="relative w-full bg-[#1A1225] border border-white/10 rounded-full py-2.5 px-5 md:flex justify-center items-center gap-4 focus:outline-none focus:border-[var(--theme-secondary)] focus:ring-1 focus:ring-[var(--theme-secondary)] transition-all">
+              <div 
+                className="relative w-full border-2 rounded-full py-2.5 px-5 md:flex justify-center items-center gap-4 focus:outline-none focus:border-[var(--theme-secondary)] focus:ring-1 focus:ring-[var(--theme-secondary)] transition-all"
+                style={{backgroundColor: "var(--bg-soft)", borderColor: "var(--border)", text: "var(--text)"}}
+              >
                 <input 
                   type="text" 
                   placeholder="Search for items, artists, or brands..." 
@@ -138,7 +143,12 @@ export default function Header({ darkMode, toggleTheme }) {
               {/* Dark Mode Toggle */}
               <button 
                 onClick={toggleTheme}
-                className="p-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors"
+                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors"
+                style={{
+                        backgroundColor: "var(--accent-soft)",
+                        color: "var(--text)",
+                        border: "1px solid var(--border)",
+                }}
               >
                 {!darkMode ? <Sun className="w-6 h-6" /> : <Moon className="w-6 h-6" />}
               </button>
@@ -209,7 +219,7 @@ export default function Header({ darkMode, toggleTheme }) {
                   </button>
                   <button
                     onClick={() => navigate("/register")}
-                    className="bg-gradient-to-r from-[var(--theme-secondary)] to-[#B88A20] hover:brightness-110 text-[#1A1225] font-bold text-sm px-5 py-2.5 rounded-full shadow-lg transition-all transform hover:-translate-y-0.5">
+                    className="bg-[#B88A20] hover:brightness-110 text-[#1A1225] font-bold text-sm px-5 py-2.5 rounded-full shadow-lg transition-all transform hover:-translate-y-0.5">
                     Register
                   </button>
                 </div>

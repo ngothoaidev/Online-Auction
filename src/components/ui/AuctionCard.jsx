@@ -113,8 +113,8 @@ export default function AuctionCard({ item }) {
         </div>
         <p className="text-gray-400 text-xs mb-4">{item.sellerName}</p>
         <div className="flex justify-between items-end mb-1">
-            <div>
-              <p className="text-xs text-gray-500 mb-0.5">Current Bid</p>
+            <div className=''>
+              <p className="text-xs text-gray-500 mb-0.5 ">Current Bid</p>
               <p className="text-white font-bold text-lg">${formatCurrency(item.currentPrice)}</p>
             </div>
             {item.buyNowPrice && (

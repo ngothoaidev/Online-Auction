@@ -1,5 +1,5 @@
 import { THEME } from './theme';
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { products as initialProducts, bids as initialBids, questions as initialQuestions } from './data/mockData.js';
 import Header from './components/Header.jsx';
@@ -24,24 +24,40 @@ function App() {
   const [bids, setBids] = useState(initialBids);
   const [questions, setQuestions] = useState(initialQuestions);
   const [sellerRequests, setSellerRequests] = useState([]);
-  const [darkMode, setDarkMode] = useState(false);
+  const [darkMode, setDarkMode] = useState(() =>
+  {
+    return localStorage.getItem("theme") === "dark";
+  });
+  
+  useEffect(() => {
+    const root = document.documentElement;
+    if(darkMode){
+      root.classList.add("dark");
+      localStorage.setItem("theme", "dark");
+    }
+    else{
+      root.classList.remove("dark");
+      localStorage.setItem("theme", "light");
+    }
+  }, [darkMode]);
 
-  function toggleDarkMode() {
+  function toggleTheme() {
     setDarkMode(!darkMode);
   }
 
   return (
     <Router>
-      <div className={darkMode ? "dark" : ""} style={{ '--theme-primary': THEME.primary, '--theme-secondary': THEME.secondary, '--theme-highlight': THEME.highlight, '--theme-urgent': THEME.urgent }}>  
-        <div className="min-h-screen bg-gray-50 dark:bg-gray-900 font-sans text-gray-900 dark:text-gray-100 transition-colors duration-300 flex flex-col grow">
+      <div className='min-h-screen transition-colors duration-1000' style={{backgroundColor: "var(--bg)", color: "var(--text)"}}>
+      {/* <div className={darkMode ? "dark" : ""} style={{ '--theme-primary': THEME.primary, '--theme-secondary': THEME.secondary, '--theme-highlight': THEME.highlight, '--theme-urgent': THEME.urgent }}>   */}
+        {/* <div className="min-h-screen bg-gray-50 dark:bg-gray-900 font-sans text-gray-900 dark:text-gray-100 transition-colors duration-300 flex flex-col grow"> */}
           <Routes>
-            <Route path="/" element={<HomePage />} />
+            <Route path="/" element={<HomePage darkMode={darkMode} toggleDarkMode={toggleTheme} />} />
             <Route path="/search" element={<ListProducts />} />
             <Route path="/product/:id" element={<ProductDetail />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
           </Routes>
-        </div>
+        {/* </div> */}
       </div>
     </Router>
   )
