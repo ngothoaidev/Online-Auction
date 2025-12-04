@@ -54,63 +54,63 @@ export default function Header({ darkMode, toggleTheme }) {
         - Text: White / Muted
         - Accents: #E0B84C (Gold), #C0341D (Red)
       */}
-      <header className="sticky top-0 z-50 w-full bg-[#2A2038] shadow-2xl border-b border-white/5 font-sans">
+      <header 
+      // className="sticky top-0 z-50 w-full bg-[#2A2038] shadow-2xl border-b border-white/5 font-sans">
+      className="bg-white/90 dark:bg-stone-900/90 backdrop-blur-md shadow-md sticky top-0 z-50 transition-colors duration-300 border-b border-stone-200/50 dark:border-stone-800/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-20">
             {/* LEFT: Logo & Categories (Desktop) */}
             <div className="flex items-center gap-8">
               {/* Logo */}
               <div className="shrink-0 cursor-pointer group">
-                <Link to="/" className="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
-                  <span className="text-[#E0B84C]">AURUM</span> AUCTIONS
+                <Link to="/" className="text-2xl font-bold tracking-tight flex items-center gap-2">
+                  <span className="text-[var(--theme-secondary)]">AURUM</span> AUCTIONS
                 </Link>
-                <div className="h-0.5 w-0 group-hover:w-full bg-[#E0B84C] transition-all duration-300"></div>
+                <div className="h-0.5 w-0 group-hover:w-full bg-[var(--theme-secondary)] transition-all duration-300"></div>
               </div>
 
               {/* Desktop Categories Menu (Mega Menu Hover) */}
               <div className="hidden lg:block relative group">
-                <button className="flex items-center gap-1 text-gray-300 hover:text-[#E0B84C] transition-colors py-6 font-medium text-sm uppercase tracking-wide">
+                <button className="flex items-center gap-1 text-gray-300 hover:text-[var(--theme-secondary)] transition-colors py-6 font-medium text-sm uppercase tracking-wide">
                   Categories
                   <ChevronDown size={16} />
                 </button>
 
                 {/* Dropdown Panel */}
-                <div className="absolute top-full left-0 w-60 bg-[#2A2038] border border-white/10 rounded-b-xl shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 transform translate-y-2 group-hover:translate-y-0 overflow-visible">
-                  <div className="flex flex-col gap-6 p-6">
-                    {categories.map((cat) => (
-                      <div className="group/item relative" key={cat.id}>
-                        <Link 
-                          // to={`/search?category=${cat.name}`}
-                          to="/search"
-                          className="px-4 py-2 rounded-lg hover:bg-blue-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 flex justify-between items-center transition-colors">
-                            {cat.name}
-                            {cat.subcategories.length > 0 && <ArrowRight className="w-3 h-3 text-gray-400" />}
-                        </Link>
-                        {cat.subcategories.length > 0 && (
-                          <div className="hidden group-hover/item:block absolute left-full top-0 w-48 pl-1">
-                            <div className="bg-white dark:bg-gray-800 shadow-xl rounded-lg border border-gray-100 dark:border-gray-700 py-2">
-                              {cat.subcategories.map((sub, sIdx) => (
-                                <Link 
-                                  key={sIdx} 
-                                  // to={`/search?category=${cat.name}&subcategory=${sub}`}
-                                  to="/search"
-                                  className="block px-4 py-2 hover:bg-blue-50 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 text-sm transition-colors">
-                                  {sub.name}
-                                </Link>
-                              ))}
-                            </div>
+                <div className="absolute top-full left-0 w-60 bg-[#2A2038] border border-white/10 rounded-xl shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 transform translate-y-2 group-hover:translate-y-0 flex flex-col gap-6 p-6 backdrop-blur-md">
+                  {categories.map((cat) => (
+                    <div className="group/item relative" key={cat.id}>
+                      <Link 
+                        // to={`/search?category=${cat.name}`}
+                        to="/search"
+                        className="px-4 py-2 rounded-lg hover:bg-blue-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 flex justify-between items-center transition-colors">
+                          {cat.name}
+                          {cat.subcategories.length > 0 && <ArrowRight className="w-3 h-3 text-gray-400" />}
+                      </Link>
+                      {cat.subcategories.length > 0 && (
+                        <div className="hidden group-hover/item:block absolute left-full top-0 w-48 pl-1">
+                          <div className="bg-white dark:bg-gray-800 shadow-xl rounded-lg border border-gray-100 dark:border-gray-700 py-2">
+                            {cat.subcategories.map((sub, sIdx) => (
+                              <Link 
+                                key={sIdx} 
+                                // to={`/search?category=${cat.name}&subcategory=${sub}`}
+                                to="/search"
+                                className="block px-4 py-2 hover:bg-blue-50 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 text-sm transition-colors">
+                                {sub.name}
+                              </Link>
+                            ))}
                           </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
 
             {/* CENTER: Search Bar (Desktop) */}
-            <div className="flex-1 max-w-2xl hidden md:flex">
-              <div className="relative w-full bg-[#1A1225] border border-white/10 rounded-full py-2.5 px-5 md:flex justify-center items-center gap-4 focus:outline-none focus:border-[#E0B84C] focus:ring-1 focus:ring-[#E0B84C] transition-all">
+            <div className="max-w-2xl hidden md:flex flex-1 mx-8">
+              <div className="relative w-full bg-[#1A1225] border border-white/10 rounded-full py-2.5 px-5 md:flex justify-center items-center gap-4 focus:outline-none focus:border-[var(--theme-secondary)] focus:ring-1 focus:ring-[var(--theme-secondary)] transition-all">
                 <input 
                   type="text" 
                   placeholder="Search for items, artists, or brands..." 
@@ -120,7 +120,7 @@ export default function Header({ darkMode, toggleTheme }) {
                   onClick={() => navigate('/search')}
                   className="p-1.5 rounded-full transition-colors"
                 >
-                  <Search className="text-gray-500 group-hover:text-[#E0B84C] transition-colors" size={18} />
+                  <Search className="text-gray-500 group-hover:text-[var(--theme-secondary)] transition-colors" size={18} />
                 </button>
               </div>
             </div>
@@ -131,7 +131,7 @@ export default function Header({ darkMode, toggleTheme }) {
               {/* Mobile Search Trigger (Visible only on small screens) */}
               <button
                 onClick={() => navigate('/search')} 
-                className="md:hidden text-gray-300 hover:text-[#E0B84C]">
+                className="md:hidden text-gray-300 hover:text-[var(--theme-secondary)]">
                 <Search size={24} />
               </button>
 
@@ -147,7 +147,7 @@ export default function Header({ darkMode, toggleTheme }) {
                 /* LOGGED IN STATE */
                 <div className="flex items-center gap-4">
                   {/* Notifications */}
-                  <button className="relative text-gray-300 hover:text-[#E0B84C] transition-colors hidden sm:block">
+                  <button className="relative text-gray-300 hover:text-[var(--theme-secondary)] transition-colors hidden sm:block">
                     <Bell size={22} />
                     <span className="absolute -top-1 -right-1 bg-[#C0341D] text-[10px] font-bold text-white w-4 h-4 rounded-full flex items-center justify-center">
                       3
@@ -160,7 +160,7 @@ export default function Header({ darkMode, toggleTheme }) {
                       onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}
                       className="flex items-center gap-2 focus:outline-none"
                     >
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#E0B84C] to-[#B88A20] p-0.5">
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[var(--theme-secondary)] to-[#B88A20] p-0.5">
                         <div className="w-full h-full rounded-full bg-[#2A2038] flex items-center justify-center overflow-hidden">
                           <img 
                             src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" 
@@ -178,13 +178,13 @@ export default function Header({ darkMode, toggleTheme }) {
                           <p className="text-sm text-white font-medium">John Doe</p>
                           <p className="text-xs text-gray-400 truncate">john.doe@example.com</p>
                         </div>
-                        <Link to="\" className="flex items-center gap-3 px-4 py-3 text-sm text-gray-300 hover:bg-white/5 hover:text-[#E0B84C] transition-colors">
+                        <Link to="\" className="flex items-center gap-3 px-4 py-3 text-sm text-gray-300 hover:bg-white/5 hover:text-[var(--theme-secondary)] transition-colors">
                           <User size={16} /> Profile
                         </Link>
-                        <Link to="\" className="flex items-center gap-3 px-4 py-3 text-sm text-gray-300 hover:bg-white/5 hover:text-[#E0B84C] transition-colors">
+                        <Link to="\" className="flex items-center gap-3 px-4 py-3 text-sm text-gray-300 hover:bg-white/5 hover:text-[var(--theme-secondary)] transition-colors">
                           <Gavel size={16} /> My Bids
                         </Link>
-                        <Link to="\" className="flex items-center gap-3 px-4 py-3 text-sm text-gray-300 hover:bg-white/5 hover:text-[#E0B84C] transition-colors">
+                        <Link to="\" className="flex items-center gap-3 px-4 py-3 text-sm text-gray-300 hover:bg-white/5 hover:text-[var(--theme-secondary)] transition-colors">
                           <Heart size={16} /> Watchlist
                         </Link>
                         <div className="border-t border-white/5 mt-1 pt-1">
@@ -204,12 +204,12 @@ export default function Header({ darkMode, toggleTheme }) {
                 <div className="hidden sm:flex items-center gap-3">
                   <button
                     onClick={() => navigate("/login")}
-                    className="text-white hover:text-[#E0B84C] font-medium text-sm transition-colors px-3 py-2">
+                    className="text-white hover:text-[var(--theme-secondary)] font-medium text-sm transition-colors px-3 py-2">
                     Log In
                   </button>
                   <button
                     onClick={() => navigate("/register")}
-                    className="bg-gradient-to-r from-[#E0B84C] to-[#B88A20] hover:brightness-110 text-[#1A1225] font-bold text-sm px-5 py-2.5 rounded-full shadow-lg transition-all transform hover:-translate-y-0.5">
+                    className="bg-gradient-to-r from-[var(--theme-secondary)] to-[#B88A20] hover:brightness-110 text-[#1A1225] font-bold text-sm px-5 py-2.5 rounded-full shadow-lg transition-all transform hover:-translate-y-0.5">
                     Register
                   </button>
                 </div>
@@ -218,7 +218,7 @@ export default function Header({ darkMode, toggleTheme }) {
               {/* Mobile Menu Trigger */}
               <button 
                 onClick={() => setIsMobileMenuOpen(true)}
-                className="lg:hidden text-white hover:text-[#E0B84C] transition-colors p-1"
+                className="lg:hidden text-white hover:text-[var(--theme-secondary)] transition-colors p-1"
               >
                 <Menu size={28} />
               </button>
@@ -259,14 +259,14 @@ export default function Header({ darkMode, toggleTheme }) {
                 <input 
                   type="text" 
                   placeholder="Search..." 
-                  className="w-full bg-[#2A2038] text-white border border-white/10 rounded-lg py-3 pl-10 pr-4 focus:outline-none focus:border-[#E0B84C]"
+                  className="w-full bg-[#2A2038] text-white border border-white/10 rounded-lg py-3 pl-10 pr-4 focus:outline-none focus:border-[var(--theme-secondary)]"
                 />
                 <Search className="absolute left-3 top-3.5 text-gray-500" size={18} />
               </div>
 
               {/* Mobile Categories (Accordion) */}
               <div className="space-y-2">
-                <h3 className="text-[#E0B84C] text-xs font-bold uppercase tracking-wider mb-2">Browse Categories</h3>
+                <h3 className="text-[var(--theme-secondary)] text-xs font-bold uppercase tracking-wider mb-2">Browse Categories</h3>
                 {categories.map((cat) => (
                   <div key={cat.id} className="border-b border-white/5 last:border-0">
                     <button 
@@ -276,7 +276,7 @@ export default function Header({ darkMode, toggleTheme }) {
                       <span className="font-medium">{cat.name}</span>
                       <ChevronDown 
                         size={16} 
-                        className={`transition-transform duration-300 ${activeMobileCategory === cat.id ? 'rotate-180 text-[#E0B84C]' : 'text-gray-500'}`} 
+                        className={`transition-transform duration-300 ${activeMobileCategory === cat.id ? 'rotate-180 text-[var(--theme-secondary)]' : 'text-gray-500'}`} 
                       />
                     </button>
                     
@@ -285,7 +285,7 @@ export default function Header({ darkMode, toggleTheme }) {
                       <ul className="pl-4 pb-3 space-y-3">
                         {cat.subcategories.map((sub) => (
                           <li key={sub.id}>
-                            <a href="#" className="text-gray-400 text-sm hover:text-[#E0B84C] block">
+                            <a href="#" className="text-gray-400 text-sm hover:text-[var(--theme-secondary)] block">
                               {sub.name}
                             </a>
                           </li>
@@ -320,7 +320,7 @@ export default function Header({ darkMode, toggleTheme }) {
                   <button onClick={() => navigate("/login")} className="text-white border border-white/20 py-3 rounded-lg font-medium hover:bg-white/5 hover:border-white/40 transition-all">
                     Log In
                   </button>
-                  <button onClick={() => navigate("/register")} className="bg-[#E0B84C] text-[#1A1225] py-3 rounded-lg font-bold hover:brightness-110 shadow-lg transition-all">
+                  <button onClick={() => navigate("/register")} className="bg-[var(--theme-secondary)] text-[#1A1225] py-3 rounded-lg font-bold hover:brightness-110 shadow-lg transition-all">
                     Register
                   </button>
                 </div>

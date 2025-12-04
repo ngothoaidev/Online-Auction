@@ -1,107 +1,190 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Trophy, Clock, Gavel, Star, ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
-import { products, topBidders } from "../data/mockData";
+import { products, topBidders, heroSlides } from "../data/mockData";
 import AuctionCard from "../components/ui/AuctionCard";
 
 {/* Dummy Hero Section */}
+// const Hero = () => {
+//   return (
+//     <div className="relative bg-gray-900 text-white overflow-hidden">
+//         <div className="relative rounded-2xl overflow-hidden h-[400px] mb-12 shadow-2xl group">
+//             <div className="absolute inset-0 bg-gradient-to-r from-[#1A1225] via-transparent to-transparent z-10"></div>
+//             <img 
+//             src="https://images.unsplash.com/photo-1599939571322-792a326991f2?q=80&w=2576&auto=format&fit=crop" 
+//             alt="Luxury Watch" 
+//             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000"
+//             />
+//             <div className="absolute bottom-0 left-0 p-10 z-20 max-w-2xl">
+//             <span className="bg-[#C0341D] text-white text-xs font-bold px-3 py-1 rounded mb-4 inline-block animate-pulse">LIVE NOW</span>
+//             <h1 className="text-4xl md:text-5xl font-bold mb-4 font-sans tracking-tight">Discover Rare Items & <span className="text-[#E0B84C]">Exclusive Deals</span></h1>
+//             <p className="text-gray-300 text-lg mb-6 line-clamp-2">Bid on thousands of unique items starting from $1. The world's most trusted online auction marketplace.</p>
+//             <div className="flex items-center gap-4">
+//             <button className="bg-[#E0B84C] hover:bg-[#E0B800] text-white px-8 py-3 rounded-full font-bold text-lg transition-all transform hover:scale-105 shadow-lg">
+//               Start Bidding
+//             </button>
+//             <button className="bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white px-8 py-3 rounded-full font-bold text-lg border border-white/30 transition-all">
+//               Sell Item
+//             </button>
+//           </div>
+//             </div>
+//         </div>
+//     </div>
+//   );
+// };
+
 const Hero = () => {
+  const [currentSlide, setCurrentSlide] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % heroSlides.length);
+    }, 5000); // Change slide every 5 seconds
+    return () => clearInterval(timer);
+  }, []);
+
   return (
-    <div className="relative bg-gray-900 text-white overflow-hidden">
-        <div className="relative rounded-2xl overflow-hidden h-[400px] mb-12 shadow-2xl group">
-            <div className="absolute inset-0 bg-gradient-to-r from-[#1A1225] via-transparent to-transparent z-10"></div>
-            <img 
-            src="https://images.unsplash.com/photo-1599939571322-792a326991f2?q=80&w=2576&auto=format&fit=crop" 
-            alt="Luxury Watch" 
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000"
-            />
-            <div className="absolute bottom-0 left-0 p-10 z-20 max-w-2xl">
-            <span className="bg-[#C0341D] text-white text-xs font-bold px-3 py-1 rounded mb-4 inline-block animate-pulse">LIVE NOW</span>
-            <h1 className="text-4xl md:text-5xl font-bold mb-4 font-sans tracking-tight">Discover Rare Items & <span className="text-[#E0B84C]">Exclusive Deals</span></h1>
-            <p className="text-gray-300 text-lg mb-6 line-clamp-2">Bid on thousands of unique items starting from $1. The world's most trusted online auction marketplace.</p>
-            <div className="flex items-center gap-4">
-            <button className="bg-[#E0B84C] hover:bg-[#E0B800] text-white px-8 py-3 rounded-full font-bold text-lg transition-all transform hover:scale-105 shadow-lg">
-              Start Bidding
-            </button>
-            <button className="bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white px-8 py-3 rounded-full font-bold text-lg border border-white/30 transition-all">
-              Sell Item
-            </button>
-          </div>
+    <div className="relative text-white overflow-hidden min-h-[550px] flex items-center group">
+      {/* 1. Base Gradient Background (Static) */}
+      <div className="absolute inset-0 bg-gradient-to-br from-[#2a0050] via-[#400080] to-[#1a0033] opacity-90 transition-colors duration-1000"></div>
+      
+      {/* 2. Subtle Dot Pattern Overlay */}
+      <div 
+        className="absolute inset-0 opacity-20 pointer-events-none" 
+        style={{ 
+          backgroundImage: 'radial-gradient(circle, #F9E400 1px, transparent 1px)',
+          backgroundSize: '32px 32px' 
+        }}
+      ></div>
+
+      {/* 3. Floating Light Orbs */}
+      <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-[#7C00FE]/20 rounded-full blur-[120px] pointer-events-none"></div>
+      <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-[#F5004F]/20 rounded-full blur-[100px] pointer-events-none"></div>
+
+      {/* 4. Sliding Content Container */}
+      <div className="container mx-auto px-4 relative z-10 h-full">
+        <div 
+        className="flex transition-transform duration-700 ease-in-out h-full"
+        style={{ transform: `translateX(-${currentSlide * 100}%)` }}
+        >
+        {heroSlides.map((slide) => (
+            <div key={slide.id} className="w-full shrink-0 flex flex-col md:flex-row items-center justify-between p-10">
+            
+            {/* Text Section */}
+            <div className="max-w-2xl mb-10 md:mb-0 pr-4">
+                <div className={`inline-block bg-white/10 backdrop-blur-md text-[#F9E400] text-xs font-bold px-3 py-1 rounded-full mb-6 border border-[#F9E400]/40 shadow-lg ${slide.shadow}`}>
+                ● {slide.tag}
+                </div>
+                <h1 className="text-4xl md:text-6xl font-bold mb-6 leading-tight tracking-tight drop-shadow-lg">
+                {slide.title} <br/>
+                <span className={`text-transparent bg-clip-text bg-gradient-to-r ${slide.gradient} filter drop-shadow-sm`}>
+                    {slide.highlight}
+                </span>
+                </h1>
+                <p className="text-lg text-stone-200 mb-8 max-w-lg font-light leading-relaxed drop-shadow-md">
+                {slide.description}
+                </p>
+                <div className="flex gap-4">
+                <button className="bg-[#F5004F] hover:bg-[#d00043] text-white px-8 py-3.5 rounded-full font-bold text-lg transition-all transform hover:scale-105 shadow-xl shadow-[#F5004F]/30">
+                    Start Bidding
+                </button>
+                <button className="bg-white/10 hover:bg-white/20 backdrop-blur-md text-white px-8 py-3.5 rounded-full font-bold text-lg border border-white/30 transition-all hover:border-[#F9E400]/50">
+                    Sell Item
+                </button>
+                </div>
             </div>
+
+            {/* Floating Image Section */}
+            <div className="w-full md:w-1/2 flex justify-center md:justify-end relative h-[350px] md:h-[400px]">
+                <div className="relative w-full h-full flex items-center justify-center">
+                    <img 
+                    src={slide.image}
+                    alt="Abstract Shape" 
+                    className="max-h-full max-w-full object-contain drop-shadow-2xl animate-float mix-blend-screen opacity-90"
+                    style={{ 
+                        maskImage: 'radial-gradient(circle, black 60%, transparent 100%)',
+                        WebkitMaskImage: 'radial-gradient(circle, black 60%, transparent 100%)'
+                    }}
+                    />
+                </div>
+            </div>
+
+            </div>
+        ))}
         </div>
+
+        {/* Navigation Dots */}
+        <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-2">
+          {heroSlides.map((_, idx) => (
+            <button
+              key={idx}
+              onClick={() => setCurrentSlide(idx)}
+              className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${
+                currentSlide === idx ? 'bg-[#F9E400] w-8' : 'bg-white/30 hover:bg-white/50'
+              }`}
+              aria-label={`Go to slide ${idx + 1}`}
+            />
+          ))}
+        </div>
+      </div>
     </div>
   );
 };
 
-const Section = ({ title, icon: Icon, items, highlightColor = "blue" }) => {
-  const [currentSlide, setCurrentSlide] = useState(0);
-  const itemsToShow = 3;
-  const maxSlide = 2;
+const ProductTabs = ({ navigate }) => {
+  const [activeTab, setActiveTab] = useState('endingSoon');
 
-  const nextSlide = () => {
-    setCurrentSlide(prev => Math.min(prev + 1, maxSlide));
-  };
+  const tabs = [
+    { id: 'endingSoon', label: 'Ending Soon', icon: Clock, color: '#F5004F', data: products },
+    { id: 'mostBids', label: 'Most Active', icon: Gavel, color: '#7C00FE', data: products },
+    { id: 'highestPrice', label: 'Premium', icon: Star, color: '#F9E400', data: products },
+  ];
 
-  const prevSlide = () => {
-    setCurrentSlide(prev => Math.max(prev - 1, 0));
-  };
-
-  // Determine button state
-  const isLeftDisabled = currentSlide === 0;
-  const isRightDisabled = currentSlide >= maxSlide;
+  const activeTabData = tabs.find(t => t.id === activeTab);
 
   return (
-    <section className="container mx-auto px-4 py-12">
-        {/* Section Header */}
-        <div className="flex items-center justify-between mb-8">
-            <div className="flex items-center gap-3">
-            <div className={`p-2 rounded-lg bg-${highlightColor}-100 dark:bg-${highlightColor}-900/30 text-${highlightColor}-600 dark:text-${highlightColor}-400`}>
-                <Icon className="w-6 h-6" />
-            </div>
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-                {title}
-            </h2>
-            </div>
-            <span className="h-px flex-1 bg-white/10 dark:bg-white/10 transition-colors duration-300 mx-4"></span>
-            <button className="text-blue-600 dark:text-blue-400 font-semibold flex items-center gap-1 hover:gap-2 transition-all">
-            View All <ArrowRight className="w-4 h-4" />
+    <section className="py-16 container mx-auto px-4">
+      <div className="flex flex-wrap justify-center gap-4 mb-10">
+        {tabs.map((tab) => {
+          const isActive = activeTab === tab.id;
+          const Icon = tab.icon;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex items-center gap-2 px-6 py-3 rounded-full font-bold text-sm uppercase tracking-wide transition-all duration-300 transform hover:scale-105 ${
+                isActive 
+                  ? `text-white shadow-lg shadow-${tab.color}/20 scale-105` 
+                  : 'bg-white dark:bg-stone-800 text-stone-500 dark:text-stone-400 hover:bg-stone-100 dark:hover:bg-stone-700'
+              }`}
+              style={{ 
+                backgroundColor: isActive ? tab.color : undefined,
+                color: isActive && tab.id === 'highestPrice' ? 'black' : undefined 
+              }}
+            >
+              <Icon className="w-4 h-4" />
+              {tab.label}
             </button>
-        </div>
+          );
+        })}
+      </div>
 
-        {/* Carousel Container */}
-        <div className="relative group/carousel">
-            {/* Main Track */}
-            <div className="overflow-hidden -mx-3"> {/* Negative margin to counteract item padding */}
-            <div 
-                className="flex transition-transform duration-500 ease-out" 
-                style={{ transform: `translateX(-${currentSlide * (100 / itemsToShow)}%)` }}
-            >
-                {items.map((item) => (
-                <div key={item.id} className="w-80% md:w-[50%] lg:w-[20%] px-3 shrink-0 box-border">
-                    <AuctionCard item={item} />
-                </div>
-                ))}
-            </div>
-            </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5 mx-10 animate-fade-in">
+        {activeTabData.data.map((item) => (
+          <div key={item.id} className="transform transition-all duration-500 hover:-translate-y-1">
+            <AuctionCard item={item} navigate={navigate} />
+          </div>
+        ))}
+      </div>
 
-            {/* Navigation Buttons (Visible on Hover) */}
-            {!isLeftDisabled && (
-            <button 
-                onClick={prevSlide}
-                className="absolute top-1/2 -left-4 -translate-y-1/2 z-10 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 p-3 rounded-full shadow-lg opacity-0 group-hover/carousel:opacity-100 transition-all duration-300 hover:bg-blue-50 dark:hover:bg-gray-700 hover:scale-110"
-            >
-                <ChevronLeft className="w-6 h-6" />
-            </button>
-            )}
-            
-            {!isRightDisabled && (
-            <button 
-                onClick={nextSlide}
-                className="absolute top-1/2 -right-4 -translate-y-1/2 z-10 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 p-3 rounded-full shadow-lg opacity-0 group-hover/carousel:opacity-100 transition-all duration-300 hover:bg-blue-50 dark:hover:bg-gray-700 hover:scale-110"
-            >
-                <ChevronRight className="w-6 h-6" />
-            </button>
-            )}
-        </div>
+      <div className="mt-12 text-center">
+        <button 
+          onClick={() => navigate('search')}
+          className="inline-flex items-center gap-2 font-bold uppercase tracking-widest text-xs border-b-2 border-transparent hover:border-current pb-1 transition-all"
+          style={{ color: activeTabData.color }}
+        >
+          View All {activeTabData.label} <ArrowRight className="w-4 h-4" />
+        </button>
+      </div>
     </section>
   );
 };
@@ -110,51 +193,13 @@ export default function HomePage() {
     return (
         <>
         <div className="min-h-screen bg-[#1A1225] text-white">
-            {/* Controls for Demo */}
-            {/* <div className="max-w-7xl mx-auto px-6 py-8">
-                <div className="bg-[#2A2038] border border-white/10 rounded-xl p-6 mb-10 flex items-center justify-between shadow-lg">
-                    <div>
-                    <h2 className="text-[#E0B84C] font-bold text-lg mb-1">Developer Preview Controls</h2>
-                    <p className="text-gray-400 text-sm">Use this toggle to switch between Guest and User views in the header.</p>
-                    </div>
-                    <button 
-                    onClick={() => setIsLoggedIn(!isLoggedIn)}
-                    className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#E0B84C] focus:ring-offset-2 focus:ring-offset-[#2A2038] ${isLoggedIn ? 'bg-[#E0B84C]' : 'bg-gray-600'}`}
-                    >
-                    <span className={`inline-block h-6 w-6 transform rounded-full bg-white transition-transform ${isLoggedIn ? 'translate-x-7' : 'translate-x-1'}`} />
-                    </button>
-                </div>
-            </div> */}
-            
+            {/* Hero Section */}
             <Hero />
 
             {/* Dummy Content Grid */}
-            <div className="space-y-4">
-                {/* Section 1: Ending Soon - Urgency Focus */}
-                <Section 
-                    title="Ending Soon" 
-                    icon={Clock}
-                    items={products} 
-                    highlightColor="red" 
-                />
-                
-                {/* Section 2: Most Bids - Popularity Focus */}
-                <Section 
-                    title="Trending Now" 
-                    icon={Gavel} 
-                    items={products} 
-                    highlightColor="orange"
-                />
-                
-                {/* Section 3: Highest Prices - Premium Focus */}
-                <Section 
-                    title="Premium Collections" 
-                    icon={Star} 
-                    items={products} 
-                    highlightColor="blue"
-                />
-            </div>
+            <ProductTabs />
 
+            {/* Top Bidders Section */}
             <section className="py-16 bg-blue-50 dark:bg-gray-800/50 transition-colors duration-300">
                 <div className="container mx-auto px-4">
                     <div className="flex items-center gap-3 mb-10 justify-center">

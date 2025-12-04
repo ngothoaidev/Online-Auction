@@ -131,7 +131,7 @@ export const generateTopBidders = (count = 100) => {
 // --- 4. Execution (Generate the Data) ---
 
 // Generate 100 Products
-export const products = generateProducts(100);
+export const products = generateProducts(5);
 
 // Generate 150 Bids (linked to those products)
 export const bids = generateBids(150, products);
@@ -140,7 +140,7 @@ export const bids = generateBids(150, products);
 export const questions = generateQuestions(100, products);
 
 // Generate 100 Top Bidders
-export const topBidders = generateTopBidders(100);
+export const topBidders = generateTopBidders(5);
 
 // Keep existing static categories
 export const categories = CATEGORIES_REF.map(c => ({
@@ -148,3 +148,36 @@ export const categories = CATEGORIES_REF.map(c => ({
     name: c.id.charAt(0).toUpperCase() + c.id.slice(1),
     subcategories: c.subs.map(s => ({ id: s, name: s.charAt(0).toUpperCase() + s.slice(1) }))
 }));
+
+export const heroSlides = [
+  {
+    id: 1,
+    tag: "LIVE AUCTIONS",
+    title: "Curated Rare Items &",
+    highlight: "Exclusive Deals",
+    description: "Bid on thousands of verified unique items starting from $1. Experience the thrill of winning on the world's most premium marketplace.",
+    image: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&q=80&w=800",
+    gradient: "from-[#7C00FE] to-[#F5004F]",
+    shadow: "shadow-[#7C00FE]/20"
+  },
+  {
+    id: 2,
+    tag: "LUXURY WATCHES",
+    title: "Timeless Elegance &",
+    highlight: "Precision Craft",
+    description: "Discover our exclusive collection of authenticated luxury timepieces. From vintage classics to modern masterpieces.",
+    image: "https://images.unsplash.com/photo-1614850523060-8da1d56ae167?auto=format&fit=crop&q=80&w=800",
+    gradient: "from-[#F9E400] to-[#FFAF00]",
+    shadow: "shadow-[#F9E400]/20"
+  },
+  {
+    id: 3,
+    tag: "MODERN ART",
+    title: "Abstract Visions &",
+    highlight: "Creative Genius",
+    description: "Invest in the future with our curated selection of modern art pieces, sculptures, and rare digital collectibles.",
+    image: "https://images.unsplash.com/photo-1618005198910-a522119f12a6?auto=format&fit=crop&q=80&w=800",
+    gradient: "from-[#F5004F] to-[#FFAF00]",
+    shadow: "shadow-[#F5004F]/20"
+  }
+];

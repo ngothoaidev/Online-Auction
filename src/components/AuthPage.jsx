@@ -49,6 +49,7 @@ export default function Login() {
 }
 
 export function Register() {
+    const navigate = useNavigate();
     return (
         <div className="flex flex-row h-screen w-full">
             {/* Left Half - Brand Name */}
