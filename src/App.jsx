@@ -1,4 +1,3 @@
-import { THEME } from './theme';
 import { useState, useEffect } from 'react'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { products as initialProducts, bids as initialBids, questions as initialQuestions } from './data/mockData.js';

@@ -9,19 +9,6 @@
     scrollbar-width: none; /* Firefox */
 }
 
-.custom-allscrollbar::-webkit-scrollbar {
-    width: 0px; /* Chrome, Safari, Edge */
-    height: 0px;
-}
-
-.custom-allscrollbar::-webkit-scrollbar-track {
-    background: transparent;
-}
-
-.custom-allscrollbar::-webkit-scrollbar-thumb {
-    background: transparent;
-}
-
 :root {
   --bg: #f9fafb;
   --bg-soft: #ffffff;
