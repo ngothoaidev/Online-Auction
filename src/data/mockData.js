@@ -58,11 +58,12 @@ export const generateProducts = (count = 100) => {
     const startDate = new Date(now.getTime() - daysAgo * 24 * 60 * 60 * 1000);
     const endDate = new Date(now.getTime() + daysLeft * 24 * 60 * 60 * 1000);
 
+    const imageLink = `https://picsum.photos/seed/${i * 123}/400/400`;
     return {
       id: generateId('p', i),
       title: `${adj} ${brand} ${subcategory.charAt(0).toUpperCase() + subcategory.slice(1)}`,
       description: `<p>This is a <strong>${adj.toLowerCase()}</strong> item from ${brand}. Great condition.</p><ul><li>Authentic ${brand}</li><li>Fast Shipping</li></ul>`,
-      images: [getRandomItem(SAMPLE_IMAGES[category]), getRandomItem(SAMPLE_IMAGES[category])],
+      images: [imageLink, imageLink, imageLink],
       startingPrice,
       currentPrice,
       buyNowPrice,
