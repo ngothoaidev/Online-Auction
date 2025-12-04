@@ -55,8 +55,8 @@ export const generateProducts = (count = 100) => {
     const daysAgo = getRandomInt(1, 7);
     const daysLeft = isEndingSoon ? (getRandomInt(1, 24) / 24) : getRandomInt(1, 10);
     
-    const startDate = new Date(now.getTime() - daysAgo * 24 * 60 * 60 * 1000);
-    const endDate = new Date(now.getTime() + daysLeft * 24 * 60 * 60 * 1000);
+    const startTime = new Date(now.getTime() - daysAgo * 24 * 60 * 60 * 1000);
+    const endTime = new Date(now.getTime() + daysLeft * 24 * 60 * 60 * 1000);
 
     const imageLink = `https://picsum.photos/seed/${i * 123}/400/400`;
     return {
@@ -75,8 +75,8 @@ export const generateProducts = (count = 100) => {
       highestBidderName: `user${getRandomInt(100, 999)}`,
       category,
       subcategory,
-      startDate,
-      endDate,
+      startTime,
+      endTime,
       totalBids: getRandomInt(0, 45),
       autoExtend: Math.random() > 0.5,
       status: 'active',
