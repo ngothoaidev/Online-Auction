@@ -4,10 +4,10 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { products as initialProducts, bids as initialBids, questions as initialQuestions } from './data/mockData.js';
 import Header from './components/Header.jsx';
 import Footer from './components/Footer.jsx';
-import HomePage from './components/HomePage.jsx';
-import ProductDetail from './components/ProductDetail.jsx';
-import ListProducts from './components/ListProducts.jsx';
-import Login, { Register } from './components/AuthPage.jsx';
+import HomePage from './pages/HomePage.jsx';
+import ProductDetail from './pages/ProductDetail.jsx';
+import ListProducts from './pages/ListProducts.jsx';
+import Login, { Register } from './pages/AuthPage.jsx';
 
 function App() {
   const initialUser = {
@@ -32,21 +32,15 @@ function App() {
 
   return (
     <Router>
-      <div className={darkMode ? "dark" : ""} style={{ '--theme-primary': THEME.primary, '--theme-secondary': THEME.secondary, '--theme-highlight': THEME.highlight, '--theme-urgent': THEME.urgent }}>
-        <div className="min-h-screen bg-gray-50 dark:bg-gray-900 font-sans text-gray-900 dark:text-gray-100 transition-colors duration-300 flex flex-col">
-          <Header darkMode={darkMode} toggleTheme={toggleDarkMode} />
-          
-          <main className="grow">
-            <Routes>
-              <Route path="/" element={<HomePage />} />
-              <Route path="/search" element={<ListProducts />} />
-              <Route path="/product/:id" element={<ProductDetail />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
-            </Routes>
-          </main>
-
-          <Footer />
+      <div className={darkMode ? "dark" : ""} style={{ '--theme-primary': THEME.primary, '--theme-secondary': THEME.secondary, '--theme-highlight': THEME.highlight, '--theme-urgent': THEME.urgent }}>  
+        <div className="min-h-screen bg-gray-50 dark:bg-gray-900 font-sans text-gray-900 dark:text-gray-100 transition-colors duration-300 flex flex-col grow">
+          <Routes>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/search" element={<ListProducts />} />
+            <Route path="/product/:id" element={<ProductDetail />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+          </Routes>
         </div>
       </div>
     </Router>
