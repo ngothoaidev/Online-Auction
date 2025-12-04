@@ -21,3 +21,30 @@
 .custom-allscrollbar::-webkit-scrollbar-thumb {
     background: transparent;
 }
+
+:root {
+  --bg: #f9fafb;
+  --bg-soft: #ffffff;
+  --text: #111827;
+  --text-muted: #6b7280;
+  --accent: #E0B84C;
+  --accent-soft: #fef3c7;
+  --border: #e5e7eb;
+  --danger: #DC2626;
+}
+
+:root.dark {
+  --bg: #050816;
+  --bg-soft: #111827;
+  --text: #f9fafb;
+  --text-muted: #9ca3af;
+  --accent: #E0B84C;
+  --accent-soft: #3f3f46;
+  --border: #1f2933;
+  --danger: #F87171;
+}
+
+body {
+  background-color: var(--bg);
+  color: var(--text);
+}
