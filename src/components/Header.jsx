@@ -73,31 +73,56 @@ export default function Header({ darkMode, toggleTheme }) {
 
               {/* Desktop Categories Menu (Mega Menu Hover) */}
               <div className="hidden lg:block relative group">
-                <button className="flex items-center gap-1 text-gray-300 hover:text-[var(--theme-secondary)] transition-colors py-6 font-medium text-sm uppercase tracking-wide">
+                <button 
+                  style={{
+                    color: "var(--text)",
+                  }}
+                  className="flex items-center gap-1   transition-colors py-6 font-medium text-sm uppercase tracking-wide"
+                >
                   Categories
                   <ChevronDown size={16} />
                 </button>
 
                 {/* Dropdown Panel */}
-                <div className="absolute top-full left-0 w-60 bg-[#2A2038] border border-white/10 rounded-xl shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 transform translate-y-2 group-hover:translate-y-0 flex flex-col gap-6 p-6 backdrop-blur-md">
+                <div
+                  style={{
+                    backgroundColor: "var(--bg-soft)",
+                    borderColor: "var(--border)",
+                  }}
+                  className="absolute top-full left-0 w-60  border  rounded-xl shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 transform translate-y-2 group-hover:translate-y-0 flex flex-col gap-6 p-6 backdrop-blur-md"
+                >
                   {categories.map((cat) => (
                     <div className="group/item relative" key={cat.id}>
                       <Link 
                         // to={`/search?category=${cat.name}`}
                         to="/search"
-                        className="px-4 py-2 rounded-lg hover:bg-blue-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 flex justify-between items-center transition-colors">
+                        style={{
+                          color: "var(--text)",
+                        }}
+                        className="px-4 py-2 rounded-lg flex justify-between items-center transition-colors hover:bg-[var(--bg-hover)]"
+                      >
                           {cat.name}
                           {cat.subcategories.length > 0 && <ArrowRight className="w-3 h-3 text-gray-400" />}
                       </Link>
                       {cat.subcategories.length > 0 && (
                         <div className="hidden group-hover/item:block absolute left-full top-0 w-48 pl-1">
-                          <div className="bg-white dark:bg-gray-800 shadow-xl rounded-lg border border-gray-100 dark:border-gray-700 py-2">
+                          <div 
+                            style={{
+                              backgroundColor: "var(--bg-soft)",
+                              borderColor: "var(--border)",
+                            }}
+                            className="shadow-xl rounded-lg border py-2"
+                          >
                             {cat.subcategories.map((sub, sIdx) => (
                               <Link 
                                 key={sIdx} 
                                 // to={`/search?category=${cat.name}&subcategory=${sub}`}
                                 to="/search"
-                                className="block px-4 py-2 hover:bg-blue-50 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 text-sm transition-colors">
+                                className="block px-4 py-2 text-sm transition-colors duration-300 hover:bg-[var(--bg-hover)]"
+                                style={{
+                                  color: "var(--text)",
+                                }}
+                                >
                                 {sub.name}
                               </Link>
                             ))}
@@ -113,18 +138,19 @@ export default function Header({ darkMode, toggleTheme }) {
             {/* CENTER: Search Bar (Desktop) */}
             <div className="max-w-2xl hidden md:flex flex-1 mx-8">
               <div 
-                className="relative w-full border-2 rounded-full py-2.5 px-5 md:flex justify-center items-center gap-4 focus:outline-none focus:border-[var(--theme-secondary)] focus:ring-1 focus:ring-[var(--theme-secondary)] transition-all"
+                className="relative transition-colors duration-300 w-full border-2 rounded-full py-2.5 px-5 md:flex justify-center items-center gap-4 focus:outline-none focus:border-[var(--theme-secondary)] focus:ring-1 focus:ring-[var(--theme-secondary)] transition-all"
                 style={{backgroundColor: "var(--bg-soft)", borderColor: "var(--border)", text: "var(--text)"}}
               >
                 <input 
                   type="text" 
                   placeholder="Search for items, artists, or brands..." 
-                  className="w-full text-gray-200 outline-none placeholder-gray-500 text-sm"
+                  className="w-full transition-colors duration-300 outline-none placeholder:text-gray-500 text-sm"
+                    style={{backgroundColor: "var(--bg-soft)", color: "var(--text)", }}
                 />
                 <button 
                   onClick={() => navigate('/search')}
                   className="p-1.5 rounded-full transition-colors"
-                >
+                  >
                   <Search className="text-gray-500 group-hover:text-[var(--theme-secondary)] transition-colors" size={18} />
                 </button>
               </div>
@@ -143,7 +169,7 @@ export default function Header({ darkMode, toggleTheme }) {
               {/* Dark Mode Toggle */}
               <button 
                 onClick={toggleTheme}
-                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors"
+                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors duration-300"
                 style={{
                         backgroundColor: "var(--accent-soft)",
                         color: "var(--text)",
@@ -157,7 +183,7 @@ export default function Header({ darkMode, toggleTheme }) {
                 /* LOGGED IN STATE */
                 <div className="flex items-center gap-4">
                   {/* Notifications */}
-                  <button className="relative text-gray-300 hover:text-[var(--theme-secondary)] transition-colors hidden sm:block">
+                  <button className="relative text-gray-300 hover:text-[var(--theme-secondary)] transition-colors duration-300 hidden sm:block">
                     <Bell size={22} />
                     <span className="absolute -top-1 -right-1 bg-[#C0341D] text-[10px] font-bold text-white w-4 h-4 rounded-full flex items-center justify-center">
                       3
