@@ -14,6 +14,14 @@ const BRANDS = {
   home: ['IKEA', 'Dyson', 'Herman Miller', 'KitchenAid', 'Bosch', 'Makita']
 };
 
+
+export const current_user = {
+  id: 'u1',
+  name: 'JohnDoe',
+  email: 'johndoe@example.com',
+  avatar: 'https://i.pravatar.cc/150?u=currentuser'
+};
+
 const SAMPLE_IMAGES = {
   electronics: ['laptop-modern', 'smartphone-modern', 'camera-vintage'],
   fashion: ['fashion-luxury', 'sneakers-modern', 'watch-classic'],
