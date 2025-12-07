@@ -1,0 +1,32 @@
+/* Auction Card Theme */
+:root {
+  /* Auction Card specific */
+  --auction-bg: #ffffff;
+  --auction-border: #e5e7eb;
+  --auction-text: #111827;
+  --auction-text-muted: #6b7280;
+  --auction-text-subtle: #9ca3af;
+  --auction-badge-bg: #f3f4f6;
+  --auction-price-bg: #f9fafb;
+  --auction-bid-bg: #fef3c7;
+  --auction-bid-text: #b8891b;
+  --auction-success: #16a34a;
+  --auction-success-bg: #dcfce7;
+  --auction-accent: #e0b84c;
+}
+
+:root.dark {
+  /* Auction Card specific - dark mode */
+  --auction-bg: #1a1f35;
+  --auction-border: #2d3e5f;
+  --auction-text: #f0f4f8;
+  --auction-text-muted: #b0bac9;
+  --auction-text-subtle: #8892a6;
+  --auction-badge-bg: #141b2e;
+  --auction-price-bg: #0f1419;
+  --auction-bid-bg: #3f3f46;
+  --auction-bid-text: #facc15;
+  --auction-success: #22c55e;
+  --auction-success-bg: #052e16;
+  --auction-accent: #fbbf24;
+}
