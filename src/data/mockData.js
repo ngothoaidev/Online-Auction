@@ -101,6 +101,13 @@ export const generateBids = (count = 100, products) => {
   });
 };
 
+export const mockNotifications = [
+  { icon: "bell", message: "Your bid on 'Vintage Rolex Watch' has been outbid.", time: new Date(now.getTime() - 10 * 60 * 1000) },
+  { icon: "trophy", message: "You won the auction for 'Apple MacBook Pro'!", time: new Date(now.getTime() - 2 * 60 * 60 * 1000) },
+  { icon: "question", message: "New question on your listing 'Sony Camera': 'Is the lens included?'", time: new Date(now.getTime() - 5 * 60 * 1000) },
+  { icon: "check-circle", message: "Your item 'Nike Sneakers' has been approved and is now live.", time: new Date(now.getTime() - 1 * 60 * 60 * 1000) },
+];
+
 export const generateQuestions = (count = 100, products) => {
   return Array.from({ length: count }, (_, i) => {
     const qa = getRandomItem(Q_AND_A);
