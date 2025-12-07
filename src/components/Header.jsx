@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
+import { useNav } from '../useNavigate.js';
 import { 
   Search, 
   Menu, 
@@ -23,6 +24,7 @@ import { categories } from '../data/mockData.js';
  */
 
 export default function Header({ darkMode, toggleTheme }) {
+  const nav = useNav();
   // State for Mobile Menu
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
@@ -34,8 +36,6 @@ export default function Header({ darkMode, toggleTheme }) {
 
   // Mock Auth State (Toggle this via the UI demo controls below)
   const [isLoggedIn, setIsLoggedIn] = useState(true);
-
-  const navigate = useNavigate();
 
   // Toggle scrolling lock when mobile menu is open
   useEffect(() => {
@@ -148,7 +148,7 @@ export default function Header({ darkMode, toggleTheme }) {
                     style={{backgroundColor: "var(--bg-soft)", color: "var(--text)", }}
                 />
                 <button 
-                  onClick={() => navigate('/search')}
+                  onClick={() => nav.search()}
                   className="p-1.5 rounded-full transition-colors"
                   >
                   <Search className="text-gray-500 group-hover:text-[var(--theme-secondary)] transition-colors" size={18} />
@@ -161,7 +161,7 @@ export default function Header({ darkMode, toggleTheme }) {
               
               {/* Mobile Search Trigger (Visible only on small screens) */}
               <button
-                onClick={() => navigate('/search')} 
+                onClick={() => nav.search()} 
                 className="md:hidden text-gray-300 hover:text-[var(--theme-secondary)]">
                 <Search size={24} />
               </button>
@@ -225,7 +225,7 @@ export default function Header({ darkMode, toggleTheme }) {
                         </Link>
                         <div className="border-t border-white/5 mt-1 pt-1">
                           <button 
-                            onClick={() => {setIsLoggedIn(false); setIsUserDropdownOpen(false); navigate('/');}}
+                            onClick={() => {setIsLoggedIn(false); setIsUserDropdownOpen(false); nav.home();}}
                             className="w-full flex items-center gap-3 px-4 py-3 text-sm text-[#C0341D] hover:bg-white/5 transition-colors text-left"
                           >
                             <LogOut size={16} /> Logout
@@ -239,12 +239,12 @@ export default function Header({ darkMode, toggleTheme }) {
                 /* GUEST STATE */
                 <div className="hidden sm:flex items-center gap-3">
                   <button
-                    onClick={() => navigate("/login")}
+                    onClick={() => nav.login()}
                     className="text-white hover:text-[var(--theme-secondary)] font-medium text-sm transition-colors px-3 py-2">
                     Log In
                   </button>
                   <button
-                    onClick={() => navigate("/register")}
+                    onClick={() => nav.register()}
                     className="bg-[#B88A20] hover:brightness-110 text-[#1A1225] font-bold text-sm px-5 py-2.5 rounded-full shadow-lg transition-all transform hover:-translate-y-0.5">
                     Register
                   </button>
@@ -346,17 +346,17 @@ export default function Header({ darkMode, toggleTheme }) {
             <div className="p-6 bg-[#2A2038] border-t border-white/10">
               {isLoggedIn ? (
                  <button 
-                 onClick={() => { setIsLoggedIn(false); setIsMobileMenuOpen(false); }}
+                 onClick={() => { setIsLoggedIn(false); setIsMobileMenuOpen(false); nav.home(); }}
                  className="w-full flex items-center justify-center gap-2 bg-red-500/10 text-red-400 py-3 rounded-lg font-medium hover:bg-red-500/20 transition-colors"
                >
                  <LogOut size={18} /> Logout
                  </button>
               ) : (
                 <div className="grid grid-cols-2 gap-4">
-                  <button onClick={() => navigate("/login")} className="text-white border border-white/20 py-3 rounded-lg font-medium hover:bg-white/5 hover:border-white/40 transition-all">
+                  <button onClick={() => nav.login()} className="text-white border border-white/20 py-3 rounded-lg font-medium hover:bg-white/5 hover:border-white/40 transition-all">
                     Log In
                   </button>
-                  <button onClick={() => navigate("/register")} className="bg-[var(--theme-secondary)] text-[#1A1225] py-3 rounded-lg font-bold hover:brightness-110 shadow-lg transition-all">
+                  <button onClick={() => nav.register()} className="bg-[var(--theme-secondary)] text-[#1A1225] py-3 rounded-lg font-bold hover:brightness-110 shadow-lg transition-all">
                     Register
                   </button>
                 </div>

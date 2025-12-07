@@ -1,8 +1,6 @@
 import { useState, useEffect } from 'react'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { products as initialProducts, bids as initialBids, questions as initialQuestions } from './data/mockData.js';
-import Header from './components/Header.jsx';
-import Footer from './components/Footer.jsx';
 import HomePage from './pages/HomePage.jsx';
 import ProductDetail from './pages/ProductDetail.jsx';
 import ListProducts from './pages/ListProducts.jsx';

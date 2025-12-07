@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Trophy, Clock, Gavel, Star, ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
+import { useNav } from '../useNavigate.js';
 import { products, topBidders, heroSlides } from "../data/mockData.js";
 import AuctionCard from "../components/AuctionCard.jsx";
 import Header from "../components/Header.jsx";
@@ -132,7 +133,7 @@ const Hero = () => {
   );
 };
 
-const ProductTabs = ({ navigate }) => {
+const ProductTabs = ({ nav }) => {
   const [activeTab, setActiveTab] = useState('endingSoon');
 
   const tabs = [
@@ -173,14 +174,14 @@ const ProductTabs = ({ navigate }) => {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5 mx-10 animate-fade-in">
         {activeTabData.data.map((item) => (
           <div key={item.id} className="transform transition-all duration-500 hover:-translate-y-1">
-            <AuctionCard item={item} navigate={navigate} />
+            <AuctionCard item={item} />
           </div>
         ))}
       </div>
 
       <div className="mt-12 text-center">
         <button 
-          onClick={() => navigate('search')}
+          onClick={() => nav.search()}
           className="inline-flex items-center gap-2 font-bold uppercase tracking-widest text-xs border-b-2 border-transparent hover:border-current pb-1 transition-all"
           style={{ color: activeTabData.color }}
         >
@@ -192,6 +193,7 @@ const ProductTabs = ({ navigate }) => {
 };
 
 export default function HomePage({ darkMode, toggleDarkMode }) {
+    const nav = useNav();
     return (
         <>
         <Header darkMode={darkMode} toggleTheme={toggleDarkMode} />
@@ -202,7 +204,7 @@ export default function HomePage({ darkMode, toggleDarkMode }) {
             <Hero />
 
             {/* Dummy Content Grid */}
-            <ProductTabs />
+            <ProductTabs nav={nav} />
 
             {/* Top Bidders Section */}
             <section className="py-16 transition-colors duration-300" style={{ backgroundColor: "var(--bg-subtle)" }}>

@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNav } from '../useNavigate.js';
 import { 
   Facebook, 
   Twitter, 
@@ -17,6 +18,7 @@ import {
  */
 
 const Footer = () => {
+  const nav = useNav();
   return (
     <footer className="bg-[#1A1225] border-t border-white/5 font-sans pt-16 pb-8 text-[#B8B0C8]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
