@@ -5,6 +5,7 @@ import HomePage from './pages/HomePage.jsx';
 import ProductDetail from './pages/ProductDetail.jsx';
 import ListProducts from './pages/ListProducts.jsx';
 import Login, { Register } from './pages/AuthPage.jsx';
+import AdminDashboard from './pages/Admin/AdminDashboard.jsx';
 
 function App() {
   const initialUser = {
@@ -13,16 +14,17 @@ function App() {
     avatar: 'https://i.pravatar.cc/150?u=1',
     rating: 95,
     isSeller: true,
+    isAdmin: true // Added this for logic contexts
   };
-  const [currentPage, setCurrentPage] = useState('listproduct'); // 'home', 'listproduct', 'productdetail', etc.
-  const [selectedProductId, setSelectedProductId] = useState(null);
+
   const [currentUser, setCurrentUser] = useState(initialUser);
   const [products, setProducts] = useState(initialProducts);
   const [bids, setBids] = useState(initialBids);
   const [questions, setQuestions] = useState(initialQuestions);
   const [sellerRequests, setSellerRequests] = useState([]);
-  const [darkMode, setDarkMode] = useState(() =>
-  {
+  
+  // Theme Management
+  const [darkMode, setDarkMode] = useState(() => {
     return localStorage.getItem("theme") === "dark";
   });
   
@@ -45,16 +47,27 @@ function App() {
   return (
     <Router>
       <div className='min-h-screen transition-colors duration-300' style={{backgroundColor: "var(--bg)", color: "var(--text)"}}>
-      {/* <div className={darkMode ? "dark" : ""} style={{ '--theme-primary': THEME.primary, '--theme-secondary': THEME.secondary, '--theme-highlight': THEME.highlight, '--theme-urgent': THEME.urgent }}>   */}
-        {/* <div className="min-h-screen bg-gray-50 dark:bg-gray-900 font-sans text-gray-900 dark:text-gray-100 transition-colors duration-300 flex flex-col grow"> */}
           <Routes>
+            {/* Public Routes */}
             <Route path="/" element={<HomePage darkMode={darkMode} toggleDarkMode={toggleTheme} />} />
             <Route path="/search" element={<ListProducts darkMode={darkMode} toggleDarkMode={toggleTheme} />} />
             <Route path="/product/:id" element={<ProductDetail darkMode={darkMode} toggleDarkMode={toggleTheme} />} />
+            
+            {/* Auth Routes */}
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+
+            {/* Admin Route */}
+            <Route 
+              path="/admin" 
+              element={
+                <AdminDashboard 
+                  darkMode={darkMode} 
+                  toggleTheme={toggleTheme}
+                />
+              } 
+            />
           </Routes>
-        {/* </div> */}
       </div>
     </Router>
   )

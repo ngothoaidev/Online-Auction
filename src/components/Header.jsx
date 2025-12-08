@@ -176,7 +176,7 @@ export default function Header({ darkMode, toggleTheme }) {
               {/* Dark Mode Toggle */}
               <button 
                 onClick={toggleTheme}
-                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors duration-300"
+                className="p-2 rounded-full"
                 style={{
                         backgroundColor: "var(--accent-soft)",
                         color: "var(--text)",
