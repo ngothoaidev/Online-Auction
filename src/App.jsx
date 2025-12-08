@@ -5,7 +5,19 @@ import HomePage from './pages/HomePage.jsx';
 import ProductDetail from './pages/ProductDetail.jsx';
 import ListProducts from './pages/ListProducts.jsx';
 import Login, { Register } from './pages/AuthPage.jsx';
+<<<<<<< HEAD
 import AdminDashboard from './pages/Admin/AdminDashboard.jsx';
+=======
+import Profile from './pages/ViewProfile.jsx';
+
+import ViewAllActiveBid from './pages/ViewAllActiveBid.jsx';
+import ViewAllActiveListings from './pages/ViewAllActiveListings.jsx';
+import ViewAllFavouriteProducts from './pages/ViewAllFavouriteProducts.jsx';
+import ViewAllReviews from './pages/ViewAllReviews.jsx';
+import ViewAllSoldItems from './pages/ViewAllSoldItems.jsx';
+import ViewAllWonAuctions from './pages/ViewAllWonAuctions.jsx';
+
+>>>>>>> c8f86ba2f95be5c744670a1f242cd8a7409732b6
 
 function App() {
   const initialUser = {
@@ -52,12 +64,13 @@ function App() {
             <Route path="/" element={<HomePage darkMode={darkMode} toggleDarkMode={toggleTheme} />} />
             <Route path="/search" element={<ListProducts darkMode={darkMode} toggleDarkMode={toggleTheme} />} />
             <Route path="/product/:id" element={<ProductDetail darkMode={darkMode} toggleDarkMode={toggleTheme} />} />
+            <Route path="/profile/:id" element={<Profile />} />
             
             {/* Auth Routes */}
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
 
-            {/* Admin Route */}
+            {/* Admin Dashboard Route */}
             <Route 
               path="/admin" 
               element={
@@ -67,6 +80,15 @@ function App() {
                 />
               } 
             />
+
+            {/* User Dashboard Routes */}
+            <Route path="/active-bids" element={<ViewAllActiveBid />} />
+            <Route path="/active-listings" element={<ViewAllActiveListings />} />
+            <Route path="/favourite-products" element={<ViewAllFavouriteProducts />} />
+            <Route path="/reviews" element={<ViewAllReviews />} />
+            <Route path="/sold-items" element={<ViewAllSoldItems />} />
+            <Route path="/won-auctions" element={<ViewAllWonAuctions />} />
+            
           </Routes>
       </div>
     </Router>

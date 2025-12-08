@@ -1,11 +1,12 @@
 import { useState, useRef, useEffect } from "react";
 import { Bell, Check, Trophy, HelpCircle, CheckCircle, X } from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import { current_user } from "../data/mockData";
+import { mockUserData } from "../data/mockData";
+
+import { useNav } from '../useNavigate.js';
 
 export default function ProfileDropper() {
+  const nav = useNav();
   const [isOpen, setIsOpen] = useState(false);
-  const navigate = useNavigate();
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -35,7 +36,7 @@ export default function ProfileDropper() {
         }}
       >
         <img
-          src={current_user.avatar}
+          src={mockUserData.avatar}
           alt="User Avatar"
           className="w-6 h-6 rounded-full object-cover"
         />        
@@ -47,15 +48,15 @@ export default function ProfileDropper() {
           <div className="py-2">
             <div className="px-4 py-2 border-b border-gray-200 dark:border-gray-700">
                 <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                    {current_user.name}
+                    {mockUserData.name}
                 </p>
                 <p className="text-xs text-gray-500 dark:text-gray-400">
-                    {current_user.email}
+                    {mockUserData.email}
                 </p>
             </div>
             <button
               className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
-              onClick={() => { setIsOpen(false); /* Add logout logic here */ }}
+              onClick={() => { setIsOpen(false); nav.profile(mockUserData.id); }}
             >
                 Profile
             </button>
