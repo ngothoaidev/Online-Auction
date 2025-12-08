@@ -16,5 +16,11 @@ export function useNav() {
     create: () => n("/create"),
     notifications: () => n("/notifications"),
     auction: (id) => n(`/auction/${id}`),
+    activeBids: () => n("/active-bids"),
+    activeListings: () => n("/active-listings"),
+    favouriteProducts: () => n("/favourite-products"),
+    reviews: () => n("/reviews"),
+    soldItems: () => n("/sold-items"),
+    wonAuctions: () => n("/won-auctions"),
   };
 }
