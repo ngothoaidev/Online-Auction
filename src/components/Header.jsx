@@ -19,7 +19,7 @@ import {
 import { categories } from '../data/mockData.js';
 import { mockNotifications } from '../data/mockData.js';
 import NotificationDropper from './NotificationDropper.jsx';
-
+import ProfileDropper from './ProfileDropper.jsx';
 /**
  * Header Component - Online Auction Platform
  * Implements "Dark Premium" theme with Gold highlights.
@@ -194,47 +194,7 @@ export default function Header({ darkMode, toggleTheme }) {
 
                   {/* User Avatar Dropdown */}
                   <div className="relative">
-                    <button 
-                      onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}
-                      className="flex items-center gap-2 focus:outline-none"
-                    >
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[var(--theme-secondary)] to-[#B88A20] p-0.5">
-                        <div className="w-full h-full rounded-full bg-[#2A2038] flex items-center justify-center overflow-hidden">
-                          <img 
-                            src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" 
-                            alt="User" 
-                            className="w-full h-full object-cover" 
-                          />
-                        </div>
-                      </div>
-                    </button>
-
-                    {/* Dropdown Menu */}
-                    {isUserDropdownOpen && (
-                      <div className="absolute right-0 mt-3 w-56 bg-[#2A2038] border border-white/10 rounded-xl shadow-2xl py-2 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-                        <div className="px-4 py-3 border-b border-white/5">
-                          <p className="text-sm text-white font-medium">John Doe</p>
-                          <p className="text-xs text-gray-400 truncate">john.doe@example.com</p>
-                        </div>
-                        <Link to="\" className="flex items-center gap-3 px-4 py-3 text-sm text-gray-300 hover:bg-white/5 hover:text-[var(--theme-secondary)] transition-colors">
-                          <User size={16} /> Profile
-                        </Link>
-                        <Link to="\" className="flex items-center gap-3 px-4 py-3 text-sm text-gray-300 hover:bg-white/5 hover:text-[var(--theme-secondary)] transition-colors">
-                          <Gavel size={16} /> My Bids
-                        </Link>
-                        <Link to="\" className="flex items-center gap-3 px-4 py-3 text-sm text-gray-300 hover:bg-white/5 hover:text-[var(--theme-secondary)] transition-colors">
-                          <Heart size={16} /> Watchlist
-                        </Link>
-                        <div className="border-t border-white/5 mt-1 pt-1">
-                          <button 
-                            onClick={() => {setIsLoggedIn(false); setIsUserDropdownOpen(false); nav.home();}}
-                            className="w-full flex items-center gap-3 px-4 py-3 text-sm text-[#C0341D] hover:bg-white/5 transition-colors text-left"
-                          >
-                            <LogOut size={16} /> Logout
-                          </button>
-                        </div>
-                      </div>
-                    )}
+                    <ProfileDropper />
                   </div>
                 </div>
               ) : (
