@@ -2,11 +2,7 @@ import express from 'express';
 import bodyParser from 'body-parser';
 import morgan from 'morgan';
 import cors from 'cors';
-import orderRoute from './routes/order.js';
-import wardRoute from './routes/ward.js';
-import provinceRoute from './routes/province.js';
-import notFound from './middlewares/notFound.js';
-import errorHandler from './middlewares/errorHandler.js';
+import productRouter from './routes/product.route.js';
 
 const app = express();
 
@@ -26,15 +22,11 @@ app.get('/', (req, res) => {
   });
 });
 
-// Order
-app.use('/orders', orderRoute);
-// Ward
-app.use('/wards', wardRoute);
-// Provice
-app.use('/provinces', provinceRoute);
+// Route handlers
+app.use('/products', productRouter);
 
 // Error handling
-app.use(notFound);
-app.use(errorHandler);
+// app.use(notFound);
+// app.use(errorHandler);
 
 export default app;

@@ -4,7 +4,11 @@ import dotenv from 'dotenv';
 // Load ENV from .env
 dotenv.config();
 
-// Bind to port
-app.listen(process.env.PORT, () => {
-  console.log(`Server is listening on port ${process.env.PORT}`);
+// Bind to port (default to 4000)
+const port = process.env.PORT || 4000;
+app.listen(port, () => {
+  console.log(`Server is listening on port ${port}`);
+}).on('error', (error) => {
+  console.error(`Server error: ${error.message}`);
+  process.exit(1);
 });
