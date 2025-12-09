@@ -5,8 +5,7 @@ export default function SoldAuctionCard({ product, onReview, onCancel }) {
   
   return (
     <div 
-      className="rounded-xl overflow-hidden border"
-      style={{ backgroundColor: 'var(--bg-soft)', borderColor: 'var(--border)' }}
+      className="sold-auction-card rounded-xl overflow-hidden border"
     >
       <div className="relative">
         <img src={product.image} alt={product.title} className="w-full h-48 object-cover" />
@@ -21,26 +20,25 @@ export default function SoldAuctionCard({ product, onReview, onCancel }) {
         </div>
       </div>
       <div className="p-4">
-        <h3 className="font-bold mb-2" style={{ color: 'var(--text)' }}>
+        <h3 className="sold-auction-title font-bold mb-2">
           {product.title}
         </h3>
         <div className="mb-3">
-          <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
+          <p className="profile-text-muted text-sm">
             Sold Price
           </p>
-          <p className="text-2xl font-bold" style={{ color: 'var(--accent)' }}>
+          <p className="sold-auction-price text-2xl font-bold">
             ${product.soldPrice}
           </p>
         </div>
-        <p className="text-sm mb-3" style={{ color: 'var(--text-muted)' }}>
+        <p className="profile-text-muted text-sm mb-3">
           Buyer: {product.buyerName}
         </p>
         {!product.reviewed && !isCancelled ? (
           <div className="space-y-2">
             <button
               onClick={() => onReview(product)}
-              className="w-full px-4 py-2 rounded-lg font-medium transition-all flex items-center justify-center gap-2"
-              style={{ backgroundColor: 'var(--accent)', color: 'var(--bg)' }}
+              className="sold-auction-btn-primary w-full px-4 py-2 rounded-lg font-medium transition-all flex items-center justify-center gap-2"
             >
               <Star size={16} />
               Rate Buyer

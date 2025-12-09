@@ -56,13 +56,13 @@ function App() {
 
   return (
     <Router>
-      <div className='min-h-screen transition-colors duration-300' style={{backgroundColor: "var(--bg)", color: "var(--text)"}}>
+      <div className='min-h-screen transition-colors duration-100 bg-[var(--bg)] color-[var(--text)]'>
           <Routes>
             {/* Public Routes */}
             <Route path="/" element={<HomePage darkMode={darkMode} toggleDarkMode={toggleTheme} />} />
             <Route path="/search" element={<ListProducts darkMode={darkMode} toggleDarkMode={toggleTheme} />} />
             <Route path="/product/:id" element={<ProductDetail darkMode={darkMode} toggleDarkMode={toggleTheme} />} />
-            <Route path="/profile/:id" element={<Profile />} />
+            <Route path="/profile/:id" element={<Profile darkMode={darkMode} toggleDarkMode={toggleTheme} />} />
             
             {/* Auth Routes */}
             <Route path="/login" element={<Login />} />

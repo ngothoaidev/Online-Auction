@@ -63,9 +63,7 @@ export default function Header({ darkMode, toggleTheme }) {
       */}
       <header 
       // className="sticky top-0 z-50 w-full bg-[#2A2038] shadow-2xl border-b border-white/5 font-sans">
-      className=" backdrop-blur-md shadow-md sticky top-0 z-50 transition-colors duration-300 border-b"
-      style={{ backgroundColor: "var(--bg-soft)", color: "var(--text)" }}
-      >
+      className="bg-[var(--bg-soft)] color-[var(--text)] backdrop-blur-md shadow-md sticky top-0 z-50 transition-colors duration-100 border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-20">
             {/* LEFT: Logo & Categories (Desktop) */}
@@ -75,61 +73,38 @@ export default function Header({ darkMode, toggleTheme }) {
                 <Link to="/" className="text-2xl font-bold tracking-tight flex items-center gap-2">
                   <span className="text-[var(--theme-secondary)]">AURUM</span> AUCTIONS
                 </Link>
-                <div className="h-0.5 w-0 group-hover:w-full bg-[var(--theme-secondary)] transition-all duration-300"></div>
+                <div className="h-0.5 w-0 group-hover:w-full bg-[var(--theme-secondary)] transition-all duration-100"></div>
               </div>
 
               {/* Desktop Categories Menu (Mega Menu Hover) */}
               <div className="hidden lg:block relative group">
-                <button 
-                  style={{
-                    color: "var(--text)",
-                  }}
-                  className="flex items-center gap-1   transition-colors py-6 font-medium text-sm uppercase tracking-wide"
-                >
+                <button className="color-[var(--text)] flex items-center gap-1 transition-colors py-6 font-medium text-sm uppercase tracking-wide">
                   Categories
                   <ChevronDown size={16} />
                 </button>
 
                 {/* Dropdown Panel */}
-                <div
-                  style={{
-                    backgroundColor: "var(--bg-soft)",
-                    borderColor: "var(--border)",
-                  }}
-                  className="absolute top-full left-0 w-60  border  rounded-xl shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 transform translate-y-2 group-hover:translate-y-0 flex flex-col gap-6 p-6 backdrop-blur-md"
-                >
+                <div className="bg-[var(--bg-soft)] border-[var(--border)] absolute top-full left-0 w-60  border  rounded-xl shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-100 transform translate-y-2 group-hover:translate-y-0 flex flex-col gap-6 p-6 backdrop-blur-md">
                   {categories.map((cat) => (
                     <div className="group/item relative" key={cat.id}>
                       <Link 
                         // to={`/search?category=${cat.name}`}
                         to="/search"
-                        style={{
-                          color: "var(--text)",
-                        }}
-                        className="px-4 py-2 rounded-lg flex justify-between items-center transition-colors hover:bg-[var(--bg-hover)]"
+                        className="color-[var(--text)] px-4 py-2 rounded-lg flex justify-between items-center transition-colors hover:bg-[var(--bg-hover)]"
                       >
                           {cat.name}
-                          {cat.subcategories.length > 0 && <ArrowRight className="w-3 h-3 text-gray-400" />}
+                          {cat.subcategories.length > 0 && <ArrowRight className="w-3 h-3 text-[var(--text-muted)]" />}
                       </Link>
                       {cat.subcategories.length > 0 && (
                         <div className="hidden group-hover/item:block absolute left-full top-0 w-48 pl-1">
-                          <div 
-                            style={{
-                              backgroundColor: "var(--bg-soft)",
-                              borderColor: "var(--border)",
-                            }}
-                            className="shadow-xl rounded-lg border py-2"
-                          >
+                          <div className="bg-[var(--bg-soft)] border-[var(--border)] shadow-xl rounded-lg border py-2">
                             {cat.subcategories.map((sub, sIdx) => (
                               <Link 
                                 key={sIdx} 
                                 // to={`/search?category=${cat.name}&subcategory=${sub}`}
                                 to="/search"
-                                className="block px-4 py-2 text-sm transition-colors duration-300 hover:bg-[var(--bg-hover)]"
-                                style={{
-                                  color: "var(--text)",
-                                }}
-                                >
+                                className="color-[var(--text)] block px-4 py-2 text-sm transition-colors duration-100 hover:bg-[var(--bg-hover)]"
+                              >
                                 {sub.name}
                               </Link>
                             ))}
@@ -145,14 +120,12 @@ export default function Header({ darkMode, toggleTheme }) {
             {/* CENTER: Search Bar (Desktop) */}
             <div className="max-w-2xl hidden md:flex flex-1 mx-8">
               <div 
-                className="relative transition-colors duration-300 w-full border-2 rounded-full py-2.5 px-5 md:flex justify-center items-center gap-4 focus:outline-none focus:border-[var(--theme-secondary)] focus:ring-1 focus:ring-[var(--theme-secondary)] transition-all"
-                style={{backgroundColor: "var(--bg-soft)", borderColor: "var(--border)", text: "var(--text)"}}
+                className="header-search-container relative transition-colors duration-100 w-full border-2 rounded-full py-2.5 px-5 md:flex justify-center items-center gap-4 focus:outline-none focus:border-[var(--theme-secondary)] focus:ring-1 focus:ring-[var(--theme-secondary)] transition-all"
               >
                 <input 
                   type="text" 
                   placeholder="Search for items, artists, or brands..." 
-                  className="w-full transition-colors duration-300 outline-none placeholder:text-gray-500 text-sm"
-                    style={{backgroundColor: "var(--bg-soft)", color: "var(--text)", }}
+                  className="header-search-input w-full transition-colors duration-100 outline-none placeholder:text-gray-500 text-sm"
                 />
                 <button 
                   onClick={() => nav.search()}
@@ -176,12 +149,7 @@ export default function Header({ darkMode, toggleTheme }) {
               {/* Dark Mode Toggle */}
               <button 
                 onClick={toggleTheme}
-                className="p-2 rounded-full"
-                style={{
-                        backgroundColor: "var(--accent-soft)",
-                        color: "var(--text)",
-                        border: "1px solid var(--border)",
-                }}
+                className="header-theme-toggle p-2 rounded-full"
               >
                 {!darkMode ? <Sun className="w-6 h-6" /> : <Moon className="w-6 h-6" />}
               </button>
@@ -237,7 +205,7 @@ export default function Header({ darkMode, toggleTheme }) {
           />
           
           {/* Drawer */}
-          <div className="absolute right-0 top-0 h-full w-[80%] max-w-[320px] bg-[#1A1225] border-l border-white/10 shadow-2xl flex flex-col transform transition-transform duration-300">
+          <div className="absolute right-0 top-0 h-full w-[80%] max-w-[320px] bg-[#1A1225] border-l border-white/10 shadow-2xl flex flex-col transform transition-transform duration-100">
             {/* Drawer Header */}
             <div className="flex items-center justify-between p-6 border-b border-white/10 bg-[#2A2038]">
               <h2 className="text-xl font-bold text-white">Menu</h2>
@@ -274,12 +242,12 @@ export default function Header({ darkMode, toggleTheme }) {
                       <span className="font-medium">{cat.name}</span>
                       <ChevronDown 
                         size={16} 
-                        className={`transition-transform duration-300 ${activeMobileCategory === cat.id ? 'rotate-180 text-[var(--theme-secondary)]' : 'text-gray-500'}`} 
+                        className={`transition-transform duration-100 ${activeMobileCategory === cat.id ? 'rotate-180 text-[var(--theme-secondary)]' : 'text-gray-500'}`} 
                       />
                     </button>
                     
                     {/* Subcategories */}
-                    <div className={`overflow-hidden transition-all duration-300 ${activeMobileCategory === cat.id ? 'max-h-60 opacity-100' : 'max-h-0 opacity-0'}`}>
+                    <div className={`overflow-hidden transition-all duration-100 ${activeMobileCategory === cat.id ? 'max-h-60 opacity-100' : 'max-h-0 opacity-0'}`}>
                       <ul className="pl-4 pb-3 space-y-3">
                         {cat.subcategories.map((sub) => (
                           <li key={sub.id}>

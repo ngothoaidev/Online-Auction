@@ -42,7 +42,7 @@ export default function AdminDashboard({ darkMode, toggleTheme }) {
     <div className="min-h-screen bg-slate-50 flex font-sans">
       
       {/* Sidebar */}
-      <aside className={`${isSidebarOpen ? 'w-64' : 'w-20'} bg-slate-900 text-white transition-all duration-300 flex flex-col fixed h-full z-20`}>
+      <aside className={`${isSidebarOpen ? 'w-64' : 'w-20'} bg-slate-900 text-white transition-all duration-100 flex flex-col fixed h-full z-20`}>
         <div className="h-16 flex items-center justify-center border-b border-slate-800">
           <span className={`font-bold text-xl tracking-wider ${!isSidebarOpen && 'hidden'}`}>BID<span className="text-indigo-400">MASTER</span></span>
         </div>
@@ -69,7 +69,7 @@ export default function AdminDashboard({ darkMode, toggleTheme }) {
       </aside>
 
       {/* Main Content Area */}
-      <main className={`flex-1 transition-all duration-300 ${isSidebarOpen ? 'ml-64' : 'ml-20'}`}>
+      <main className={`flex-1 transition-all duration-100 ${isSidebarOpen ? 'ml-64' : 'ml-20'}`}>
         
         {/* Top Header */}
         <header className="h-16 bg-white border-b border-slate-200 sticky top-0 z-10 px-6 flex items-center justify-between">
@@ -79,14 +79,12 @@ export default function AdminDashboard({ darkMode, toggleTheme }) {
 
           <div className="max-w-2xl hidden md:flex flex-1 mx-8">
             <div 
-              className="relative transition-colors duration-300 w-full border-2 rounded-full py-2.5 px-5 md:flex justify-center items-center gap-4 focus:outline-none focus:border-[var(--theme-secondary)] focus:ring-1 focus:ring-[var(--theme-secondary)] transition-all"
-              style={{backgroundColor: "var(--bg-soft)", borderColor: "var(--border)", text: "var(--text)"}}
+              className="admin-card relative transition-colors duration-100 w-full border-2 rounded-full py-2.5 px-5 md:flex justify-center items-center gap-4 focus:outline-none focus:border-[var(--theme-secondary)] focus:ring-1 focus:ring-[var(--theme-secondary)] transition-all"
             >
               <input 
                 type="text" 
                 placeholder="Search for items, artists, or brands..." 
-                className="w-full transition-colors duration-300 outline-none placeholder:text-gray-500 text-sm"
-                  style={{backgroundColor: "var(--bg-soft)", color: "var(--text)", }}
+                className="admin-input w-full transition-colors duration-100 outline-none placeholder:text-gray-500 text-sm"
               />
               <button 
                 // onClick={() => nav.search()}
@@ -109,12 +107,7 @@ export default function AdminDashboard({ darkMode, toggleTheme }) {
             {/* Dark Mode Toggle */}
             <button 
               onClick={toggleTheme}
-              className="p-2 rounded-full"
-              style={{
-                      backgroundColor: "var(--accent-soft)",
-                      color: "var(--text)",
-                      border: "1px solid var(--border)",
-              }}
+              className="header-theme-toggle p-2 rounded-full"
             >
               {!darkMode ? <Sun className="w-6 h-6" /> : <Moon className="w-6 h-6" />}
             </button>

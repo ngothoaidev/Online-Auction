@@ -16,10 +16,9 @@ import SellerListingCard from "../components/profile/SellerListingCard";
 import WonAuctionCard from "../components/WonAuctionCard";
 import SoldAuctionCard from "../components/SoldAuctionCard";
 
-export default function Profile() {
+export default function Profile({darkMode, toggleDarkMode}) {
   const [activeTab, setActiveTab] = useState('buyer');
   const [userData, setUserData] = useState(mockUserData);
-  const [darkMode, setDarkMode] = useState(false);
   
   // Modal states
   const [isEditingProfile, setIsEditingProfile] = useState(false);
@@ -43,7 +42,7 @@ export default function Profile() {
   
   const [reviewForm, setReviewForm] = useState({ rating: 'positive', comment: '' });
 
-  const toggleTheme = () => setDarkMode(!darkMode);
+  const toggleTheme = () => toggleDarkMode();
 
   // Handlers
   const handleProfileUpdate = () => {

@@ -205,23 +205,21 @@ export default function Profile() {
     <>
       <Header darkMode={darkMode} toggleTheme={toggleTheme} />
       
-      <div className="min-h-screen py-8" style={{ backgroundColor: 'var(--bg)' }}>
+      <div className="profile-container min-h-screen py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           
           {/* Profile Header */}
           <div 
-            className="rounded-2xl p-8 mb-8 shadow-lg border"
-            style={{ backgroundColor: 'var(--bg-soft)', borderColor: 'var(--border)' }}
+            className="profile-header rounded-2xl p-8 mb-8 shadow-lg border"
           >
             <div className="flex flex-col md:flex-row items-center md:items-start gap-6">
               {/* Avatar */}
               <div className="relative">
-                <div className="w-32 h-32 rounded-full border-4 overflow-hidden" style={{ borderColor: 'var(--accent)' }}>
+                <div className="profile-avatar-border w-32 h-32 rounded-full border-4 overflow-hidden">
                   <img src={userData.avatar} alt={userData.name} className="w-full h-full object-cover" />
                 </div>
                 <div 
-                  className="absolute -bottom-2 -right-2 w-10 h-10 rounded-full flex items-center justify-center border-4"
-                  style={{ backgroundColor: 'var(--success)', borderColor: 'var(--bg-soft)' }}
+                  className="profile-verified-badge absolute -bottom-2 -right-2 w-10 h-10 rounded-full flex items-center justify-center border-4"
                 >
                   <CheckCircle size={20} className="text-white" />
                 </div>
@@ -230,22 +228,22 @@ export default function Profile() {
               {/* User Info */}
               <div className="flex-1 text-center md:text-left">
                 <div className="mb-4">
-                  <h1 className="text-3xl font-bold mb-1" style={{ color: 'var(--text)' }}>
+                  <h1 className="profile-name text-3xl font-bold mb-1">
                     {userData.name}
                   </h1>
-                  <p className="text-sm flex items-center gap-2 justify-center md:justify-start" style={{ color: 'var(--text-muted)' }}>
+                  <p className="profile-text-muted text-sm flex items-center gap-2 justify-center md:justify-start">
                     <User size={14} />
                     @{userData.username}
                   </p>
                 </div>
 
                 <div className="mb-3 space-y-1">
-                  <p className="text-sm flex items-center gap-2 justify-center md:justify-start" style={{ color: 'var(--text-muted)' }}>
+                  <p className="profile-text-muted text-sm flex items-center gap-2 justify-center md:justify-start">
                     <Mail size={14} />
                     {userData.email}
                   </p>
                   {userData.birthDate && (
-                    <p className="text-sm flex items-center gap-2 justify-center md:justify-start" style={{ color: 'var(--text-muted)' }}>
+                    <p className="profile-text-muted text-sm flex items-center gap-2 justify-center md:justify-start">
                       <Calendar size={14} />
                       {new Date(userData.birthDate).toLocaleDateString('en-US', { 
                         year: 'numeric', 
@@ -257,28 +255,28 @@ export default function Profile() {
                 </div>
 
                 {userData.bio && (
-                  <p className="mb-4 text-sm max-w-2xl mx-auto md:mx-0 italic" style={{ color: 'var(--text)' }}>
+                  <p className="profile-name mb-4 text-sm max-w-2xl mx-auto md:mx-0 italic">
                     "{userData.bio}"
                   </p>
                 )}
                 
                 {/* Rating */}
-                <div className="flex items-center gap-4 justify-center md:justify-start pt-3 border-t" style={{ borderColor: 'var(--border-subtle)' }}>
+                <div className="profile-divider flex items-center gap-4 justify-center md:justify-start pt-3 border-t">
                   <div className="flex items-center gap-2">
-                    <ThumbsUp size={20} style={{ color: 'var(--success)' }} />
-                    <span className="font-bold" style={{ color: 'var(--text)' }}>
+                    <ThumbsUp size={20} className="profile-icon-success" />
+                    <span className="profile-name font-bold">
                       {userData.rating.positive}
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <ThumbsDown size={20} style={{ color: 'var(--danger)' }} />
-                    <span className="font-bold" style={{ color: 'var(--text)' }}>
+                    <ThumbsDown size={20} className="profile-icon-danger" />
+                    <span className="profile-name font-bold">
                       {userData.rating.negative}
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Star size={20} style={{ color: 'var(--accent)' }} />
-                    <span className="font-bold" style={{ color: 'var(--text)' }}>
+                    <Star size={20} className="profile-icon-accent" />
+                    <span className="profile-name font-bold">
                       {userData.rating.percentage}%
                     </span>
                   </div>
@@ -289,16 +287,14 @@ export default function Profile() {
               <div className="flex gap-3">
                 <button
                   onClick={() => setIsEditingProfile(true)}
-                  className="px-6 py-3 rounded-lg font-medium transition-all flex items-center gap-2 hover:shadow-lg"
-                  style={{ backgroundColor: 'var(--accent)', color: 'var(--bg)' }}
+                  className="profile-btn-primary px-6 py-3 rounded-lg font-medium transition-all flex items-center gap-2 hover:shadow-lg"
                 >
                   <Edit2 size={18} />
                   Edit Profile
                 </button>
                 <button
                   onClick={() => setIsEditingPassword(true)}
-                  className="px-6 py-3 rounded-lg font-medium transition-all flex items-center gap-2 hover:shadow-lg border"
-                  style={{ borderColor: 'var(--border)', color: 'var(--text)', backgroundColor: 'var(--bg-soft)' }}
+                  className="profile-btn-secondary px-6 py-3 rounded-lg font-medium transition-all flex items-center gap-2 hover:shadow-lg border"
                 >
                   <Lock size={18} />
                   Change Password

@@ -29,7 +29,7 @@ export default function ListProduct({ darkMode, toggleDarkMode }) {
       <Header darkMode={darkMode} toggleTheme={toggleDarkMode} />
       <div className="flex gap-6 px-4 sm:px-6 lg:px-8 py-8 max-w-7xl mx-auto w-full">
           <FilterSidebar isOpen={true} onClose={() => {}} />
-          <section className="py-10 w-[75%] rounded-2xl shadow-lg transition-colors duration-300" style={{ backgroundColor: "var(--bg-soft)", color: "var(--text)" }}>
+          <section className="list-products-section py-10 w-[75%] rounded-2xl shadow-lg transition-colors duration-100\">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
               <div className="flex items-center justify-between mb-6">
                 <div>

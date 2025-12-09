@@ -56,26 +56,25 @@ export default function AuctionCard({ item }) {
   };
 
   return (
-    <div className="group relative w-full max-w-sm rounded-2xl border shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 overflow-hidden flex flex-col" style={{backgroundColor: 'var(--auction-bg)', borderColor: 'var(--auction-border)', color: 'var(--auction-text)'}}>
+    <div className="group relative w-full max-w-sm rounded-2xl border shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-100 overflow-hidden flex flex-col bg-[var(--auction-bg)] border-[var(--auction-border)] color-[var(--auction-text)]">
       
       {/* --- Image Section --- */}
-      <div className="relative aspect-4/3 overflow-hidden" style={{backgroundColor: 'var(--auction-badge-bg)'}}>
+      <div className="auction-card-image-bg relative aspect-4/3 overflow-hidden">
         <img 
           src={item.image} 
           alt={item.title} 
-          className="w-full h-full object-cover transition-all duration-300 group-hover:scale-105"
+          className="w-full h-full object-cover transition-all duration-100 group-hover:scale-105"
         />
         
         <div className="absolute top-3 left-3 flex gap-2">
-          <span className="px-2.5 py-1 backdrop-blur-sm text-xs font-bold rounded-full shadow-sm" style={{backgroundColor: 'rgba(255, 255, 255, 0.95)', color: 'var(--auction-text-subtle)'}}>
+          <span className="px-2.5 py-1 backdrop-blur-sm text-xs font-bold rounded-full shadow-sm bg-[rgba(255,255,255,0.95)] color-[var(--auction-text-subtle)]">
             {item.category}
           </span>
         </div>
 
         <button 
           onClick={() => setIsLiked(!isLiked)}
-          className="absolute top-3 right-3 p-2 rounded-full hover:text-rose-500 transition-colors shadow-sm z-10"
-          style={{backgroundColor: 'rgba(255, 255, 255, 0.8)', color: 'var(--auction-text-subtle)'}}
+          className="absolute top-3 right-3 p-2 rounded-full hover:text-rose-500 transition-colors shadow-sm z-10 bg-[rgba(255,255,255,0.8)] color-[var(--auction-text-subtle)]"
         >
           <Heart size={18} className={isLiked ? 'fill-rose-500 text-rose-500' : ''} />
         </button>
@@ -89,58 +88,57 @@ export default function AuctionCard({ item }) {
 
       {/* --- Content Section --- */}
       <div className="p-5 flex flex-col flex-grow">
-        <h3 className="text-lg font-bold line-clamp-1 mb-4 transition-colors" style={{color: 'var(--auction-text)'}}>
+        <h3 className="text-lg font-bold line-clamp-1 mb-4 transition-colors duration-100 color-[var(--auction-text)]">
           {item.title}
         </h3>
         
         {/* --- DUAL PRICE BOX --- */}
-        <div className="grid grid-cols-2 gap-px rounded-xl overflow-hidden border mb-5" style={{backgroundColor: 'var(--auction-border)', borderColor: 'var(--auction-border)'}}>
+        <div className="grid grid-cols-2 gap-px rounded-xl overflow-hidden border mb-5 bg-[var(--auction-border)] border-[var(--auction-border)]">
           
           {/* === LEFT: Hover Reveal Logic === */}
-          <div className="relative group/bid cursor-help overflow-hidden" style={{backgroundColor: 'var(--auction-price-bg)'}}>
+          <div className="relative group/bid cursor-help overflow-hidden bg-[var(--auction-price-bg)]">
             
             {/* 1. Default View: The Price */}
-            <div className="absolute inset-0 flex flex-col justify-center px-3 transition-all duration-300 transform group-hover/bid:-translate-y-full group-hover/bid:opacity-0">
-                <span className="text-[10px] uppercase font-bold tracking-wider mb-1 flex items-center gap-1" style={{color: 'var(--auction-text-subtle)'}}>
+            <div className="absolute inset-0 flex flex-col justify-center px-3 transition-all duration-100 transform group-hover/bid:-translate-y-full group-hover/bid:opacity-0">
+                <span className="text-[10px] uppercase font-bold tracking-wider mb-1 flex items-center gap-1 color-[var(--auction-text-subtle)]">
                     <Gavel size={12} /> Highest Bid
                 </span>
-                <span className="text-xl font-black" style={{color: 'var(--auction-text)'}}>
+                <span className="text-xl font-black color-[var(--auction-text)]">
                     {formatCurrency(item.currentBid)}
                 </span>
             </div>
 
             {/* 2. Hover View: The Person */}
-            <div className="absolute inset-0 flex flex-col justify-center items-center transition-all duration-300 transform translate-y-full opacity-0 group-hover/bid:translate-y-0 group-hover/bid:opacity-100" style={{backgroundColor: 'var(--auction-bid-bg)'}}>
+            <div className="absolute inset-0 flex flex-col justify-center items-center transition-all duration-100 transform translate-y-full opacity-0 group-hover/bid:translate-y-0 group-hover/bid:opacity-100 bg-[var(--auction-bid-bg)]">
                  {item.highestBidder ? (
                     <div className="flex flex-col items-center gap-1">
                         <div className="relative">
                             <img 
                                 src={item.highestBidder.avatar} 
                                 alt={item.highestBidder.name} 
-                                className="w-8 h-8 rounded-full border-2 shadow-sm"
-                                style={{borderColor: 'var(--auction-bg)'}}
+                                className="w-8 h-8 rounded-full border-2 shadow-sm border-[var(--auction-bg)]"
                             />
-                            <div className="absolute -top-2 -right-2 text-white p-0.5 rounded-full ring-2" style={{backgroundColor: 'var(--auction-accent)', ringColor: 'var(--auction-bg)'}}>
+                            <div className="absolute -top-2 -right-2 text-white p-0.5 rounded-full ring-2 bg-[var(--auction-accent)] ring-[var(--auction-bg)]">
                                 <Crown size={8} fill="currentColor" />
                             </div>
                         </div>
-                        <span className="text-xs font-bold" style={{color: 'var(--auction-bid-text)'}}>
+                        <span className="text-xs font-bold color-[var(--auction-bid-text)]">
                             {item.highestBidder.name}
                         </span>
                     </div>
                  ) : (
-                    <span className="text-xs font-medium" style={{color: 'var(--auction-text-subtle)'}}>No Bids Yet</span>
+                    <span className="text-xs font-medium color-[var(--auction-text-subtle)]">No Bids Yet</span>
                  )}
             </div>
           </div>
 
           {/* === RIGHT: Buy Now === */}
-          <div className="p-3 flex flex-col justify-center border-l relative hover:bg-[var(--auction-success-bg)] transition-colors cursor-pointer" style={{borderLeftColor: 'var(--auction-border)'}}>
+          <div className="p-3 flex flex-col justify-center border-l relative hover:bg-[var(--auction-success-bg)] transition-colors cursor-pointer border-[var(--auction-border)]" >
              <div className="h-full flex flex-col justify-center">
-                <span className="text-[10px] uppercase font-bold tracking-wider mb-1 flex items-center gap-1" style={{color: 'var(--auction-success)'}}>
+                <span className="text-[10px] uppercase font-bold tracking-wider mb-1 flex items-center gap-1 color-[var(--auction-success)]">
                     <Zap size={12} className="fill-current" /> Buy Now
                 </span>
-                <span className="text-lg font-bold" style={{color: 'var(--auction-success)'}}>
+                <span className="text-lg font-bold color-[var(--auction-success)]">
                     {item.buyNowPrice ? formatCurrency(item.buyNowPrice) : 'N/A'}
                 </span>
              </div>
@@ -148,14 +146,13 @@ export default function AuctionCard({ item }) {
         </div>
 
         {/* --- Footer --- */}
-        <div className="mt-auto flex items-center justify-between border-t pt-3" style={{borderTopColor: 'var(--auction-border)'}}>
-          <div className="text-xs font-medium" style={{color: 'var(--auction-text-muted)'}}>
-             Total <span className="font-bold" style={{color: 'var(--auction-text)'}}>{item.bidCount}</span> bids placed
+        <div className="mt-auto flex items-center justify-between border-t pt-3 border-[var(--auction-border)]" >
+          <div className="text-xs font-medium color-[var(--auction-text-muted)]">
+             Total <span className="font-bold color-[var(--auction-text)]">{item.bidCount}</span> bids placed
           </div>
 
           <button 
-            className="flex items-center gap-2 px-4 py-2 text-white text-sm font-bold rounded-full transition-all duration-300 shadow-md hover:shadow-lg group/btn" 
-            style={{backgroundColor: 'var(--auction-accent)'}}
+            className="flex items-center gap-2 px-4 py-2 text-white text-sm font-bold rounded-full transition-all duration-100 shadow-md hover:shadow-lg group/btn bg-[var(--auction-accent)] hover:bg-[var(--auction-accent-hover)]" 
             onClick={() => nav.auction(item.id)}>
             Place Bid
             <ArrowRight size={16} className="transition-transform group-hover/btn:translate-x-1" />

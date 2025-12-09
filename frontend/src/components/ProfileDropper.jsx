@@ -29,7 +29,7 @@ export default function ProfileDropper() {
       {/* Notification Bell Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="relative p-2 rounded-full transition-all duration-200 hover:bg-gray-100 dark:hover:bg-gray-800"
+        className="relative p-2 rounded-full transition-all duration-100 hover:bg-gray-100 dark:hover:bg-gray-800"
         style={{
           backgroundColor: isOpen ? "var(--accent-soft)" : "transparent",
           color: "var(--text)",

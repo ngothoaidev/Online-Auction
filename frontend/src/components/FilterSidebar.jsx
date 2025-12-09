@@ -9,10 +9,9 @@ export default function FilterSidebar({
 }) {
   return (
     <aside
-      className={`sticky top-30 self-start rounded-2xl p-4 md:p-5 w-full md:w-72 lg:w-80 shadow-lg transition-colors duration-300 ${
+      className={`sticky top-30 bg-[var(--bg-soft)] color-[var(--text)] self-start rounded-2xl p-4 md:p-5 w-full md:w-72 lg:w-80 shadow-lg transition-colors duration-100 ${
         isOpen ? "block" : "hidden md:block"
       }`}
-      style={{ backgroundColor: "var(--bg-soft)", color: "var(--text)" }}
     >
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">

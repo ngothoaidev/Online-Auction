@@ -12,14 +12,13 @@ export default function ChangePasswordModal({
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <div 
-        className="w-full max-w-md rounded-2xl p-8 shadow-2xl"
-        style={{ backgroundColor: 'var(--bg-soft)' }}
+        className="modal-bg w-full max-w-md rounded-2xl p-8 shadow-2xl"
       >
         <div className="flex items-center justify-between mb-6">
-          <h3 className="text-2xl font-bold" style={{ color: 'var(--text)' }}>
+          <h3 className="modal-title text-2xl font-bold">
             Change Password
           </h3>
-          <button onClick={onCancel} style={{ color: 'var(--text-muted)' }}>
+          <button onClick={onCancel} className="modal-close">
             <X size={24} />
           </button>
         </div>
@@ -27,7 +26,7 @@ export default function ChangePasswordModal({
         <div className="space-y-5">
           {/* Current Password */}
           <div>
-            <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text)' }}>
+            <label className="modal-label block text-sm font-medium mb-2">
               <Lock size={16} className="inline mr-2" />
               Current Password *
             </label>
@@ -36,18 +35,13 @@ export default function ChangePasswordModal({
               value={passwordForm.currentPassword}
               onChange={(e) => setPasswordForm(prev => ({ ...prev, currentPassword: e.target.value }))}
               placeholder="Enter current password"
-              className="w-full px-4 py-3 rounded-lg border focus:outline-none focus:ring-2"
-              style={{ 
-                backgroundColor: 'var(--input-bg)', 
-                borderColor: 'var(--input-border)',
-                color: 'var(--text)'
-              }}
+              className="modal-input w-full px-4 py-3 rounded-lg border focus:outline-none focus:ring-2"
             />
           </div>
 
           {/* New Password */}
           <div>
-            <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text)' }}>
+            <label className="modal-label block text-sm font-medium mb-2">
               <Lock size={16} className="inline mr-2" />
               New Password *
             </label>
@@ -56,38 +50,28 @@ export default function ChangePasswordModal({
               value={passwordForm.newPassword}
               onChange={(e) => setPasswordForm(prev => ({ ...prev, newPassword: e.target.value }))}
               placeholder="Enter new password (min 6 characters)"
-              className="w-full px-4 py-3 rounded-lg border focus:outline-none focus:ring-2"
-              style={{ 
-                backgroundColor: 'var(--input-bg)', 
-                borderColor: 'var(--input-border)',
-                color: 'var(--text)'
-              }}
+              className="modal-input w-full px-4 py-3 rounded-lg border focus:outline-none focus:ring-2"
             />
           </div>
 
           {/* Confirm Password */}
           <div>
-            <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text)' }}>
+            <label className="modal-label block text-sm font-medium mb-2">
               <Lock size={16} className="inline mr-2" />
-              Confirm New Password *
+              Confirm Password *
             </label>
             <input
               type="password"
               value={passwordForm.confirmPassword}
               onChange={(e) => setPasswordForm(prev => ({ ...prev, confirmPassword: e.target.value }))}
               placeholder="Confirm new password"
-              className="w-full px-4 py-3 rounded-lg border focus:outline-none focus:ring-2"
-              style={{ 
-                backgroundColor: 'var(--input-bg)', 
-                borderColor: 'var(--input-border)',
-                color: 'var(--text)'
-              }}
+              className="modal-input w-full px-4 py-3 rounded-lg border focus:outline-none focus:ring-2"
             />
           </div>
 
           {/* Password strength hint */}
-          <div className="p-3 rounded-lg" style={{ backgroundColor: 'var(--info-soft)' }}>
-            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+          <div className="modal-info-box p-3 rounded-lg">
+            <p className="modal-info-text text-xs">
               💡 Password must be at least 6 characters long
             </p>
           </div>
@@ -97,19 +81,13 @@ export default function ChangePasswordModal({
         <div className="flex gap-4 mt-8">
           <button
             onClick={onCancel}
-            className="flex-1 px-6 py-3 rounded-lg font-medium transition-all border"
-            style={{ 
-              borderColor: 'var(--border)',
-              color: 'var(--text)',
-              backgroundColor: 'var(--bg-subtle)'
-            }}
+            className="modal-btn-cancel flex-1 px-6 py-3 rounded-lg font-medium transition-all border"
           >
             Cancel
           </button>
           <button
             onClick={onSave}
-            className="flex-1 px-6 py-3 rounded-lg font-medium transition-all flex items-center justify-center gap-2"
-            style={{ backgroundColor: 'var(--accent)', color: 'var(--bg)' }}
+            className="modal-btn-submit flex-1 px-6 py-3 rounded-lg font-medium transition-all flex items-center justify-center gap-2"
           >
             <Save size={18} />
             Update Password
