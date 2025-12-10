@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useAuth } from "../../context/AuthContext";
 
 import ViewAllButton from "../../components/ViewAllButton";
 import AuctionCard from "../../components/AuctionCard";
@@ -17,6 +18,7 @@ import UserSections from "./RoleSection";
 import CardSection from "./RoleSection/CardSections";
 
 export default function Profile() {
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('buyer');
   const [userData, setUserData] = useState(mockUserData);
   
@@ -164,7 +166,6 @@ export default function Profile() {
         <ProfileTabs 
           activeTab={activeTab}
           setActiveTab={setActiveTab}
-          isSeller={userData.isSeller}
         />
 
         {/* Buyer Tab Content */}
@@ -178,7 +179,7 @@ export default function Profile() {
         )}
 
         {/* Seller Tab Content */}
-        {activeTab === 'seller' && userData.isSeller && (
+        {activeTab === 'seller' && user?.role === 'seller' && (
           <UserSections 
             userData={userData} 
             type="seller" 

@@ -30,16 +30,20 @@ function App() {
           {/* --- LEVEL 1: STANDARD USERS (Just need to be logged in) --- */}
           <Route element={<ProtectedRoute />}>
             <Route path="/profile/:id" element={<Profile />} />
-            <Route path="/create-auction" element={<CreateAuction />} />
-            <Route path="/active-bids" element={<ViewAllActiveBid />} />
             <Route path="/active-listings" element={<ViewAllActiveListings />} />
             <Route path="/favourite-products" element={<ViewAllFavouriteProducts />} />
             <Route path="/reviews" element={<ViewAllReviews />} />
-            <Route path="/sold-items" element={<ViewAllSoldItems />} />
             <Route path="/won-auctions" element={<ViewAllWonAuctions />} />
           </Route>
 
-          {/* --- LEVEL 2: ADMIN ONLY (Needs 'admin' role) --- */}
+          {/* --- LEVEL 2: SELLER ONLY (Needs 'seller' role) --- */}
+          <Route element={<ProtectedRoute requiredRole="seller" />}>
+            <Route path="/create-auction" element={<CreateAuction />} />
+            <Route path="/active-bids" element={<ViewAllActiveBid />} />
+            <Route path="/sold-items" element={<ViewAllSoldItems />} />
+          </Route>
+
+          {/* --- LEVEL 3: ADMIN ONLY (Needs 'admin' role) --- */}
           <Route element={<ProtectedRoute requiredRole="admin" />}>
             <Route path="/admin" element={<AdminDashboard />} />
           </Route>
