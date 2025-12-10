@@ -1,6 +1,6 @@
 import { ArrowRight } from "lucide-react";
 
-import { useNav } from "../../useNavigate.js";
+import { useNav } from "../../hooks/useNavigate.js";
 
 export default function ViewAllButton({ page }) {
     const nav = useNav();

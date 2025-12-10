@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import { Trophy, Clock, Gavel, Star, ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
-import { useNav } from '../useNavigate.js';
-import { products, topBidders, heroSlides } from "../data/mockData.js";
-import AuctionCard from "../components/AuctionCard.jsx";
-import Header from "../components/Header.jsx";
+import { useNav } from '../hooks/useNavigate.js';
+import { topBidders, heroSlides, products } from "../data/index.js";
+import AuctionCard from "../components/AuctionCard/DefaultAuctionCard.jsx";
+import Header from "../components/Header/index.jsx";
 import Footer from "../components/Footer.jsx";
 
 const Hero = () => {
@@ -23,7 +23,11 @@ const Hero = () => {
       
       {/* 2. Subtle Dot Pattern Overlay */}
       <div 
-        className="home-hero-dot-pattern absolute inset-0 opacity-20 pointer-events-none" 
+        className="absolute inset-0 opacity-20 pointer-events-none" 
+        style={{ 
+          backgroundImage: 'radial-gradient(circle, #F9E400 1px, transparent 1px)',
+          backgroundSize: '32px 32px' 
+        }}
       ></div>
 
       {/* 3. Floating Light Orbs */}
@@ -88,7 +92,7 @@ const Hero = () => {
             <button
               key={idx}
               onClick={() => setCurrentSlide(idx)}
-              className={`w-2.5 h-2.5 rounded-full transition-all duration-100 ${
+              className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${
                 currentSlide === idx ? 'bg-[#F9E400] w-8' : 'bg-white/30 hover:bg-white/50'
               }`}
               aria-label={`Go to slide ${idx + 1}`}
@@ -102,17 +106,59 @@ const Hero = () => {
 
 const ProductTabs = ({ nav }) => {
   const [activeTab, setActiveTab] = useState('endingSoon');
+  // const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  // Fetch all products on component mount
+  // useEffect(() => {
+  //   fetchProducts();
+  // }, []);
+
+  // const fetchProducts = async () => {
+  //   try {
+  //     setLoading(true);
+  //     setError(null);
+  //     const response = await fetch(`${API_URL}/products`);
+  //     if (!response.ok) throw new Error('Failed to fetch products');
+  //     const result = await response.json();
+  //     setProducts(result.data || []);
+  //   } catch (err) {
+  //     setError(err.message);
+  //     console.error('Error fetching products:', err);
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
 
   const tabs = [
-    { id: 'endingSoon', label: 'Ending Soon', icon: Clock, color: '#F5004F', data: products },
-    { id: 'mostBids', label: 'Most Active', icon: Gavel, color: '#7C00FE', data: products },
-    { id: 'highestPrice', label: 'Premium', icon: Star, color: '#F9E400', data: products },
+    { id: 'endingSoon', label: 'Ending Soon', icon: Clock, color: '#F5004F' },
+    { id: 'mostBids', label: 'Most Active', icon: Gavel, color: '#7C00FE' },
+    { id: 'highestPrice', label: 'Premium', icon: Star, color: '#F9E400' },
   ];
 
   const activeTabData = tabs.find(t => t.id === activeTab);
 
+  // Filter products based on active tab
+  const getFilteredProducts = () => {
+    if (!products.length) return [];
+    
+    switch (activeTab) {
+      case 'endingSoon':
+        return products.filter(p => p.status === 'active').slice(0, 10);
+      case 'mostBids':
+        return products.filter(p => p.status === 'active').slice(0, 10);
+      case 'highestPrice':
+        return [...products].sort((a, b) => parseFloat(b.price) - parseFloat(a.price)).slice(0, 10);
+      default:
+        return products.slice(0, 10);
+    }
+  };
+
+  const displayProducts = getFilteredProducts();
+
   return (
-    <section className="py-16 container px-4">
+    <section className="py-16 container mx-auto px-4">
       <div className="flex flex-wrap justify-center gap-4 mb-10">
         {tabs.map((tab) => {
           const isActive = activeTab === tab.id;
@@ -121,7 +167,7 @@ const ProductTabs = ({ nav }) => {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 px-6 py-3 rounded-full font-bold text-sm uppercase tracking-wide transition-all duration-100 transform hover:scale-105 ${
+              className={`flex items-center gap-2 px-6 py-3 rounded-full font-bold text-sm uppercase tracking-wide transition-all duration-300 transform hover:scale-105 ${
                 isActive 
                   ? `text-white shadow-lg shadow-${tab.color}/20 scale-105` 
                   : 'bg-white dark:bg-stone-800 text-stone-500 dark:text-stone-400 hover:bg-stone-100 dark:hover:bg-stone-700'
@@ -138,12 +184,21 @@ const ProductTabs = ({ nav }) => {
         })}
       </div>
 
+      {loading && <div className="text-center py-10 text-gray-500">Loading products...</div>}
+      {error && <div className="text-center py-10 text-red-500">Error: {error}</div>}
+      
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5 mx-10 animate-fade-in">
-        {activeTabData.data.map((item) => (
-          <div key={item.id} className="transform transition-all duration-100 hover:-translate-y-1">
-            <AuctionCard item={item} />
+        {displayProducts.length > 0 ? (
+          displayProducts.map((item) => (
+            <div key={item.id} className="transform transition-all duration-500 hover:-translate-y-1">
+              <AuctionCard item={item} />
+            </div>
+          ))
+        ) : (
+          <div className="col-span-full text-center py-10 text-gray-500">
+            {!loading && products.length === 0 ? 'No products found' : 'Loading...'}
           </div>
-        ))}
+        )}
       </div>
 
       <div className="mt-12 text-center">
@@ -164,7 +219,8 @@ export default function HomePage({ darkMode, toggleDarkMode }) {
     return (
         <>
         <Header darkMode={darkMode} toggleTheme={toggleDarkMode} />
-        <div className="home-container min-h-screen transition-colors duration-100" 
+        <div className="min-h-screen transition-colors duration-300" 
+              style={{ backgroundColor: "var(--bg-soft)", color: "var(--text)" }}
         >
             {/* Hero Section */}
             <Hero />
@@ -173,93 +229,93 @@ export default function HomePage({ darkMode, toggleDarkMode }) {
             <ProductTabs nav={nav} />
 
             {/* Top Bidders Section */}
-            <section className="home-top-bidders-section py-16 transition-colors duration-100">
+            <section className="py-16 transition-colors duration-300" style={{ backgroundColor: "var(--bg-subtle)" }}>
                 <div className="container mx-auto px-4">
                     <div className="flex items-center gap-3 mb-10 justify-center">
-                    <div className="home-trophy-badge p-2 rounded-lg">
+                    <div className="p-2 rounded-lg" style={{ backgroundColor: "var(--accent-soft)", color: "var(--accent-strong)" }}>
                         <Trophy className="w-8 h-8" />
                     </div>
-                    <h2 className="home-section-title text-3xl font-bold">Top Bidders Hall of Fame</h2>
+                    <h2 className="text-3xl font-bold" style={{ color: "var(--text)" }}>Top Bidders Hall of Fame</h2>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto items-end">
                     {/* Rank 2 */}
-                    <div className="home-bidder-card rounded-2xl shadow-lg p-6 flex flex-col items-center border order-2 md:order-1 relative mt-8 md:mt-0">
-                        <div className="home-bidder-badge absolute -top-4 bg-gray-300 text-gray-800 font-bold px-3 py-1 rounded-full shadow-sm text-sm border-2">
+                    <div className="rounded-2xl shadow-lg p-6 flex flex-col items-center border order-2 md:order-1 relative mt-8 md:mt-0" style={{ backgroundColor: "var(--card-bg)", borderColor: "var(--border)" }}>
+                        <div className="absolute -top-4 bg-gray-300 text-gray-800 font-bold px-3 py-1 rounded-full shadow-sm text-sm border-2" style={{ borderColor: "var(--card-bg)" }}>
                         #2 Silver
                         </div>
                         <div className="w-20 h-20 rounded-full border-4 border-gray-300 mb-4 overflow-hidden">
                         <img src={topBidders[1].avatar} alt="Bidder" className="w-full h-full object-cover" />
                         </div>
-                        <h3 className="home-bidder-name text-xl font-bold mb-1">{topBidders[1].name}</h3>
-                        <div className="home-bidder-rating flex items-center gap-1 mb-4">
+                        <h3 className="text-xl font-bold mb-1" style={{ color: "var(--text)" }}>{topBidders[1].name}</h3>
+                        <div className="flex items-center gap-1 mb-4" style={{ color: "var(--accent)" }}>
                         <Star className="w-4 h-4 fill-current" />
                         <span className="font-medium">{topBidders[1].rating}% Rating</span>
                         </div>
-                        <div className="home-bidder-divider text-center w-full pt-4 border-t">
-                        <p className="home-bidder-won text-2xl font-bold">{topBidders[1].won}</p>
-                        <p className="home-bidder-won-label text-xs uppercase tracking-wide">Auctions Won</p>
+                        <div className="text-center w-full pt-4 border-t" style={{ borderColor: "var(--border-subtle)" }}>
+                        <p className="text-2xl font-bold" style={{ color: "var(--info)" }}>{topBidders[1].won}</p>
+                        <p className="text-xs uppercase tracking-wide" style={{ color: "var(--text-subtle)" }}>Auctions Won</p>
                         </div>
                     </div>
 
                     {/* Rank 1 */}
-                    <div className="home-champion-card rounded-2xl shadow-xl p-8 flex flex-col items-center border-2 order-1 md:order-2 transform md:-translate-y-6 relative z-10">
-                        <div className="home-champion-badge absolute -top-5 font-bold px-4 py-1.5 rounded-full shadow-lg text-base border-4 flex items-center gap-1">
+                    <div className="rounded-2xl shadow-xl p-8 flex flex-col items-center border-2 order-1 md:order-2 transform md:-translate-y-6 relative z-10" style={{ backgroundColor: "var(--card-bg)", borderColor: "var(--accent)" }}>
+                        <div className="absolute -top-5 font-bold px-4 py-1.5 rounded-full shadow-lg text-base border-4 flex items-center gap-1" style={{ backgroundColor: "var(--accent)", color: "var(--bg)", borderColor: "var(--card-bg)" }}>
                         <Trophy className="w-4 h-4" /> #1 Champion
                         </div>
-                        <div className="home-champion-avatar-border w-24 h-24 rounded-full border-4 mb-4 overflow-hidden shadow-lg">
+                        <div className="w-24 h-24 rounded-full border-4 mb-4 overflow-hidden shadow-lg" style={{ borderColor: "var(--accent)" }}>
                         <img src={topBidders[0].avatar} alt="Bidder" className="w-full h-full object-cover" />
                         </div>
-                        <h3 className="home-bidder-name text-2xl font-bold mb-1">{topBidders[0].name}</h3>
-                        <div className="home-bidder-rating flex items-center gap-1 mb-6">
+                        <h3 className="text-2xl font-bold mb-1" style={{ color: "var(--text)" }}>{topBidders[0].name}</h3>
+                        <div className="flex items-center gap-1 mb-6" style={{ color: "var(--accent)" }}>
                         <Star className="w-5 h-5 fill-current" />
                         <span className="font-bold text-lg">{topBidders[0].rating}% Rating</span>
                         </div>
-                        <div className="home-bidder-divider text-center w-full pt-6 border-t">
-                        <p className="home-bidder-won text-4xl font-extrabold">{topBidders[0].won}</p>
-                        <p className="home-bidder-won-label text-sm font-bold uppercase tracking-wide">Auctions Won</p>
+                        <div className="text-center w-full pt-6 border-t" style={{ borderColor: "var(--border-subtle)" }}>
+                        <p className="text-4xl font-extrabold" style={{ color: "var(--info)" }}>{topBidders[0].won}</p>
+                        <p className="text-sm font-bold uppercase tracking-wide" style={{ color: "var(--text-subtle)" }}>Auctions Won</p>
                         </div>
                     </div>
 
                     {/* Rank 3 */}
-                    <div className="home-bidder-card rounded-2xl shadow-lg p-6 flex flex-col items-center border order-3 md:order-3 relative mt-8 md:mt-0">
-                        <div className="home-bidder-badge absolute -top-4 bg-orange-300 text-orange-900 font-bold px-3 py-1 rounded-full shadow-sm text-sm border-2">
+                    <div className="rounded-2xl shadow-lg p-6 flex flex-col items-center border order-3 md:order-3 relative mt-8 md:mt-0" style={{ backgroundColor: "var(--card-bg)", borderColor: "var(--border)" }}>
+                        <div className="absolute -top-4 bg-orange-300 text-orange-900 font-bold px-3 py-1 rounded-full shadow-sm text-sm border-2" style={{ borderColor: "var(--card-bg)" }}>
                         #3 Bronze
                         </div>
                         <div className="w-20 h-20 rounded-full border-4 border-orange-300 mb-4 overflow-hidden">
                         <img src={topBidders[2].avatar} alt="Bidder" className="w-full h-full object-cover" />
                         </div>
-                        <h3 className="home-bidder-name text-xl font-bold mb-1">{topBidders[2].name}</h3>
-                        <div className="home-bidder-rating flex items-center gap-1 mb-4">
+                        <h3 className="text-xl font-bold mb-1" style={{ color: "var(--text)" }}>{topBidders[2].name}</h3>
+                        <div className="flex items-center gap-1 mb-4" style={{ color: "var(--accent)" }}>
                         <Star className="w-4 h-4 fill-current" />
                         <span className="font-medium">{topBidders[2].rating}% Rating</span>
                         </div>
-                        <div className="home-bidder-divider text-center w-full pt-4 border-t">
-                        <p className="home-bidder-won text-2xl font-bold">{topBidders[2].won}</p>
-                        <p className="home-bidder-won-label text-xs uppercase tracking-wide">Auctions Won</p>
+                        <div className="text-center w-full pt-4 border-t" style={{ borderColor: "var(--border-subtle)" }}>
+                        <p className="text-2xl font-bold" style={{ color: "var(--info)" }}>{topBidders[2].won}</p>
+                        <p className="text-xs uppercase tracking-wide" style={{ color: "var(--text-subtle)" }}>Auctions Won</p>
                         </div>
                     </div>
                     </div>
 
                     {/* Other Ranks List */}
-                    <div className="home-bidders-list max-w-3xl mx-auto mt-8 rounded-xl shadow-sm border overflow-hidden">
+                    <div className="max-w-3xl mx-auto mt-8 rounded-xl shadow-sm border overflow-hidden" style={{ backgroundColor: "var(--card-bg)", borderColor: "var(--border)" }}>
                     {topBidders.slice(3).map((bidder) => (
-                        <div key={bidder.id} className="home-bidder-item flex items-center justify-between p-4 border-b last:border-0 hover:bg-[var(--bg-hover)] transition-colors">
+                        <div key={bidder.id} className="flex items-center justify-between p-4 border-b last:border-0 hover:bg-[var(--bg-hover)] transition-colors" style={{ borderColor: "var(--border-subtle)" }}>
                         <div className="flex items-center gap-4">
-                            <span className="home-bidder-rank font-bold w-6 text-center">#{bidder.rank}</span>
+                            <span className="font-bold w-6 text-center" style={{ color: "var(--text-subtle)" }}>#{bidder.rank}</span>
                             <div className="w-10 h-10 rounded-full overflow-hidden">
                             <img src={bidder.avatar} alt={bidder.name} className="w-full h-full object-cover" />
                             </div>
                             <div>
-                            <h4 className="home-bidder-name font-bold">{bidder.name}</h4>
-                            <div className="home-bidder-rating flex items-center gap-1 text-xs">
+                            <h4 className="font-bold" style={{ color: "var(--text)" }}>{bidder.name}</h4>
+                            <div className="flex items-center gap-1 text-xs" style={{ color: "var(--accent)" }}>
                                 <Star className="w-3 h-3 fill-current" />
                                 {bidder.rating}% Positive Rating
                             </div>
                             </div>
                         </div>
                         <div className="text-right">
-                            <span className="home-bidder-won block font-bold">{bidder.won} Won</span>
+                            <span className="block font-bold" style={{ color: "var(--info)" }}>{bidder.won} Won</span>
                         </div>
                         </div>
                     ))}

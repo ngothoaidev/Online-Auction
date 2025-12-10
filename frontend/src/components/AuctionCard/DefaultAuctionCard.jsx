@@ -1,24 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Heart, Clock, Gavel, Zap, ArrowRight, Crown } from 'lucide-react';
-import { useNav } from '../useNavigate.js';
-
-// --- Helpers ---
-
-const formatCurrency = (amount) => {
-  return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
-};
-
-const formatTimeLeft = (seconds) => {
-  if (seconds <= 0) return "Ended";
-  const d = Math.floor(seconds / (3600 * 24));
-  const h = Math.floor((seconds % (3600 * 24)) / 3600);
-  const m = Math.floor((seconds % 3600) / 60);
-  const s = Math.floor(seconds % 60);
-
-  if (d > 0) return `${d}d ${h}h`;
-  if (h > 0) return `${h}h ${m}m`;
-  return `${m}m ${s}s`;
-};
+import { useNav } from '../../hooks/useNavigate.js';
+import { formatCurrency, calculateTimeLeft } from '../../utils/timeFormat.js';
+import './defaultAuctionCard.css';
 
 export default function AuctionCard({ item }) {
   const nav = useNav();
@@ -27,25 +11,14 @@ export default function AuctionCard({ item }) {
   const [urgencyLevel, setUrgencyLevel] = useState('normal');
 
   useEffect(() => {
-    const calculateTimeLeft = () => {
-      const difference = new Date(item.endTime) - new Date();
-      if (difference > 0) {
-        const days = Math.floor(difference / (1000 * 60 * 60 * 24));
-        const hours = Math.floor((difference / (1000 * 60 * 60)) % 24);
-        const minutes = Math.floor((difference / 1000 / 60) % 60);
-        
-        if (days === 0 && hours < 1) setUrgencyLevel('critical');
-        else if (days === 0) setUrgencyLevel('warning');
-        else setUrgencyLevel('normal');
-
-        if (days > 0) return `${days}d ${hours}h left`;
-        return `${hours}h ${minutes}m left`;
-      }
-      return 'Ended';
+    const updateTimeLeft = () => {
+      const { timeLeft, urgencyLevel } = calculateTimeLeft(item.endTime);
+      setTimeLeft(timeLeft);
+      setUrgencyLevel(urgencyLevel);
     };
 
-    setTimeLeft(calculateTimeLeft());
-    const timer = setInterval(() => { setTimeLeft(calculateTimeLeft()); }, 60000);
+    updateTimeLeft();
+    const timer = setInterval(updateTimeLeft, 60000);
     return () => clearInterval(timer);
   }, [item.endTime]);
 

@@ -1,31 +1,24 @@
 import { useState, useEffect } from 'react'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { products as initialProducts, bids as initialBids, questions as initialQuestions } from './data/mockData.js';
+import { mockUserData as initialUser, products as initialProducts, bids as initialBids, questions as initialQuestions } from './data/index.js';
+
 import HomePage from './pages/HomePage.jsx';
 import ProductDetail from './pages/ProductDetail.jsx';
-import ListProducts from './pages/ListProducts.jsx';
-import Login, { Register } from './pages/AuthPage.jsx';
-import Profile from './pages/ViewProfile.jsx';
-
+import ListProducts from './pages/ListProducts';
+import Login from './pages/Login.jsx';
+import Register from './pages/Register.jsx';
+import Profile from './pages/Profile';
+import CreateAuction from './components/Header/CreateAuction.jsx';
 import ViewAllActiveBid from './pages/ViewAllActiveBid.jsx';
 import ViewAllActiveListings from './pages/ViewAllActiveListings.jsx';
 import ViewAllFavouriteProducts from './pages/ViewAllFavouriteProducts.jsx';
 import ViewAllReviews from './pages/ViewAllReviews.jsx';
 import ViewAllSoldItems from './pages/ViewAllSoldItems.jsx';
 import ViewAllWonAuctions from './pages/ViewAllWonAuctions.jsx';
-
-import AdminDashboard from './pages/Admin/AdminDashboard.jsx';
+import AdminDashboard from './pages/Admin';
 
 
 function App() {
-  const initialUser = {
-    id: 1,
-    name: 'John Doe',
-    avatar: 'https://i.pravatar.cc/150?u=1',
-    rating: 95,
-    isSeller: true,
-    isAdmin: true // Added this for logic contexts
-  };
 
   const [currentUser, setCurrentUser] = useState(initialUser);
   const [products, setProducts] = useState(initialProducts);
@@ -63,6 +56,7 @@ function App() {
             <Route path="/search" element={<ListProducts darkMode={darkMode} toggleDarkMode={toggleTheme} />} />
             <Route path="/product/:id" element={<ProductDetail darkMode={darkMode} toggleDarkMode={toggleTheme} />} />
             <Route path="/profile/:id" element={<Profile darkMode={darkMode} toggleDarkMode={toggleTheme} />} />
+            <Route path="/create-auction" element={<CreateAuction darkMode={darkMode} toggleTheme={toggleTheme} />} />
             
             {/* Auth Routes */}
             <Route path="/login" element={<Login />} />

@@ -1,11 +1,11 @@
 // src/components/ListProduct.jsx
 import React, {useState} from "react";
 import { House, ChevronLeft, ChevronRight } from "lucide-react";
-import { products } from "../data/mockData";
-import AuctionCard from "../components/AuctionCard";
-import FilterSidebar from "../components/FilterSidebar";
-import Header from "../components/Header";
-import Footer from "../components/Footer";
+import { products } from "../../data/index.js";
+import AuctionCard from "../../components/AuctionCard/DefaultAuctionCard";
+import FilterSidebar from "./FilterSidebar";
+import Header from "../../components/Header";
+import Footer from "../../components/Footer";
 
 export default function ListProduct({ darkMode, toggleDarkMode }) {
     const category = "electronics";

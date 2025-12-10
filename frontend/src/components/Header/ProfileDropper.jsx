@@ -1,8 +1,8 @@
 import { useState, useRef, useEffect } from "react";
 import { Bell, Check, Trophy, HelpCircle, CheckCircle, X } from "lucide-react";
-import { mockUserData } from "../data/mockData";
+import { mockUserData } from "../../data/users.js";
 
-import { useNav } from '../useNavigate.js';
+import { useNav } from '../../hooks/useNavigate.js';
 
 export default function ProfileDropper() {
   const nav = useNav();
@@ -75,7 +75,7 @@ export default function ProfileDropper() {
 
             <button
               className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
-              onClick={() => { setIsOpen(false); navigate("/login"); /* Add logout logic here */ }}
+              onClick={() => { setIsOpen(false); nav.login(); /* Add logout logic here */ }}
             >
               Logout
             </button>

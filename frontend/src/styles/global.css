@@ -1,9 +1,5 @@
 @import "tailwindcss";
 
-button {
-  @apply cursor-pointer
-}
-
 /* Header Styles */
 .header-search-container {
   background-color: var(--bg-soft);

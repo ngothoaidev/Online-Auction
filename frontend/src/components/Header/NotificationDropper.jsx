@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Bell, Check, Trophy, HelpCircle, CheckCircle, X } from "lucide-react";
-import { mockNotifications } from "../data/mockData";
+import { mockNotifications } from "../../data/users.js";
 
 export default function NotificationDropper() {
   const [isOpen, setIsOpen] = useState(false);

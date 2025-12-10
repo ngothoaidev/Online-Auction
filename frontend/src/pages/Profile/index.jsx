@@ -1,20 +1,21 @@
 import { useState } from "react";
-import { Heart, Gavel, Trophy, Clock, CheckCircle } from "lucide-react";
-import Header from "../components/Header";
-import Footer from "../components/Footer";
-import { mockUserData } from "../data/mockData";
-
+import { Heart, Gavel, Trophy, Clock, CheckCircle, Plus } from "lucide-react";
+import Header from "../../components/Header";
+import Footer from "../../components/Footer";
 // Profile Components
-import ProfileHeader from "../components/profile/ProfileHeader";
-import ProfileTabs from "../components/profile/ProfileTabs";
-import ReviewsSection from "../components/profile/ReviewsSection";
-import EditProfileModal from "../components/profile/EditProfileModal";
-import ChangePasswordModal from "../components/profile/ChangePasswordModal";
-import ReviewModal from "../components/profile/ReviewModal";
-import ProductCard from "../components/profile/ProductCard";
-import SellerListingCard from "../components/profile/SellerListingCard";
-import WonAuctionCard from "../components/WonAuctionCard";
-import SoldAuctionCard from "../components/SoldAuctionCard";
+import ProfileHeader from "./ProfileHeader";
+import ProfileTabs from "./ProfileTabs";
+import ReviewsSection from "./ReviewsSection";
+import EditProfileModal from "./EditProfileModal";
+import ChangePasswordModal from "./ChangePasswordModal";
+import ReviewModal from "./ReviewModal";
+import ProductCard from "./ProductCard";
+import SellerListingCard from "./SellerListingCard";
+import WonAuctionCard from "../../components/AuctionCard/WonAuctionCard";
+import SoldAuctionCard from "../../components/AuctionCard/SoldAuctionCard";
+
+// Mock User Data
+import { mockUserData } from "../../data/users.js";
 
 export default function Profile({darkMode, toggleDarkMode}) {
   const [activeTab, setActiveTab] = useState('buyer');
@@ -24,6 +25,7 @@ export default function Profile({darkMode, toggleDarkMode}) {
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [isEditingPassword, setIsEditingPassword] = useState(false);
   const [reviewModal, setReviewModal] = useState({ isOpen: false, item: null, type: 'buyer' });
+  const [showCreateAuctionModal, setShowCreateAuctionModal] = useState(false);
   
   // Form states
   const [profileForm, setProfileForm] = useState({
@@ -153,7 +155,7 @@ export default function Profile({darkMode, toggleDarkMode}) {
 
   return (
     <>
-      <Header darkMode={darkMode} toggleTheme={toggleTheme} />
+      <Header darkMode={darkMode} toggleTheme={toggleDarkMode} />
       
       <div className="min-h-screen py-8" style={{ backgroundColor: 'var(--bg)' }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
