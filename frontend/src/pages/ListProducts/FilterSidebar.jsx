@@ -1,7 +1,7 @@
 // src/ui/FilterSidebar.jsx
 import React from "react";
 import { SlidersHorizontal, X } from "lucide-react";
-import { categories } from "../data/mockData";
+import { categories } from "../../data/constants";
 
 export default function FilterSidebar({
   isOpen = true,

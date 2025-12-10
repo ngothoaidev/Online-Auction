@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { useNav } from '../useNavigate.js';
+import { useNav } from '../../hooks/useNavigate.js';
 import { 
   Search, 
   Menu, 
@@ -15,9 +15,11 @@ import {
   Sun,
   Moon,
   ArrowRight,
+  Plus,
 } from 'lucide-react';
-import { categories } from '../data/mockData.js';
-import { mockNotifications } from '../data/mockData.js';
+
+import { categories } from '../../data/constants.js';
+import { mockNotifications } from '../../data/users.js';
 import NotificationDropper from './NotificationDropper.jsx';
 import ProfileDropper from './ProfileDropper.jsx';
 /**
@@ -37,12 +39,14 @@ export default function Header({ darkMode, toggleTheme }) {
   const [notifications, setNotifications] = useState(mockNotifications);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
 
-
   // State for User Dropdown (Desktop)
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
 
   // Mock Auth State (Toggle this via the UI demo controls below)
   const [isLoggedIn, setIsLoggedIn] = useState(true);
+
+  // Mock Seller State (Replace with actual user from context/auth)
+  const [isSeller, setIsSeller] = useState(true);
 
   // Toggle scrolling lock when mobile menu is open
   useEffect(() => {
@@ -189,6 +193,17 @@ export default function Header({ darkMode, toggleTheme }) {
               {isLoggedIn ? (
                 /* LOGGED IN STATE */
                 <div className="flex items-center gap-4">
+                  {/* Create New Auction Button - Only for Sellers */}
+                  {isSeller && (
+                    <Link
+                      to="/create-auction"
+                      className="hidden sm:flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition text-sm"
+                    >
+                      <Plus size={18} />
+                      <span className="hidden md:inline">Create Auction</span>
+                    </Link>
+                  )}
+
                   {/* Notifications */}
                   <NotificationDropper />
 

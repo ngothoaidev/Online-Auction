@@ -1,39 +1,10 @@
 import { useState, useEffect } from "react";
 import { Trophy, Clock, Gavel, Star, ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
-import { useNav } from '../useNavigate.js';
-import { products, topBidders, heroSlides } from "../data/mockData.js";
-import AuctionCard from "../components/AuctionCard.jsx";
-import Header from "../components/Header.jsx";
+import { useNav } from '../hooks/useNavigate.js';
+import { topBidders, heroSlides, products } from "../data/index.js";
+import AuctionCard from "../components/AuctionCard/DefaultAuctionCard.jsx";
+import Header from "../components/Header/index.jsx";
 import Footer from "../components/Footer.jsx";
-
-{/* Dummy Hero Section */}
-// const Hero = () => {
-//   return (
-//     <div className="relative bg-gray-900 text-white overflow-hidden">
-//         <div className="relative rounded-2xl overflow-hidden h-[400px] mb-12 shadow-2xl group">
-//             <div className="absolute inset-0 bg-gradient-to-r from-[#1A1225] via-transparent to-transparent z-10"></div>
-//             <img 
-//             src="https://images.unsplash.com/photo-1599939571322-792a326991f2?q=80&w=2576&auto=format&fit=crop" 
-//             alt="Luxury Watch" 
-//             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000"
-//             />
-//             <div className="absolute bottom-0 left-0 p-10 z-20 max-w-2xl">
-//             <span className="bg-[#C0341D] text-white text-xs font-bold px-3 py-1 rounded mb-4 inline-block animate-pulse">LIVE NOW</span>
-//             <h1 className="text-4xl md:text-5xl font-bold mb-4 font-sans tracking-tight">Discover Rare Items & <span className="text-[#E0B84C]">Exclusive Deals</span></h1>
-//             <p className="text-gray-300 text-lg mb-6 line-clamp-2">Bid on thousands of unique items starting from $1. The world's most trusted online auction marketplace.</p>
-//             <div className="flex items-center gap-4">
-//             <button className="bg-[#E0B84C] hover:bg-[#E0B800] text-white px-8 py-3 rounded-full font-bold text-lg transition-all transform hover:scale-105 shadow-lg">
-//               Start Bidding
-//             </button>
-//             <button className="bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white px-8 py-3 rounded-full font-bold text-lg border border-white/30 transition-all">
-//               Sell Item
-//             </button>
-//           </div>
-//             </div>
-//         </div>
-//     </div>
-//   );
-// };
 
 const Hero = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -135,14 +106,56 @@ const Hero = () => {
 
 const ProductTabs = ({ nav }) => {
   const [activeTab, setActiveTab] = useState('endingSoon');
+  // const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  // Fetch all products on component mount
+  // useEffect(() => {
+  //   fetchProducts();
+  // }, []);
+
+  // const fetchProducts = async () => {
+  //   try {
+  //     setLoading(true);
+  //     setError(null);
+  //     const response = await fetch(`${API_URL}/products`);
+  //     if (!response.ok) throw new Error('Failed to fetch products');
+  //     const result = await response.json();
+  //     setProducts(result.data || []);
+  //   } catch (err) {
+  //     setError(err.message);
+  //     console.error('Error fetching products:', err);
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
 
   const tabs = [
-    { id: 'endingSoon', label: 'Ending Soon', icon: Clock, color: '#F5004F', data: products },
-    { id: 'mostBids', label: 'Most Active', icon: Gavel, color: '#7C00FE', data: products },
-    { id: 'highestPrice', label: 'Premium', icon: Star, color: '#F9E400', data: products },
+    { id: 'endingSoon', label: 'Ending Soon', icon: Clock, color: '#F5004F' },
+    { id: 'mostBids', label: 'Most Active', icon: Gavel, color: '#7C00FE' },
+    { id: 'highestPrice', label: 'Premium', icon: Star, color: '#F9E400' },
   ];
 
   const activeTabData = tabs.find(t => t.id === activeTab);
+
+  // Filter products based on active tab
+  const getFilteredProducts = () => {
+    if (!products.length) return [];
+    
+    switch (activeTab) {
+      case 'endingSoon':
+        return products.filter(p => p.status === 'active').slice(0, 10);
+      case 'mostBids':
+        return products.filter(p => p.status === 'active').slice(0, 10);
+      case 'highestPrice':
+        return [...products].sort((a, b) => parseFloat(b.price) - parseFloat(a.price)).slice(0, 10);
+      default:
+        return products.slice(0, 10);
+    }
+  };
+
+  const displayProducts = getFilteredProducts();
 
   return (
     <section className="py-16 container mx-auto px-4">
@@ -171,12 +184,21 @@ const ProductTabs = ({ nav }) => {
         })}
       </div>
 
+      {loading && <div className="text-center py-10 text-gray-500">Loading products...</div>}
+      {error && <div className="text-center py-10 text-red-500">Error: {error}</div>}
+      
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5 mx-10 animate-fade-in">
-        {activeTabData.data.map((item) => (
-          <div key={item.id} className="transform transition-all duration-500 hover:-translate-y-1">
-            <AuctionCard item={item} />
+        {displayProducts.length > 0 ? (
+          displayProducts.map((item) => (
+            <div key={item.id} className="transform transition-all duration-500 hover:-translate-y-1">
+              <AuctionCard item={item} />
+            </div>
+          ))
+        ) : (
+          <div className="col-span-full text-center py-10 text-gray-500">
+            {!loading && products.length === 0 ? 'No products found' : 'Loading...'}
           </div>
-        ))}
+        )}
       </div>
 
       <div className="mt-12 text-center">

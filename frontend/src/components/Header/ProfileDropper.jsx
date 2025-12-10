@@ -1,8 +1,8 @@
 import { useState, useRef, useEffect } from "react";
 import { Bell, Check, Trophy, HelpCircle, CheckCircle, X } from "lucide-react";
-import { mockUserData } from "../data/mockData";
+import { mockUserData } from "../../data/users.js";
 
-import { useNav } from '../useNavigate.js';
+import { useNav } from '../../hooks/useNavigate.js';
 
 export default function ProfileDropper() {
   const nav = useNav();

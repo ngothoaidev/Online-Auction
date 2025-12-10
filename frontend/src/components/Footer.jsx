@@ -1,5 +1,5 @@
 import React from 'react';
-import { useNav } from '../useNavigate.js';
+import { useNav } from '../hooks/useNavigate.js';
 import { 
   Facebook, 
   Twitter, 
