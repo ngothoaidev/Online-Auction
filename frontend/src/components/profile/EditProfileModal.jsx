@@ -81,10 +81,6 @@ export default function EditProfileModal({
               onChange={(e) => setProfileForm(prev => ({ ...prev, birthDate: e.target.value }))}
               className="modal-input w-full px-4 py-3 rounded-lg border focus:outline-none focus:ring-2"
             /> 
-                borderColor: 'var(--input-border)',
-                color: 'var(--text)'
-              }}
-            />
           </div>
 
           {/* Bio */}

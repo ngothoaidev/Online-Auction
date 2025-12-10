@@ -1,8 +1,7 @@
 import { Star, ThumbsUp, ThumbsDown, ArrowRight } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import ViewAllButton from "./ViewAllButton";
 
 export default function ReviewsSection({ reviews }) {
-  const navigate = useNavigate();
 
   return (
     <section>
@@ -11,18 +10,7 @@ export default function ReviewsSection({ reviews }) {
           <Star size={24} style={{ color: 'var(--accent)' }} />
           Reviews & Ratings
         </h2>
-        <button
-          onClick={() => navigate('/reviews')}
-          className="px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2 hover:shadow-md"
-          style={{ 
-            backgroundColor: 'var(--bg-subtle)', 
-            color: 'var(--accent)',
-            border: '1px solid var(--border)'
-          }}
-        >
-          View All
-          <ArrowRight size={16} />
-        </button>
+        <ViewAllButton page="reviews" />
       </div>
       
       <div className="space-y-4">
@@ -40,15 +28,15 @@ export default function ReviewsSection({ reviews }) {
                   <ThumbsDown size={20} style={{ color: 'var(--danger)' }} />
                 )}
                 <div>
-                  <p className="font-bold" style={{ color: 'var(--text)' }}>
+                  <p className="font-bold color-[var(--text)]">
                     {review.from}
                   </p>
-                  <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
+                  <p className="text-sm color-[var(--text-muted)]">
                     {review.productTitle}
                   </p>
                 </div>
               </div>
-              <span className="text-sm" style={{ color: 'var(--text-muted)' }}>
+              <span className="text-sm color-[var(--text-muted)]">
                 {review.date.toLocaleDateString()}
               </span>
             </div>
