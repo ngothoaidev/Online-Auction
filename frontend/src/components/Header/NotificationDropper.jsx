@@ -67,7 +67,7 @@ export default function NotificationDropper() {
       {/* Notification Bell Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="relative p-2 rounded-full transition-all duration-200 hover:bg-gray-100 dark:hover:bg-gray-800"
+        className="relative p-2 rounded-full transition-all duration-100 hover:bg-gray-100 dark:hover:bg-gray-800"
         style={{
           backgroundColor: isOpen ? "var(--accent-soft)" : "transparent",
           color: "var(--text)",
@@ -84,28 +84,21 @@ export default function NotificationDropper() {
       {/* Dropdown Menu */}
       {isOpen && (
         <div
-          className="absolute right-0 mt-3 w-80 sm:w-96 rounded-xl shadow-2xl border overflow-hidden animate-in fade-in zoom-in-95 duration-200 z-50"
-          style={{
-            backgroundColor: "var(--bg-soft)",
-            borderColor: "var(--border)",
-          }}
+          className="notification-dropdown absolute right-0 mt-3 w-80 sm:w-96 rounded-xl shadow-2xl border overflow-hidden animate-in fade-in zoom-in-95 duration-100 z-50"
         >
           {/* Header */}
           <div
-            className="px-4 py-3 border-b flex items-center justify-between"
-            style={{ borderColor: "var(--border)" }}
+            className="notification-header px-4 py-3 border-b flex items-center justify-between"
           >
             <h3
-              className="font-bold text-lg"
-              style={{ color: "var(--text)" }}
+              className="notification-title font-bold text-lg"
             >
               Notifications
             </h3>
             {unreadCount > 0 && (
               <button
                 onClick={handleMarkAllRead}
-                className="text-xs font-medium transition-colors hover:underline"
-                style={{ color: "var(--accent)" }}
+                className="notification-link text-xs font-medium transition-colors hover:underline"
               >
                 Mark all read
               </button>
@@ -117,30 +110,27 @@ export default function NotificationDropper() {
             {notifications.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 px-4">
                 <div
-                  className="w-16 h-16 rounded-full flex items-center justify-center mb-3"
-                  style={{ backgroundColor: "var(--bg-subtle)" }}
+                  className="notification-empty w-16 h-16 rounded-full flex items-center justify-center mb-3"
                 >
-                  <Bell size={32} style={{ color: "var(--text-muted)" }} />
+                  <Bell size={32} className="notification-empty-icon" />
                 </div>
                 <p
-                  className="text-sm font-medium"
-                  style={{ color: "var(--text-muted)" }}
+                  className="notification-empty-text text-sm font-medium"
                 >
                   No new notifications
                 </p>
                 <p
-                  className="text-xs mt-1"
-                  style={{ color: "var(--text-subtle)" }}
+                  className="notification-empty-subtext text-xs mt-1"
                 >
                   You're all caught up!
                 </p>
               </div>
             ) : (
-              <div className="divide-y" style={{ borderColor: "var(--border)" }}>
+              <div className="notification-divider divide-y">
                 {notifications.map((notification, index) => (
                   <div
                     key={index}
-                    className="px-4 py-3 transition-colors duration-200 hover:bg-[var(--bg-hover)] group relative"
+                    className="px-4 py-3 transition-colors duration-100 hover:bg-[var(--bg-hover)] group relative"
                   >
                     <div className="flex gap-3">
                       {/* Icon */}
@@ -167,14 +157,12 @@ export default function NotificationDropper() {
                       {/* Content */}
                       <div className="flex-1 min-w-0">
                         <p
-                          className="text-sm leading-relaxed"
-                          style={{ color: "var(--text)" }}
+                          className="notification-item-title text-sm leading-relaxed"
                         >
                           {notification.message}
                         </p>
                         <p
-                          className="text-xs mt-1"
-                          style={{ color: "var(--text-muted)" }}
+                          className="notification-item-desc text-xs mt-1"
                         >
                           {formatTime(notification.time)}
                         </p>
@@ -183,8 +171,7 @@ export default function NotificationDropper() {
                       {/* Remove button */}
                       <button
                         onClick={() => handleRemoveNotification(index)}
-                        className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-[var(--danger-soft)]"
-                        style={{ color: "var(--text-muted)" }}
+                        className="notification-time flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-[var(--danger-soft)]"
                       >
                         <X size={16} />
                       </button>
@@ -198,12 +185,10 @@ export default function NotificationDropper() {
           {/* Footer */}
           {notifications.length > 0 && (
             <div
-              className="px-4 py-3 border-t text-center"
-              style={{ borderColor: "var(--border)" }}
+              className="notification-footer px-4 py-3 border-t text-center"
             >
               <button
-                className="text-sm font-medium transition-colors hover:underline"
-                style={{ color: "var(--accent)" }}
+                className="notification-footer-link text-sm font-medium transition-colors hover:underline"
               >
                 View all notifications
               </button>

@@ -29,7 +29,7 @@ export default function ProfileDropper() {
       {/* Notification Bell Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="relative p-2 rounded-full transition-all duration-200 hover:bg-gray-100 dark:hover:bg-gray-800"
+        className="relative p-2 rounded-full transition-all duration-100 hover:bg-gray-100 dark:hover:bg-gray-800"
         style={{
           backgroundColor: isOpen ? "var(--accent-soft)" : "transparent",
           color: "var(--text)",
@@ -75,7 +75,7 @@ export default function ProfileDropper() {
 
             <button
               className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
-              onClick={() => { setIsOpen(false); navigate("/login"); /* Add logout logic here */ }}
+              onClick={() => { setIsOpen(false); nav.login(); /* Add logout logic here */ }}
             >
               Logout
             </button>

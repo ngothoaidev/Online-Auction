@@ -17,10 +17,9 @@ import SoldAuctionCard from "../../components/AuctionCard/SoldAuctionCard";
 // Mock User Data
 import { mockUserData } from "../../data/users.js";
 
-export default function Profile() {
+export default function Profile({darkMode, toggleDarkMode}) {
   const [activeTab, setActiveTab] = useState('buyer');
   const [userData, setUserData] = useState(mockUserData);
-  const [darkMode, setDarkMode] = useState(false);
   
   // Modal states
   const [isEditingProfile, setIsEditingProfile] = useState(false);
@@ -45,7 +44,7 @@ export default function Profile() {
   
   const [reviewForm, setReviewForm] = useState({ rating: 'positive', comment: '' });
 
-  const toggleTheme = () => setDarkMode(!darkMode);
+  const toggleTheme = () => toggleDarkMode();
 
   // Handlers
   const handleProfileUpdate = () => {
@@ -156,7 +155,7 @@ export default function Profile() {
 
   return (
     <>
-      <Header darkMode={darkMode} toggleTheme={toggleTheme} />
+      <Header darkMode={darkMode} toggleTheme={toggleDarkMode} />
       
       <div className="min-h-screen py-8" style={{ backgroundColor: 'var(--bg)' }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

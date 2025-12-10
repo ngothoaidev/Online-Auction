@@ -1,7 +1,6 @@
 import DefaultAuctionCard from './DefaultAuctionCard';
 import WonAuctionCard from './WonAuctionCard';
 import SoldAuctionCard from './SoldAuctionCard';
-import './auction.css';
 
 /**
  * AuctionCard Controller Component

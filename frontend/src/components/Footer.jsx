@@ -17,10 +17,12 @@ import {
  * Matches the global "Dark Premium" theme.
  */
 
-const Footer = () => {
+const Footer = ({darkMode}) => {
   const nav = useNav();
   return (
-    <footer className="bg-[#1A1225] border-t border-white/5 font-sans pt-16 pb-8 text-[#B8B0C8]">
+    <footer 
+      className="border-t border-white/5 font-sans pt-16 pb-8 text-[var(--text)] bg-[var(--bg-soft)] transition-colors duration-100"
+      >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* TOP SECTION: Grid Layout */}
@@ -29,12 +31,12 @@ const Footer = () => {
           {/* COLUMN 1: Brand & tagline */}
           <div className="space-y-6">
             <div className="flex-shrink-0 cursor-pointer group w-fit">
-              <h2 className="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
-                <span className="text-[#E0B84C]">AURUM</span> AUCTIONS
+              <h2 className="text-2xl font-bold tracking-tight flex items-center gap-2">
+                <span className="text-[var(--accent)]">AURUM</span> AUCTIONS
               </h2>
-              <div className="h-0.5 w-0 group-hover:w-full bg-[#E0B84C] transition-all duration-300"></div>
+              <div className="h-0.5 w-0 group-hover:w-full bg-[var(--accent)] transition-all duration-100"></div>
             </div>
-            <p className="text-sm leading-relaxed text-gray-400 max-w-xs">
+            <p className="text-sm leading-relaxed text-[var(--text-muted)] max-w-xs">
               The world's premier destination for exclusive collectibles, luxury timepieces, and rare digital assets. Experience the thrill of the bid.
             </p>
             <div className="flex items-center gap-4">
@@ -59,7 +61,7 @@ const Footer = () => {
 
           {/* COLUMN 3: Support & Policies */}
           <div>
-            <h3 className="text-white font-bold text-lg mb-6 tracking-wide">Support</h3>
+            <h3 className="text-[var(--text)] font-bold text-lg mb-6 tracking-wide">Support</h3>
             <ul className="space-y-4 text-sm">
               <FooterLink href="#">Help Center</FooterLink>
               <FooterLink href="#">Buying Guides</FooterLink>
@@ -72,18 +74,18 @@ const Footer = () => {
 
           {/* COLUMN 4: Contact & Newsletter */}
           <div>
-            <h3 className="text-white font-bold text-lg mb-6 tracking-wide">Stay Connected</h3>
+            <h3 className="text-[var(--text)] font-bold text-lg mb-6 tracking-wide">Stay Connected</h3>
             <div className="space-y-4 mb-6">
               <div className="flex items-start gap-3 text-sm group cursor-pointer">
-                <MapPin className="text-[#E0B84C] mt-0.5 group-hover:text-white transition-colors" size={16} />
+                <MapPin className="text-[var(--accent)] mt-0.5 group-hover:text-[var(--text)] transition-colors" size={16} />
                 <span>123 Luxury Lane, Suite 100<br />New York, NY 10012</span>
               </div>
               <div className="flex items-center gap-3 text-sm group cursor-pointer">
-                <Phone className="text-[#E0B84C] group-hover:text-white transition-colors" size={16} />
+                <Phone className="text-[var(--accent)] group-hover:text-[var(--text)] transition-colors" size={16} />
                 <span>+1 (888) 123-4567</span>
               </div>
               <div className="flex items-center gap-3 text-sm group cursor-pointer">
-                <Mail className="text-[#E0B84C] group-hover:text-white transition-colors" size={16} />
+                <Mail className="text-[var(--accent)] group-hover:text-[var(--text)] transition-colors" size={16} />
                 <span>concierge@aurum.com</span>
               </div>
             </div>
@@ -95,9 +97,9 @@ const Footer = () => {
                 <input 
                   type="email" 
                   placeholder="Enter your email" 
-                  className="w-full bg-[#2A2038] text-white text-sm border border-white/10 rounded-lg py-3 pl-4 pr-12 focus:outline-none focus:border-[#E0B84C] focus:ring-1 focus:ring-[#E0B84C] transition-all"
+                  className="w-full bg-[var(--input-bg)] border-[var(--input-border)]  text-white text-sm border border-white/10 rounded-lg py-3 pl-4 pr-12 focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)] transition-all border-[var(--input-border)]  placeholder:text-gray-500 outline-none"
                 />
-                <button className="absolute right-1 top-1 bottom-1 bg-[#E0B84C] hover:bg-[#B88A20] text-[#1A1225] rounded-md px-3 transition-colors flex items-center justify-center">
+                <button className="absolute right-1 top-1 bottom-1 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--input-text)] rounded-md px-3 transition-colors flex items-center justify-center">
                   <ArrowRight size={18} />
                 </button>
               </div>
@@ -129,7 +131,7 @@ const FooterLink = ({ href, children }) => (
   <li>
     <a 
       href={href} 
-      className="hover:text-[#E0B84C] hover:pl-2 transition-all duration-300 block w-fit"
+      className="hover:text-[#E0B84C] hover:pl-2 transition-all duration-100 block w-fit"
     >
       {children}
     </a>
@@ -140,7 +142,7 @@ const FooterLink = ({ href, children }) => (
 const SocialLink = ({ href, icon }) => (
   <a 
     href={href} 
-    className="w-8 h-8 rounded-full bg-[#2A2038] flex items-center justify-center text-gray-400 hover:bg-[#E0B84C] hover:text-[#1A1225] transition-all duration-300 hover:-translate-y-1 shadow-md hover:shadow-lg hover:shadow-[#E0B84C]/20"
+    className="w-8 h-8 rounded-full bg-[#2A2038] flex items-center justify-center text-gray-400 hover:bg-[#E0B84C] hover:text-[#1A1225] transition-all duration-100 hover:-translate-y-1 shadow-md hover:shadow-lg hover:shadow-[#E0B84C]/20"
   >
     {icon}
   </a>
