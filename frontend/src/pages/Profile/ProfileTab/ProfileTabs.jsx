@@ -1,6 +1,12 @@
 import { ShoppingBag, Package } from "lucide-react";
+import { useAuth } from "../../../context/AuthContext";
 
-export default function ProfileTabs({ activeTab, setActiveTab, isSeller }) {
+export default function ProfileTabs({ activeTab, setActiveTab }) {
+  const { user } = useAuth();
+
+  // Check if user is a seller
+  const isSeller = user?.role === 'seller';
+
   return (
     <div 
       className="flex gap-2 mb-8 border-b"
@@ -8,7 +14,7 @@ export default function ProfileTabs({ activeTab, setActiveTab, isSeller }) {
     >
       <button
         onClick={() => setActiveTab('buyer')}
-        className="px-6 py-3 font-medium transition-all relative"
+        className="px-6 py-3 font-medium transition-all relative cursor-pointer"
         style={{ 
           color: activeTab === 'buyer' ? 'var(--accent)' : 'var(--text-muted)',
         }}

@@ -1,4 +1,4 @@
-import CardSection from "../../CardSection/index.jsx";
+import CardSection from "../CardSections";
 
 export default function SellerSection({userData, formatTime, setReviewModal, handleCancelTransaction}) {
     return (

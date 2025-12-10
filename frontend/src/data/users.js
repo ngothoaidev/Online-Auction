@@ -10,7 +10,7 @@ export const mockUserData = {
   bio: 'Passionate collector and tech enthusiast. Love finding rare items and great deals!',
   birthDate: '1990-05-15',
   avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix',
-  isSeller: true, // Change to false to disable seller tab
+  role: 'admin', // or 'seller' or 'admin'
   rating: {
     positive: 45,
     negative: 2,

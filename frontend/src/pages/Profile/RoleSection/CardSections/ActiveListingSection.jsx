@@ -1,6 +1,6 @@
 import { Clock } from 'lucide-react';
-import ViewAllButton from "../../../components/ViewAllButton.jsx";
-import AuctionCard from "../../../components/AuctionCard/index.jsx";
+import ViewAllButton from "../../../../components/ViewAllButton";
+import AuctionCard from "../../../../components/AuctionCard";
 
 export default function ActiveListingSection({products, formatTime}) {
     return (

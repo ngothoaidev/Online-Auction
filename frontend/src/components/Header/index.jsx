@@ -6,47 +6,34 @@ import {
   Menu, 
   X, 
   ChevronDown, 
-  User, 
   LogOut, 
   Heart, 
-  Gavel, 
   ShoppingBag, 
-  Bell,
-  Sun,
-  Moon,
   ArrowRight,
   Plus,
 } from 'lucide-react';
 
 import { categories } from '../../data/constants.js';
-import { mockNotifications } from '../../data/users.js';
 import NotificationDropper from './NotificationDropper.jsx';
 import ProfileDropper from './ProfileDropper.jsx';
+import ThemeToggle from '../ThemeToggle.jsx';
+import { useAuth } from '../../context/AuthContext.jsx';
+
 /**
  * Header Component - Online Auction Platform
  * Implements "Dark Premium" theme with Gold highlights.
  */
 
-export default function Header({ darkMode, toggleTheme }) {
+// export default function Header({ darkMode, toggleTheme }) {
+export default function Header() {
   const nav = useNav();
+  const { user } = useAuth();
+
   // State for Mobile Menu
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
   // State for Mobile Category Accordion
   const [activeMobileCategory, setActiveMobileCategory] = useState(null);
-
-  // State for Notifications Dropper
-  const [notifications, setNotifications] = useState(mockNotifications);
-  const [isNotificationOpen, setIsNotificationOpen] = useState(false);
-
-  // State for User Dropdown (Desktop)
-  const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
-
-  // Mock Auth State (Toggle this via the UI demo controls below)
-  const [isLoggedIn, setIsLoggedIn] = useState(true);
-
-  // Mock Seller State (Replace with actual user from context/auth)
-  const [isSeller, setIsSeller] = useState(true);
 
   // Toggle scrolling lock when mobile menu is open
   useEffect(() => {
@@ -151,18 +138,13 @@ export default function Header({ darkMode, toggleTheme }) {
               </button>
 
               {/* Dark Mode Toggle */}
-              <button 
-                onClick={toggleTheme}
-                className="header-theme-toggle p-2 rounded-full"
-              >
-                {!darkMode ? <Sun className="w-6 h-6" /> : <Moon className="w-6 h-6" />}
-              </button>
+              <ThemeToggle />
 
-              {isLoggedIn ? (
+              {user ? (
                 /* LOGGED IN STATE */
                 <div className="flex items-center gap-4">
                   {/* Create New Auction Button - Only for Sellers */}
-                  {isSeller && (
+                  {user.role === 'seller' && (
                     <Link
                       to="/create-auction"
                       className="hidden sm:flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition text-sm"

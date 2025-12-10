@@ -1,24 +1,24 @@
 import { useState } from "react";
-import { Heart, Gavel, Trophy, Clock, CheckCircle, Plus } from "lucide-react";
-import Header from "../../components/Header";
-import Footer from "../../components/Footer";
-// Profile Components
-import ProfileHeader from "./HeaderProfile/ProfileHeader.jsx";
-import ProfileTabs from "./ProfileTab/ProfileTabs.jsx";
-import ReviewsSection from "./RoleSection/BuyerSections/ReviewSection/ReviewsSection.jsx";
-import EditProfileModal from "./HeaderProfile/Modal/EditProfileModal.jsx";
-import ChangePasswordModal from "./HeaderProfile/Modal/ChangePasswordModal.jsx";
-import ReviewModal from "./RoleSection/BuyerSections/ReviewSection/ReviewModal.jsx";
-import ViewAllButton from "../../components/ViewAllButton.jsx";
+import { useAuth } from "../../context/AuthContext";
 
-import UserSections from "./RoleSection/index.jsx";
-import CardSection from "./CardSection/index.jsx";
+import ViewAllButton from "../../components/ViewAllButton";
+import AuctionCard from "../../components/AuctionCard";
 
-import AuctionCard from "../../components/AuctionCard/index.jsx";
 // Mock User Data
 import { mockUserData } from "../../data/users.js";
 
-export default function Profile({darkMode, toggleDarkMode}) {
+// Profile Components
+import ProfileHeader from "./HeaderProfile/ProfileHeader";
+import ProfileTabs from "./ProfileTab/ProfileTabs";
+import ReviewsSection from "./RoleSection/BuyerSections/ReviewSection/ReviewsSection";
+import EditProfileModal from "./HeaderProfile/Modal/EditProfileModal";
+import ChangePasswordModal from "./HeaderProfile/Modal/ChangePasswordModal";
+import ReviewModal from "./RoleSection/BuyerSections/ReviewSection/ReviewModal";
+import UserSections from "./RoleSection";
+import CardSection from "./RoleSection/CardSections";
+
+export default function Profile() {
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('buyer');
   const [userData, setUserData] = useState(mockUserData);
   
@@ -44,8 +44,6 @@ export default function Profile({darkMode, toggleDarkMode}) {
   });
   
   const [reviewForm, setReviewForm] = useState({ rating: 'positive', comment: '' });
-
-  const toggleTheme = () => toggleDarkMode();
 
   // Handlers
   const handleProfileUpdate = () => {
@@ -156,73 +154,68 @@ export default function Profile({darkMode, toggleDarkMode}) {
 
   return (
     <>
-      <Header darkMode={darkMode} toggleTheme={toggleDarkMode} />
-      
-      <div className="min-h-screen py-8" style={{ backgroundColor: 'var(--bg)' }}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          
-          <ProfileHeader 
-            userData={userData}
-            onEditProfile={() => setIsEditingProfile(true)}
-            onChangePassword={() => setIsEditingPassword(true)}
+    <div className="min-h-screen py-8" style={{ backgroundColor: 'var(--bg)' }}>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        <ProfileHeader 
+          userData={userData}
+          onEditProfile={() => setIsEditingProfile(true)}
+          onChangePassword={() => setIsEditingPassword(true)}
+        />
+
+        <ProfileTabs 
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+        />
+
+        {/* Buyer Tab Content */}
+        {activeTab === 'buyer' && (
+          <UserSections 
+            userData={userData} 
+            type="buyer" 
+            formatTime={formatTime} 
+            setReviewModal={setReviewModal} 
           />
+        )}
 
-          <ProfileTabs 
-            activeTab={activeTab}
-            setActiveTab={setActiveTab}
-            isSeller={userData.isSeller}
+        {/* Seller Tab Content */}
+        {activeTab === 'seller' && user?.role === 'seller' && (
+          <UserSections 
+            userData={userData} 
+            type="seller" 
+            formatTime={formatTime} 
+            setReviewModal={setReviewModal} 
+            handleCancelTransaction={handleCancelTransaction} 
           />
-
-          {/* Buyer Tab Content */}
-          {activeTab === 'buyer' && (
-            <UserSections 
-              userData={userData} 
-              type="buyer" 
-              formatTime={formatTime} 
-              setReviewModal={setReviewModal} 
-            />
-          )}
-
-          {/* Seller Tab Content */}
-          {activeTab === 'seller' && userData.isSeller && (
-            <UserSections 
-              userData={userData} 
-              type="seller" 
-              formatTime={formatTime} 
-              setReviewModal={setReviewModal} 
-              handleCancelTransaction={handleCancelTransaction} 
-            />
-          )}
-        </div>
+        )}
       </div>
+    </div>
 
-      {/* Modals */}
-      <EditProfileModal
-        isOpen={isEditingProfile}
-        profileForm={profileForm}
-        setProfileForm={setProfileForm}
-        onSave={handleProfileUpdate}
-        onCancel={handleCancelProfileEdit}
-      />
+    {/* Modals */}
+    <EditProfileModal
+      isOpen={isEditingProfile}
+      profileForm={profileForm}
+      setProfileForm={setProfileForm}
+      onSave={handleProfileUpdate}
+      onCancel={handleCancelProfileEdit}
+    />
 
-      <ChangePasswordModal
-        isOpen={isEditingPassword}
-        passwordForm={passwordForm}
-        setPasswordForm={setPasswordForm}
-        onSave={handlePasswordUpdate}
-        onCancel={handleCancelPasswordEdit}
-      />
+    <ChangePasswordModal
+      isOpen={isEditingPassword}
+      passwordForm={passwordForm}
+      setPasswordForm={setPasswordForm}
+      onSave={handlePasswordUpdate}
+      onCancel={handleCancelPasswordEdit}
+    />
 
-      <ReviewModal
-        isOpen={reviewModal.isOpen}
-        reviewModal={reviewModal}
-        reviewForm={reviewForm}
-        setReviewForm={setReviewForm}
-        onSubmit={handleSubmitReview}
-        onClose={() => setReviewModal({ isOpen: false, item: null, type: 'buyer' })}
-      />
-
-      <Footer />
+    <ReviewModal
+      isOpen={reviewModal.isOpen}
+      reviewModal={reviewModal}
+      reviewForm={reviewForm}
+      setReviewForm={setReviewForm}
+      onSubmit={handleSubmitReview}
+      onClose={() => setReviewModal({ isOpen: false, item: null, type: 'buyer' })}
+    />
     </>
   );
 }

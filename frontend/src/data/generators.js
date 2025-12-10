@@ -64,7 +64,6 @@ export const generateProducts = (count = 100) => {
       category,
       subcategory,
       startTime,
-      endTime,
       endTime: endTime,
       totalBids: getRandomInt(0, 45),
       bidCount: getRandomInt(0, 45),

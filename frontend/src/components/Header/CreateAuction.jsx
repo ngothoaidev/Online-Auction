@@ -6,7 +6,7 @@ import Footer from "../Footer";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
-export default function CreateAuction({ darkMode, toggleTheme }) {
+export default function CreateAuction() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -129,7 +129,7 @@ export default function CreateAuction({ darkMode, toggleTheme }) {
 
   return (
     <>
-      <Header darkMode={darkMode} toggleTheme={toggleTheme} />
+      <Header />
 
       <div className="min-h-screen py-12" style={{ backgroundColor: "var(--bg)" }}>
         <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">

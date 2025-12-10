@@ -22,7 +22,7 @@ import OverviewView from './Overview.jsx';
 import LiveAuctionsView from './LiveAuctions.jsx';
 import NotificationDropper from '../../components/NotificationDropper.jsx';
 
-export default function AdminDashboard({ darkMode, toggleTheme }) {
+export default function AdminDashboard() {
   const nav = useNav();
   const [activeTab, setActiveTab] = useState('overview');
   const [isSidebarOpen, setSidebarOpen] = useState(true);

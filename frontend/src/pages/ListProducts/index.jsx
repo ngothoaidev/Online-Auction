@@ -1,5 +1,5 @@
 // src/components/ListProduct.jsx
-import React, {useState} from "react";
+import {useState} from "react";
 import { House, ChevronLeft, ChevronRight } from "lucide-react";
 import { products } from "../../data/index.js";
 import AuctionCard from "../../components/AuctionCard/DefaultAuctionCard";
@@ -7,7 +7,7 @@ import FilterSidebar from "./FilterSidebar";
 import Header from "../../components/Header";
 import Footer from "../../components/Footer";
 
-export default function ListProduct({ darkMode, toggleDarkMode }) {
+export default function ListProduct() {
     const category = "electronics";
     const subcategory = "smartphones";
 
@@ -25,8 +25,6 @@ export default function ListProduct({ darkMode, toggleDarkMode }) {
     );
 
     return (
-      <>
-      <Header darkMode={darkMode} toggleTheme={toggleDarkMode} />
       <div className="flex gap-6 px-4 sm:px-6 lg:px-8 py-8 max-w-7xl mx-auto w-full">
           <FilterSidebar isOpen={true} onClose={() => {}} />
           <section className="list-products-section py-10 w-[75%] rounded-2xl shadow-lg transition-colors duration-100\">
@@ -111,7 +109,5 @@ export default function ListProduct({ darkMode, toggleDarkMode }) {
             </div>
           </section>
       </div>
-      <Footer />
-      </>
     );
 }

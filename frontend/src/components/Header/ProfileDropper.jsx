@@ -62,20 +62,20 @@ export default function ProfileDropper() {
             </button>
             <button
               className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
-              onClick={() => { setIsOpen(false); /* Add logout logic here */ }}
+              onClick={() => { setIsOpen(false); }}
             >
               My bids
             </button>
             <button
               className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
-              onClick={() => { setIsOpen(false); /* Add logout logic here */ }}
+              onClick={() => { setIsOpen(false); }}
             >
               Watch list
             </button>
 
             <button
               className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
-              onClick={() => { setIsOpen(false); nav.login(); /* Add logout logic here */ }}
+              onClick={() => { setIsOpen(false); }}
             >
               Logout
             </button>

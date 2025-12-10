@@ -3,11 +3,11 @@
 // import SoldAuctionCard from './SoldAuctionCard';
 
 // Component Exports
-import ActiveBidsSection from "./ActiveBidsSection.jsx";
-import ActiveListingSection from "./ActiveListingSection.jsx";
-import FavoriteSection from "./FavoriteSection.jsx";
-import SoldItemSection from "./SoldItemSection.jsx";
-import WonSection from "./WonSection.jsx";
+import ActiveBidsSection from "./ActiveBidsSection";
+import ActiveListingSection from "./ActiveListingSection";
+import FavoriteSection from "./FavoriteSection";
+import SoldItemSection from "./SoldItemSection";
+import WonSection from "./WonSection";
 
 
 /**

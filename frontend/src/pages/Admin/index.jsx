@@ -1,7 +1,5 @@
-import React, { useState } from 'react';
-import { 
-  Sun, 
-  Moon,
+import { useState } from 'react';
+import {
   LayoutDashboard, 
   Gavel, 
   Users, 
@@ -20,9 +18,8 @@ import {
 import { useNav } from '../../hooks/useNavigate.js';
 import OverviewView from './Overview.jsx';
 import LiveAuctionsView from './LiveAuctions.jsx';
-import NotificationDropper from '../../components/Header/NotificationDropper.jsx';
 
-export default function AdminDashboard({ darkMode, toggleTheme }) {
+export default function AdminDashboard() {
   const nav = useNav();
   const [activeTab, setActiveTab] = useState('overview');
   const [isSidebarOpen, setSidebarOpen] = useState(true);
@@ -70,87 +67,6 @@ export default function AdminDashboard({ darkMode, toggleTheme }) {
 
       {/* Main Content Area */}
       <main className={`flex-1 transition-all duration-300 ${isSidebarOpen ? 'ml-64' : 'ml-20'}`}>
-        
-        {/* Top Header */}
-        <header className="h-16 bg-white border-b border-slate-200 sticky top-0 z-10 px-6 flex items-center justify-between">
-          {/* <button onClick={() => setSidebarOpen(!isSidebarOpen)} className="p-2 hover:bg-slate-100 rounded-lg text-slate-500">
-            <Menu size={20} />
-          </button> */}
-
-          <div className="max-w-2xl hidden md:flex flex-1 mx-8">
-            <div 
-              className="relative transition-colors duration-300 w-full border-2 rounded-full py-2.5 px-5 md:flex justify-center items-center gap-4 focus:outline-none focus:border-[var(--theme-secondary)] focus:ring-1 focus:ring-[var(--theme-secondary)] transition-all"
-              style={{backgroundColor: "var(--bg-soft)", borderColor: "var(--border)", text: "var(--text)"}}
-            >
-              <input 
-                type="text" 
-                placeholder="Search for items, artists, or brands..." 
-                className="w-full transition-colors duration-300 outline-none placeholder:text-gray-500 text-sm"
-                  style={{backgroundColor: "var(--bg-soft)", color: "var(--text)", }}
-              />
-              <button 
-                // onClick={() => nav.search()}
-                className="p-1.5 rounded-full transition-colors"
-                >
-                <Search className="text-gray-500 group-hover:text-[var(--theme-secondary)] transition-colors" size={18} />
-              </button>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-4">
-            
-            {/* Mobile Search Trigger (Visible only on small screens) */}
-            <button
-              // onClick={() => nav.search()} 
-              className="md:hidden text-gray-300 hover:text-[var(--theme-secondary)]">
-              <Search size={24} />
-            </button>
-
-            {/* Dark Mode Toggle */}
-            <button 
-              onClick={toggleTheme}
-              className="p-2 rounded-full"
-              style={{
-                      backgroundColor: "var(--accent-soft)",
-                      color: "var(--text)",
-                      border: "1px solid var(--border)",
-              }}
-            >
-              {!darkMode ? <Sun className="w-6 h-6" /> : <Moon className="w-6 h-6" />}
-            </button>
-
-            {/* ADMIN STATE */}
-            <div className="flex items-center gap-4">
-              {/* Notifications */}
-              <NotificationDropper />
-
-              {/* Admin Avatar Dropdown */}
-              <div className="relative">
-                {/* The Avatar acts as the button */}
-                <button 
-                  onClick={() => setIsMenuOpen(!isMenuOpen)}
-                  className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-700 font-bold text-sm focus:ring-2 ring-indigo-500 transition-all"
-                >
-                    AD
-                </button>
-
-                {/* The Dropdown Menu */}
-                {isMenuOpen && (
-                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-slate-100 py-1 z-50">
-                        <div className="px-4 py-2 border-b border-slate-100">
-                            <p className="text-sm font-bold text-slate-700">Administrator</p>
-                            <p className="text-xs text-slate-400">admin@auction.com</p>
-                        </div>
-                        <button onClick={() => {setActiveTab('settings')}} className="w-full text-left px-4 py-2 text-sm text-slate-600 hover:bg-slate-100">Settings</button>
-                        <button onClick={() => nav.home()} className="w-full text-left px-4 py-2 text-sm text-rose-600 hover:bg-rose-50 font-medium">
-                            Logout
-                        </button>
-                    </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </header>
 
         {/* Dashboard Content */}
         <div className="p-8">

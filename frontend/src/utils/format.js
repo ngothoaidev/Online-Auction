@@ -17,7 +17,7 @@ export const formatCurrency = (amount) => {
  * @param {number} seconds - Number of seconds
  * @returns {string} Formatted time string (e.g., "2d 5h", "3h 45m", "30m 15s")
  */
-export const formatTimeLeft = (seconds) => {
+export const formatTime = (seconds) => {
   if (seconds <= 0) return "Ended";
   const d = Math.floor(seconds / (3600 * 24));
   const h = Math.floor((seconds % (3600 * 24)) / 3600);

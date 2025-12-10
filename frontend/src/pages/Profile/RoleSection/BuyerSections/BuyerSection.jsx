@@ -1,5 +1,5 @@
-import ReviewsSection from "./ReviewSection/ReviewsSection.jsx";
-import CardSection from "../../CardSection/index.jsx";
+import ReviewsSection from "./ReviewSection/ReviewsSection";
+import CardSection from "../CardSections";
 
 
 export default function BuyerSection({userData, formatTime, setReviewModal}){
