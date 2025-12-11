@@ -10,7 +10,7 @@ export default function ActiveListingSection({products, formatTime}) {
             <Clock size={24} style={{ color: 'var(--accent)' }} />
                 Active Listings
             </h2>
-            <ViewAllButton page="activeListings" />
+            <ViewAllButton page="active-listings" />
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {products.map(product => (

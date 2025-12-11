@@ -10,7 +10,7 @@ export default function FavoriteSection({products, formatTime}) {
                 <Heart size={24} style={{ color: 'var(--danger)' }} />
                 Favorite Products
             </h2>
-            <ViewAllButton page="favorites" />
+            <ViewAllButton page="favorites-products" />
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {products.map(product => (

@@ -11,7 +11,7 @@ export default function WonSection({products, setReviewModal}) {
             <Trophy size={24} style={{ color: 'var(--accent)' }} />
                 Won Auctions
             </h2>
-            <ViewAllButton page="wonAuctions" />
+            <ViewAllButton page="won-auctions" />
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {products.map(product => (

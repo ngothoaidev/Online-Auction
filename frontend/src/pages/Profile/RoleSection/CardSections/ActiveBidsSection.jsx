@@ -10,7 +10,7 @@ export default function ActiveBidsSection({products, formatTime}) {
             <Gavel size={24} style={{ color: 'var(--accent)' }} />
                 Active Bids
             </h2>
-            <ViewAllButton page="activeBids" />
+            <ViewAllButton page="active-bids" />
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {products.map(product => (

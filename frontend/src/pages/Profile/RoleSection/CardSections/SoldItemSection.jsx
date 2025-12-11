@@ -10,7 +10,7 @@ export default function SoldItemSection({ products, setReviewModal, handleCancel
             <Gavel size={24} style={{ color: 'var(--accent)' }} />
                 Sold Items
             </h2>
-            <ViewAllButton page="soldItems" />
+            <ViewAllButton page="sold-items" />
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
