@@ -89,4 +89,5 @@ function onListening() {
     ? 'pipe ' + addr
     : 'port ' + addr.port;
   debugLog('Listening on ' + bind);
+  console.log('Server đang chạy tại: http://localhost:' + addr.port);
 }
