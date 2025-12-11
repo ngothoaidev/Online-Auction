@@ -26,6 +26,8 @@ export default function CardSection({
     handleCancelTransaction,
     type,
 }) {
+    // Get only 2 items for preview
+    products = products.slice(0, 2);
     switch (type) {
         case 'activeListings':
             return <ActiveListingSection products={products} formatTime={formatTime} />;

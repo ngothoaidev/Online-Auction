@@ -19,7 +19,7 @@ export default function FavoriteAuctionCard({product, formatTime}) {
               Current Price
             </p>
             <p className="text-xl font-bold" style={{ color: 'var(--accent)' }}>
-              ${product.currentPrice}
+              ${product.currentBid}
             </p>
           </div>
         </div>

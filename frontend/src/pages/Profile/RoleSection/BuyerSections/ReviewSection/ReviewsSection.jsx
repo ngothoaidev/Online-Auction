@@ -2,6 +2,7 @@ import { Star, ThumbsUp, ThumbsDown, ArrowRight } from "lucide-react";
 import ViewAllButton from "../../../../../components/ViewAllButton";
 
 export default function ReviewsSection({ reviews }) {
+  reviews = reviews.slice(0, 3); // Show only 3 reviews in the section
 
   return (
     <section>
