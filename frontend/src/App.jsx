@@ -8,12 +8,10 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Profile from './pages/Profile';
 import CreateAuction from './components/Header/CreateAuction';
-import ViewAllActiveBid from './pages/ViewAllActiveBid';
-import ViewAllActiveListings from './pages/ViewAllActiveListings';
-import ViewAllFavouriteProducts from './pages/ViewAllFavouriteProducts';
-import ViewAllReviews from './pages/ViewAllReviews';
-import ViewAllSoldItems from './pages/ViewAllSoldItems';
-import ViewAllWonAuctions from './pages/ViewAllWonAuctions';
+
+import ViewAll from './pages/ViewAll';
+
+
 import AdminDashboard from './pages/Admin';
 
 function App() {
@@ -30,17 +28,13 @@ function App() {
           {/* --- LEVEL 1: STANDARD USERS (Just need to be logged in) --- */}
           <Route element={<ProtectedRoute />}>
             <Route path="/profile/:id" element={<Profile />} />
-            <Route path="/active-listings" element={<ViewAllActiveListings />} />
-            <Route path="/favourite-products" element={<ViewAllFavouriteProducts />} />
-            <Route path="/reviews" element={<ViewAllReviews />} />
-            <Route path="/won-auctions" element={<ViewAllWonAuctions />} />
+            <Route path="/:type" element={<ViewAll />} />
           </Route>
 
           {/* --- LEVEL 2: SELLER ONLY (Needs 'seller' role) --- */}
           <Route element={<ProtectedRoute requiredRole="seller" />}>
             <Route path="/create-auction" element={<CreateAuction />} />
-            <Route path="/active-bids" element={<ViewAllActiveBid />} />
-            <Route path="/sold-items" element={<ViewAllSoldItems />} />
+            <Route path="/:type" element={<ViewAll />} />
           </Route>
 
           {/* --- LEVEL 3: ADMIN ONLY (Needs 'admin' role) --- */}
