@@ -7,12 +7,18 @@ import { notFound, errorHandler } from './middlewares/error.js';
 
 const app = express();
 
+const cors = require('cors');
+
+
 // CORS, open for all domain
 app.use(cors());
+app.use(cors({
+  origin: 'http://localhost:5173'
+}))
 
 // Log
 app.use(morgan('dev'));
-
+app.use(express.json());
 // Parse JSON body
 app.use(bodyParser.json());
 
