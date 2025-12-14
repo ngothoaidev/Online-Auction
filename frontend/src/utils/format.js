@@ -13,14 +13,20 @@ export const formatCurrency = (amount) => {
 };
 
 /**
- * Calculate and format time left - Determine urgency level
- * @param {string|Date} endTime - The auction end time (ISO string or Date object)
- * @param {number} seconds - Number of seconds
- * @returns {string} Formatted time string (e.g., "2d 5h", "3h 45m", "30m 15s")
+ * Format the ending date
+ * @param {string|Date} date - The auction end time (ISO string or Date object)
+ * @returns {string} Formatted date string
  */
+export const formatDate = (date) => {
+    return new Date(date).toLocaleDateString('en-US', { 
+        month: 'short', 
+        day: 'numeric', 
+        year: 'numeric' 
+    });
+};
 
 /**
- * Calculate time left from end date and determine urgency level
+ * Calculate and format time left - Determine urgency level
  * @param {string|Date} endTime - The auction end time (ISO string or Date object)
  * @returns {Object} Object with timeLeft string and urgencyLevel
  * @returns {string} Object.timeLeft - Formatted time remaining
@@ -45,12 +51,16 @@ export const formatTimeLeft = (endTime) => {
 
   // 2. If > 3 Days: Return specific Date (dd/mm/yyyy)
   if (days > 3) {
-    const d = String(end.getDate()).padStart(2, '0');
-    const m = String(end.getMonth() + 1).padStart(2, '0');
-    const y = end.getFullYear();
+    // const d = String(end.getDate()).padStart(2, '0');
+    // const m = String(end.getMonth() + 1).padStart(2, '0');
+    // const y = end.getFullYear();
+    // return {
+    //   timeLeft: `${d}/${m}/${y}`,
+    //   urgencyLevel: 'normal' // Not urgent yet
+    // };
     return {
-      timeLeft: `${d}/${m}/${y}`,
-      urgencyLevel: 'normal' // Not urgent yet
+      timeLeft: formatDate(end), 
+      urgencyLevel: 'normal'
     };
   }
 
