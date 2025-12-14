@@ -15,11 +15,18 @@ import {
   Package, 
   CheckCircle, 
   XCircle, 
-  MoreVertical, 
+  MoreVertical,
+  FolderTree,
+  ShoppingBag,
+  UserPlus,
 } from 'lucide-react';
 import { useNav } from '../../useNavigate.js';
 import OverviewView from './Overview.jsx';
 import LiveAuctionsView from './LiveAuctions.jsx';
+import CategoryList from './CategoryList.jsx';
+import ProductList from './ProductList.jsx';
+import UserList from './UserList.jsx';
+import UpgradeRequests from './UpgradeRequests.jsx';
 import NotificationDropper from '../../components/NotificationDropper.jsx';
 
 export default function AdminDashboard() {
@@ -32,8 +39,11 @@ export default function AdminDashboard() {
   const navItems = [
     { id: 'overview', label: 'Overview', icon: LayoutDashboard },
     { id: 'auctions', label: 'Live Auctions', icon: Gavel },
-    { id: 'users', label: 'User Management', icon: Users },
-    { id: 'disputes', label: 'Disputes & Reports', icon: AlertCircle, badge: 3 },
+    { id: 'categories', label: 'Categories', icon: FolderTree },
+    { id: 'products', label: 'Products', icon: ShoppingBag },
+    { id: 'users', label: 'Users', icon: Users },
+    { id: 'upgrades', label: 'Upgrade Requests', icon: UserPlus, badge: 3 },
+    { id: 'disputes', label: 'Disputes & Reports', icon: AlertCircle },
     { id: 'finance', label: 'Financials', icon: DollarSign },
     { id: 'settings', label: 'Settings', icon: Settings },
   ];
@@ -71,85 +81,36 @@ export default function AdminDashboard() {
       {/* Main Content Area */}
       <main className={`flex-1 transition-all duration-100 ${isSidebarOpen ? 'ml-64' : 'ml-20'}`}>
         
-        {/* Top Header */}
-        <header className="h-16 bg-white border-b border-slate-200 sticky top-0 z-10 px-6 flex items-center justify-between">
-          {/* <button onClick={() => setSidebarOpen(!isSidebarOpen)} className="p-2 hover:bg-slate-100 rounded-lg text-slate-500">
-            <Menu size={20} />
-          </button> */}
-
-          <div className="max-w-2xl hidden md:flex flex-1 mx-8">
-            <div 
-              className="admin-card relative transition-colors duration-100 w-full border-2 rounded-full py-2.5 px-5 md:flex justify-center items-center gap-4 focus:outline-none focus:border-[var(--theme-secondary)] focus:ring-1 focus:ring-[var(--theme-secondary)] transition-all"
-            >
-              <input 
-                type="text" 
-                placeholder="Search for items, artists, or brands..." 
-                className="admin-input w-full transition-colors duration-100 outline-none placeholder:text-gray-500 text-sm"
-              />
-              <button 
-                // onClick={() => nav.search()}
-                className="p-1.5 rounded-full transition-colors"
-                >
-                <Search className="text-gray-500 group-hover:text-[var(--theme-secondary)] transition-colors" size={18} />
-              </button>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-4">
-            
-            {/* Mobile Search Trigger (Visible only on small screens) */}
-            <button
-              // onClick={() => nav.search()} 
-              className="md:hidden text-gray-300 hover:text-[var(--theme-secondary)]">
-              <Search size={24} />
-            </button>
-
-            {/* Dark Mode Toggle */}
-            <button 
-              onClick={toggleTheme}
-              className="header-theme-toggle p-2 rounded-full"
-            >
-              {!darkMode ? <Sun className="w-6 h-6" /> : <Moon className="w-6 h-6" />}
-            </button>
-
-            {/* ADMIN STATE */}
-            <div className="flex items-center gap-4">
-              {/* Notifications */}
-              <NotificationDropper />
-
-              {/* Admin Avatar Dropdown */}
-              <div className="relative">
-                {/* The Avatar acts as the button */}
-                <button 
-                  onClick={() => setIsMenuOpen(!isMenuOpen)}
-                  className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-700 font-bold text-sm focus:ring-2 ring-indigo-500 transition-all"
-                >
-                    AD
-                </button>
-
-                {/* The Dropdown Menu */}
-                {isMenuOpen && (
-                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-slate-100 py-1 z-50">
-                        <div className="px-4 py-2 border-b border-slate-100">
-                            <p className="text-sm font-bold text-slate-700">Administrator</p>
-                            <p className="text-xs text-slate-400">admin@auction.com</p>
-                        </div>
-                        <button onClick={() => {setActiveTab('settings')}} className="w-full text-left px-4 py-2 text-sm text-slate-600 hover:bg-slate-100">Settings</button>
-                        <button onClick={() => nav.home()} className="w-full text-left px-4 py-2 text-sm text-rose-600 hover:bg-rose-50 font-medium">
-                            Logout
-                        </button>
-                    </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </header>
 
         {/* Dashboard Content */}
         <div className="p-8">
-            {/* Render different views based on activeTab */}
             {activeTab === 'overview' && <OverviewView />}
             {activeTab === 'auctions' && <LiveAuctionsView />}
+            {activeTab === 'categories' && <CategoryList />}
+            {activeTab === 'products' && <ProductList />}
+            {activeTab === 'users' && <UserList />}
+            {activeTab === 'upgrades' && <UpgradeRequests />}
+            {activeTab === 'disputes' && (
+              <div className="profile-card rounded-xl p-12 text-center">
+                <AlertCircle size={48} className="mx-auto mb-4 text-gray-400" />
+                <h2 className="profile-name text-xl font-bold mb-2">Disputes & Reports</h2>
+                <p className="profile-text-muted">This feature is coming soon</p>
+              </div>
+            )}
+            {activeTab === 'finance' && (
+              <div className="profile-card rounded-xl p-12 text-center">
+                <DollarSign size={48} className="mx-auto mb-4 text-gray-400" />
+                <h2 className="profile-name text-xl font-bold mb-2">Financial Reports</h2>
+                <p className="profile-text-muted">This feature is coming soon</p>
+              </div>
+            )}
+            {activeTab === 'settings' && (
+              <div className="profile-card rounded-xl p-12 text-center">
+                <Settings size={48} className="mx-auto mb-4 text-gray-400" />
+                <h2 className="profile-name text-xl font-bold mb-2">Admin Settings</h2>
+                <p className="profile-text-muted">This feature is coming soon</p>
+              </div>
+            )}
         </div>
       </main>
     </div>
