@@ -1,0 +1,28 @@
+:root {
+  /* --- LIGHT HEADER THEME (Frosted White) --- */
+  --header-bg: rgba(255, 255, 255, 0.85); /* High translucency for glass effect */
+  --header-border: #E2E8F0;               /* Slate-200 */
+  --header-text: #0F172A;                 /* Slate-900 */
+  --header-text-muted: #64748B;           /* Slate-500 */
+  
+  --header-input-bg: #F1F5F9;             /* Slate-100 */
+  --header-input-border: #E2E8F0;         /* Slate-200 */
+  --header-input-focus: #B45309;          /* Amber-700 (Brand) */
+  
+  --header-hover: #F1F5F9;                /* Slate-100 */
+}
+
+.dark {
+  /* --- DARK HEADER THEME (Deep Obsidian) --- */
+  /* We use a slightly darker tone than the body to anchor the top */
+  --header-bg: rgba(2, 6, 23, 0.85);      /* Slate-950 (Glassy) */
+  --header-border: rgba(255, 255, 255, 0.08);
+  --header-text: #F8FAFC;                 /* Slate-50 */
+  --header-text-muted: #94A3B8;           /* Slate-400 */
+  
+  --header-input-bg: rgba(30, 41, 59, 0.5); /* Slate-800 (50% opacity) */
+  --header-input-border: rgba(255, 255, 255, 0.1);
+  --header-input-focus: #FBBF24;          /* Amber-400 (Brand) */
+  
+  --header-hover: rgba(255, 255, 255, 0.05);
+}

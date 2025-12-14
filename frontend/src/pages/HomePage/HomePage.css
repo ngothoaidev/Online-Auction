@@ -1,0 +1,8 @@
+:root {
+  /* Text adjustments for light mode hero */
+  --hero-text-secondary: #64748B; /* Slate-500 */
+}
+
+.dark {
+  --hero-text-secondary: #d6d3d1; /* Stone-300 */
+}

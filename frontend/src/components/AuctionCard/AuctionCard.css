@@ -1,0 +1,56 @@
+/* Auction Card Theme Definition */
+:root {
+  /* LIGHT MODE - Clean, Professional, High Contrast */
+  --auction-bg: #ffffff;
+  --auction-border: #e2e8f0;        /* Slate-200 */
+  --auction-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  
+  --auction-text: #0f172a;          /* Slate-900 */
+  --auction-text-muted: #64748b;    /* Slate-500 */
+  --auction-text-subtle: #94a3b8;   /* Slate-400 */
+
+  --auction-accent: #b45309;        /* Amber-700 */
+  --auction-accent-fg: #ffffff;     /* White text on accent button */
+  --auction-accent-hover: #92400e;
+  
+  --auction-success: #15803d;       /* Green-700 */
+  --auction-success-bg: #dcfce7;    /* Green-100 */
+  
+  --auction-danger: #dc2626;        /* Red-600 */
+  --auction-danger-bg: #fee2e2;     /* Red-100 */
+  
+  --auction-badge-bg: #f1f5f9;      /* Slate-100 */
+  
+  /* Specific to DefaultCard layout */
+  --auction-price-bg: #f8fafc;      /* Slate-50 */
+  --auction-bid-bg: #fffbeb;        /* Amber-50 */
+  --auction-bid-text: #92400e;      /* Amber-800 */
+}
+
+:root.dark {
+  /* DARK MODE - Premium, Deep, Glowing */
+  --auction-bg: #0f172a;            /* Slate-900 */
+  --auction-border: #1e293b;        /* Slate-800 */
+  --auction-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.5);
+
+  --auction-text: #f8fafc;          /* Slate-50 */
+  --auction-text-muted: #94a3b8;    /* Slate-400 */
+  --auction-text-subtle: #64748b;   /* Slate-500 */
+
+  --auction-accent: #fbbf24;        /* Amber-400 (Gold) */
+  --auction-accent-fg: #0f172a;     /* Dark text on gold button */
+  --auction-accent-hover: #f59e0b;
+  
+  --auction-success: #4ade80;       /* Green-400 */
+  --auction-success-bg: #052e16;    /* Green-950 */
+  
+  --auction-danger: #f87171;        /* Red-400 */
+  --auction-danger-bg: #450a0a;     /* Red-950 */
+  
+  --auction-badge-bg: #1e293b;      /* Slate-800 */
+
+  /* Specific to DefaultCard layout */
+  --auction-price-bg: #020617;      /* Slate-950 */
+  --auction-bid-bg: #451a03;        /* Amber-950 */
+  --auction-bid-text: #fcd34d;      /* Amber-300 */
+}

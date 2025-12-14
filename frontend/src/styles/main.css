@@ -1,94 +1,124 @@
 @import 'tailwindcss';
 
-.custom-scrollbar{
+/* --- UTILITIES --- */
+.custom-scrollbar {
     scrollbar-width: thin;
-    scrollbar-color: rgba(156, 163, 175, 1) transparent; /* thumb color and track color */
+    scrollbar-color: var(--border) transparent;
+}
+.custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background-color: var(--border);
+    border-radius: 20px;
+    border: 2px solid transparent;
+    background-clip: content-box;
 }
 
 .custom-allscrollbar {
-    scrollbar-width: none; /* Firefox */
+    scrollbar-width: none;
 }
 
+/* --- THEME VARIABLES --- */
 :root {
-  /* Base */
-  --bg: #f9fafb;
-  --bg-soft: #ffffff;
-  --bg-subtle: #f3f4f6;
-  --bg-hover: #f3f4f6;
+  /* LIGHT THEME: Clean, Airy, Professional 
+    Base: Slate 50/100
+  */
+  --bg: #F8FAFC;          /* Slate-50: Main background */
+  --bg-soft: #FFFFFF;     /* White: Cards, Headers, Dropdowns */
+  --bg-subtle: #F1F5F9;   /* Slate-100: Secondary sections */
+  --bg-hover: #E2E8F0;    /* Slate-200: Hover states */
 
-  --text: #111827;
-  --text-muted: #6b7280;
-  --text-subtle: #9ca3af;
+  /* Typography */
+  --text: #0F172A;        /* Slate-900: Primary text */
+  --text-muted: #64748B;  /* Slate-500: Secondary text */
+  --text-subtle: #94A3B8; /* Slate-400: Tertiary text */
 
-  /* Accent / brand */
-  --accent: #e0b84c;
-  --accent-soft: #fef3c7;
-  --accent-strong: #b8891b;
+  /* Brand: Aurum Gold & Royal Violet */
+  --accent: #B45309;        /* Amber-700: Readable gold for light mode text/borders */
+  --accent-soft: #FFFBEB;   /* Amber-50: Backgrounds for active items */
+  --accent-strong: #78350F; /* Amber-900: Deep gold for emphasis */
+  --theme-secondary: #7C3AED; /* Violet-600: Secondary brand color */
 
-  /* Border levels */
-  --border: #e5e7eb;
-  --border-subtle: #f3f4f6;
-  --border-strong: #9ca3af;
+  /* Borders */
+  --border: #E2E8F0;        /* Slate-200 */
+  --border-subtle: #F1F5F9; /* Slate-100 */
+  --border-strong: #CBD5E1; /* Slate-300 */
 
-  /* States */
-  --danger: #dc2626;
-  --danger-soft: #fee2e2;
-  --success: #16a34a;
-  --success-soft: #dcfce7;
-  --warning: #eab308;
-  --warning-soft: #fef9c3;
-  --info: #0ea5e9;
-  --info-soft: #e0f2fe;
+  /* Functional Colors */
+  --danger: #EF4444;
+  --danger-soft: #FEE2E2;
+  --success: #10B981;
+  --success-soft: #D1FAE5;
+  --warning: #F59E0B;
+  --warning-soft: #FEF3C7;
+  --info: #0EA5E9;
+  --info-soft: #E0F2FE;
 
-  /* Surfaces / components */
-  --card-bg: var(--bg-soft);
+  /* Components */
+  --card-bg: #FFFFFF;
   --card-border: var(--border);
-  --input-bg: #f3f4f6;
-  --input-border: #d1d5db;
-  --input-border-focus: #e0b84c;
+  --card-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+  
+  --input-bg: #F8FAFC;
+  --input-border: #E2E8F0;
+  --input-border-focus: #B45309;
+  
+  --auction-badge-bg: #F3F4F6;
 }
 
 :root.dark {
-  /* Base */
-  --bg: #050816;
-  --bg-soft: #111827;
-  --bg-subtle: #020617;
-  --bg-hover: #1f2937;
+  /* DARK THEME: Deep, Premium, Cinematic 
+    Base: Slate 950/900
+  */
+  --bg: #020617;          /* Slate-950: Main background */
+  --bg-soft: #0F172A;     /* Slate-900: Cards, Headers */
+  --bg-subtle: #1E293B;   /* Slate-800: Secondary sections */
+  --bg-hover: #334155;    /* Slate-700: Hover states */
 
-  --text: #f9fafb;
-  --text-muted: #9ca3af;
-  --text-subtle: #6b7280;
+  /* Typography */
+  --text: #F8FAFC;        /* Slate-50: Primary text */
+  --text-muted: #94A3B8;  /* Slate-400: Secondary text */
+  --text-subtle: #64748B; /* Slate-500: Tertiary text */
 
-  /* Accent / brand */
-  --accent: #e0b84c;
-  --accent-soft: #3f3f46;
-  --accent-strong: #facc15;
+  /* Brand: Glowing Gold */
+  --accent: #FBBF24;        /* Amber-400: Bright gold for dark mode */
+  --accent-soft: #451a03;   /* Deep Amber/Brown: Subtle backgrounds */
+  --accent-strong: #FEF3C7; /* Amber-100: High contrast text */
+  --theme-secondary: #A78BFA; /* Violet-400: Secondary brand color */
 
-  /* Border levels */
-  --border: #1f2933;
-  --border-subtle: #020617;
-  --border-strong: #4b5563;
+  /* Borders */
+  --border: #1E293B;        /* Slate-800 */
+  --border-subtle: #0F172A; /* Slate-900 */
+  --border-strong: #334155; /* Slate-700 */
 
-  /* States */
-  --danger: #f87171;
-  --danger-soft: #451a1a;
-  --success: #22c55e;
+  /* Functional Colors */
+  --danger: #F87171;
+  --danger-soft: #450a0a;
+  --success: #4ADE80;
   --success-soft: #052e16;
-  --warning: #eab308;
+  --warning: #FBBF24;
   --warning-soft: #422006;
-  --info: #38bdf8;
+  --info: #38BDF8;
   --info-soft: #082f49;
 
-  /* Surfaces / components */
-  --card-bg: #0b1120;
+  /* Components */
+  --card-bg: #0F172A;
   --card-border: var(--border);
-  --input-bg: #020617;
-  --input-border: #1f2937;
-  --input-border-focus: #e0b84c;
-}
+  --card-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.5), 0 4px 6px -4px rgb(0 0 0 / 0.5);
 
+  --input-bg: #020617;
+  --input-border: #1E293B;
+  --input-border-focus: #FBBF24;
+  
+  --auction-badge-bg: #1E293B;
+}
 
 body {
   background-color: var(--bg);
   color: var(--text);
+  transition: background-color 0.3s ease, color 0.3s ease;
 }

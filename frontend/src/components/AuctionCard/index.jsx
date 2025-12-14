@@ -4,6 +4,8 @@ import SoldAuctionCard from './SoldAuctionCard';
 import ActiveBidsAuctionCard from './ActiveBidsAuctionCard';
 import ActiveListingAuctionCard from './ActiveListingAuctionCard';
 import FavoriteAuctionCard from './FavoriteAuctionCard';
+import './AuctionCard.css'
+
 /**
  * AuctionCard Controller Component
  * Routes to different auction card layouts based on type prop

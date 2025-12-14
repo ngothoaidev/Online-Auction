@@ -4,6 +4,7 @@ import { topBidders } from "../../data";
 import ProductTabs from "./ProductTabs";
 import Hero from "./Hero";
 import CTA from "./CTA";
+import './HomePage.css'
 
 export default function HomePage() {
     const nav = useNav();

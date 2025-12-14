@@ -1,0 +1,68 @@
+/* --- FILTER BAR THEME (Glassmorphism) --- */
+.filter-bar-glass {
+  background-color: rgba(255, 255, 255, 0.7); /* Light Mode Frost */
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+.dark .filter-bar-glass {
+  background-color: rgba(15, 23, 42, 0.7); /* Dark Mode Smoke (Slate-900) */
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+}
+
+/* Dropdown Panels */
+.filter-dropdown-panel {
+  background-color: var(--card-bg);
+  border: 1px solid var(--border);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  color: var(--text);
+}
+
+/* Filter Buttons (Pills) */
+.filter-btn-default {
+  background-color: var(--bg-soft);
+  border: 1px solid var(--border);
+  color: var(--text);
+  transition: all 0.2s ease;
+}
+.filter-btn-default:hover {
+  background-color: var(--bg-hover);
+  border-color: var(--border-strong);
+}
+
+.filter-btn-active {
+  background-color: var(--accent-soft);
+  border: 1px solid var(--accent);
+  color: var(--accent-strong); /* Darker Gold text for readability */
+}
+.dark .filter-btn-active {
+  color: var(--accent); /* Brighter Gold text for dark mode */
+  background-color: rgba(234, 179, 8, 0.1); /* Low opacity gold bg */
+}
+
+/* --- PAGINATION THEME --- */
+.pagination-btn {
+  background-color: var(--bg-soft);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  transition: all 0.2s ease;
+}
+.pagination-btn:hover:not(:disabled) {
+  background-color: var(--bg-hover);
+  color: var(--text);
+  transform: translateY(-1px);
+}
+.pagination-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pagination-btn-active {
+  background-color: var(--accent);
+  border-color: var(--accent);
+  color: #1a1205; /* Dark text for contrast against gold */
+  font-weight: 700;
+  box-shadow: 0 4px 6px -1px rgba(234, 179, 8, 0.4);
+}

@@ -40,8 +40,7 @@ function App() {
 
           {/* --- LEVEL 2: SELLER ONLY (Needs 'seller' role) --- */}
           <Route element={<ProtectedRoute requiredRole="seller" />}>
-            <Route path="/create-auction" element={<CreateAuction />} />
-            <Route path="/:type" element={<ViewAll />} />
+            <Route path="/create" element={<CreateAuction />} />
           </Route>
 
           {/* --- LEVEL 3: ADMIN ONLY (Needs 'admin' role) --- */}
