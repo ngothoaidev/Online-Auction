@@ -62,7 +62,7 @@ export default function ListProduct() {
               {/* Grid sản phẩm */}
               <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
                 {items.map((item) => (
-                  <AuctionCard key={item.id} item={item} />
+                  <AuctionCard key={item.id} product={item} variant="default" />
                 ))}
               </div>
 

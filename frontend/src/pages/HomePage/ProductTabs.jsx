@@ -68,7 +68,7 @@ export default function ProductTabs() {
         {displayProducts.length > 0 ? (
           displayProducts.map((item) => (
             <div key={item.id} className="transform transition-all duration-500 hover:-translate-y-1">
-              <AuctionCard product={item} />
+              <AuctionCard product={item} variant="default"/>
             </div>
           ))
         ) : (
