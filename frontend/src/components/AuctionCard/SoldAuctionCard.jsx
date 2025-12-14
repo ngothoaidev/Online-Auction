@@ -1,39 +1,29 @@
-import { Star, Ban } from "lucide-react";
+import { Star, Ban, Calendar } from "lucide-react";
+import { formatDate } from "../../utils/format"
 
 export default function SoldAuctionCard({ product, onReview, onCancel }) {
   const isCancelled = product.status === 'cancelled';
   
   return (
-    <div 
-      className="sold-auction-card rounded-xl overflow-hidden border"
-    >
-      <div className="relative">
-        <img src={product.image} alt={product.title} className="w-full h-48 object-cover" />
-        <div 
-          className="absolute top-3 right-3 px-3 py-1 rounded-full text-xs font-bold"
-          style={{ 
-            backgroundColor: isCancelled ? 'var(--danger)' : 'var(--success)', 
-            color: 'white' 
-          }}
-        >
-          {isCancelled ? 'Cancelled' : 'Sold'}
-        </div>
-      </div>
+    <div className="rounded-xl overflow-hidden border hover:shadow-xl transition-all" style={{ backgroundColor: 'var(--bg-soft)', borderColor: 'var(--border)' }}>
+      <img src={product.image} alt={product.title} className="w-full h-48 object-cover" />
       <div className="p-4">
-        <h3 className="sold-auction-title font-bold mb-2">
-          {product.title}
-        </h3>
-        <div className="mb-3">
-          <p className="profile-text-muted text-sm">
-            Sold Price
-          </p>
-          <p className="sold-auction-price text-2xl font-bold">
-            ${product.soldPrice}
-          </p>
+        <h3 className="font-bold mb-2" style={{ color: 'var(--text)' }}>{product.title}</h3>
+        
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Final Sale Price</p>
+            <p className="text-xl font-bold" style={{ color: 'var(--success)' }}>${product.soldPrice}</p>
+          </div>
         </div>
-        <p className="profile-text-muted text-sm mb-3">
-          Buyer: {product.buyerName}
-        </p>
+        
+        <div className="flex items-center justify-between text-sm mb-4" style={{ color: 'var(--text-muted)' }}>
+          <span className="flex items-center gap-1">
+            <Calendar size={14} />
+            {formatDate(product.endTime)}
+          </span>
+          <span>Buyer: {product.buyerName}</span>
+        </div>
         {!product.reviewed && !isCancelled ? (
           <div className="space-y-2">
             <button

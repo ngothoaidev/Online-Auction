@@ -15,58 +15,32 @@ import FavoriteAuctionCard from './FavoriteAuctionCard';
  * @param {Function} props.onCancel - Callback for cancel action (sold only)
  * @returns {JSX.Element} Rendered auction card variant
  */
-export default function AuctionCard({
-  product,
-  type = 'default',
-  formatTime,
-  onReview,
-  onCancel,
-}) {
-  switch (type) {
+export default function AuctionCard({ product, variant, ...props }) {
+  console.log(`Card: "${product?.title}" | Variant Received: "${variant}"`);
+  switch (variant) {
     case 'wonItem':
       return (
-        <WonAuctionCard
-          product={product}
-          onReview={onReview}
-        />
+        <WonAuctionCard product={product} {...props}/>
       );
-    
     case 'soldItem':
       return (
-        <SoldAuctionCard
-          product={product}
-          onReview={onReview}
-          onCancel={onCancel}
-        />
+        <SoldAuctionCard product={product} {...props}/>
       );
     case 'activeBids':
       return (
-        <ActiveBidsAuctionCard
-          product={product}
-          formatTime={formatTime}
-        />
+        <ActiveBidsAuctionCard product={product} {...props}/>
       );
     case 'activeListings':
       return (
-        <ActiveListingAuctionCard
-          product={product}
-          formatTime={formatTime}
-        />
+        <ActiveListingAuctionCard product={product} {...props}/>
       );
     case 'favorites':
       return (
-        <FavoriteAuctionCard
-          product={product}
-          formatTime={formatTime}
-        />
+        <FavoriteAuctionCard product={product} {...props}/>
       );
-    
-    case 'default':
     default:
       return (
-        <DefaultAuctionCard
-          item={product}
-        />
+        <DefaultAuctionCard product={product}/>
       );
   }
 }

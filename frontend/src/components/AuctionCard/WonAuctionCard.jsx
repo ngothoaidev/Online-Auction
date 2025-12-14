@@ -1,11 +1,9 @@
-import { Trophy, Star } from "lucide-react";
+import { Trophy, Star, Calendar } from "lucide-react";
+import { formatDate } from "../../utils/format"
 
 export default function WonAuctionCard({ product, onReview }) {
   return (
-    <div 
-      className="rounded-xl overflow-hidden border"
-      style={{ backgroundColor: 'var(--bg-soft)', borderColor: 'var(--border)' }}
-    >
+    <div key={product.id} className="rounded-xl overflow-hidden border hover:shadow-xl transition-all" style={{ backgroundColor: 'var(--bg-soft)', borderColor: 'var(--border)' }}>
       <div className="relative">
         <img src={product.image} alt={product.title} className="w-full h-48 object-cover" />
         <div 
@@ -17,20 +15,23 @@ export default function WonAuctionCard({ product, onReview }) {
         </div>
       </div>
       <div className="p-4">
-        <h3 className="font-bold mb-2" style={{ color: 'var(--text)' }}>
-          {product.title}
-        </h3>
-        <div className="mb-3">
-          <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-            Winning Bid
-          </p>
-          <p className="text-2xl font-bold" style={{ color: 'var(--accent)' }}>
-            ${product.winningBid}
-          </p>
+        <h3 className="font-bold mb-2" style={{ color: 'var(--text)' }}>{product.title}</h3>
+        
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Winning Bid</p>
+            <p className="text-xl font-bold" style={{ color: 'var(--accent)' }}>${product.winningBid}</p>
+          </div>
         </div>
-        <p className="text-sm mb-3" style={{ color: 'var(--text-muted)' }}>
-          Seller: {product.sellerName}
-        </p>
+        
+        <div className="flex items-center justify-between text-sm mb-4" style={{ color: 'var(--text-muted)' }}>
+          <span className="flex items-center gap-1">
+            <Calendar size={14} />
+            {formatDate(product.endTime)}
+          </span>
+          <span>Seller: {product.sellerName}</span>
+        </div>
+        
         {!product.reviewed ? (
           <button
             onClick={() => onReview(product)}

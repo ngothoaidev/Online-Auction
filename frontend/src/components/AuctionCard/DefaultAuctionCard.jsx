@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import { Heart, Clock, Gavel, Zap, ArrowRight, Crown } from 'lucide-react';
 import { useNav } from '../../hooks/useNavigate.js';
-import { formatCurrency, calculateTimeLeft } from '../../utils/format.js';
+import { formatCurrency, formatTimeLeft } from '../../utils/format.js';
 import './defaultAuctionCard.css';
 
-export default function DefaultAuctionCard({ item }) {
+export default function DefaultAuctionCard({ product }) {
   const nav = useNav();
   const [isLiked, setIsLiked] = useState(false);
   const [timeLeft, setTimeLeft] = useState('');
@@ -12,7 +12,7 @@ export default function DefaultAuctionCard({ item }) {
 
   useEffect(() => {
     const updateTimeLeft = () => {
-      const { timeLeft, urgencyLevel } = calculateTimeLeft(item.endTime);
+      const { timeLeft, urgencyLevel } = formatTimeLeft(product.endTime);
       setTimeLeft(timeLeft);
       setUrgencyLevel(urgencyLevel);
     };
@@ -20,7 +20,7 @@ export default function DefaultAuctionCard({ item }) {
     updateTimeLeft();
     const timer = setInterval(updateTimeLeft, 60000);
     return () => clearInterval(timer);
-  }, [item.endTime]);
+  }, [product.endTime]);
 
   const timerStyles = {
     normal: 'bg-black/50 text-white',
@@ -34,14 +34,14 @@ export default function DefaultAuctionCard({ item }) {
       {/* --- Image Section --- */}
       <div className="auction-card-image-bg relative aspect-4/3 overflow-hidden">
         <img 
-          src={item.image} 
-          alt={item.title} 
+          src={product.image} 
+          alt={product.title} 
           className="w-full h-full object-cover transition-all duration-100 group-hover:scale-105"
         />
         
         <div className="absolute top-3 left-3 flex gap-2">
           <span className="px-2.5 py-1 backdrop-blur-sm text-xs font-bold rounded-full shadow-sm bg-[rgba(255,255,255,0.95)] color-[var(--auction-text-subtle)]">
-            {item.category}
+            {product.category}
           </span>
         </div>
 
@@ -62,7 +62,7 @@ export default function DefaultAuctionCard({ item }) {
       {/* --- Content Section --- */}
       <div className="p-5 flex flex-col flex-grow">
         <h3 className="text-lg font-bold line-clamp-1 mb-4 transition-colors duration-100 color-[var(--auction-text)]">
-          {item.title}
+          {product.title}
         </h3>
         
         {/* --- DUAL PRICE BOX --- */}
@@ -77,18 +77,18 @@ export default function DefaultAuctionCard({ item }) {
                     <Gavel size={12} /> Highest Bid
                 </span>
                 <span className="text-xl font-black color-[var(--auction-text)]">
-                    {formatCurrency(item.currentBid)}
+                    {formatCurrency(product.currentBid)}
                 </span>
             </div>
 
             {/* 2. Hover View: The Person */}
             <div className="absolute inset-0 flex flex-col justify-center items-center transition-all duration-100 transform translate-y-full opacity-0 group-hover/bid:translate-y-0 group-hover/bid:opacity-100 bg-[var(--auction-bid-bg)]">
-                 {item.highestBidder ? (
+                 {product.highestBidder ? (
                     <div className="flex flex-col items-center gap-1">
                         <div className="relative">
                             <img 
-                                src={item.highestBidder.avatar} 
-                                alt={item.highestBidder.name} 
+                                src={product.highestBidder.avatar} 
+                                alt={product.highestBidder.name} 
                                 className="w-8 h-8 rounded-full border-2 shadow-sm border-[var(--auction-bg)]"
                             />
                             <div className="absolute -top-2 -right-2 text-white p-0.5 rounded-full ring-2 bg-[var(--auction-accent)] ring-[var(--auction-bg)]">
@@ -96,7 +96,7 @@ export default function DefaultAuctionCard({ item }) {
                             </div>
                         </div>
                         <span className="text-xs font-bold color-[var(--auction-bid-text)]">
-                            {item.highestBidder.name}
+                            {product.highestBidder.name}
                         </span>
                     </div>
                  ) : (
@@ -112,7 +112,7 @@ export default function DefaultAuctionCard({ item }) {
                     <Zap size={12} className="fill-current" /> Buy Now
                 </span>
                 <span className="text-lg font-bold color-[var(--auction-success)]">
-                    {item.buyNowPrice ? formatCurrency(item.buyNowPrice) : 'N/A'}
+                    {product.buyNowPrice ? formatCurrency(product.buyNowPrice) : 'N/A'}
                 </span>
              </div>
           </div>
@@ -121,12 +121,12 @@ export default function DefaultAuctionCard({ item }) {
         {/* --- Footer --- */}
         <div className="mt-auto flex items-center justify-between border-t pt-3 border-[var(--auction-border)]" >
           <div className="text-xs font-medium color-[var(--auction-text-muted)]">
-             Total <span className="font-bold color-[var(--auction-text)]">{item.bidCount}</span> bids placed
+             Total <span className="font-bold color-[var(--auction-text)]">{product.bidCount}</span> bids placed
           </div>
 
           <button 
             className="flex items-center gap-2 px-4 py-2 text-white text-sm font-bold rounded-full transition-all duration-100 shadow-md hover:shadow-lg group/btn bg-[var(--auction-accent)] hover:bg-[var(--auction-accent-hover)]" 
-            onClick={() => nav.auction(item.id)}>
+            onClick={() => nav.auction(product.id)}>
             Place Bid
             <ArrowRight size={16} className="transition-transform group-hover/btn:translate-x-1" />
           </button>
