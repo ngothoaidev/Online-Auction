@@ -3,6 +3,7 @@ import { TrendingUp, TrendingDown, DollarSign, Clock, ArrowLeft } from "lucide-r
 import { useNav } from "../../hooks/useNavigate";
 import FilterSection from "../../components/FilterSection";
 import { mockUserData } from "../../data/users";
+import AuctionCard from "../../components/AuctionCard";
 
 export default function ViewAllActiveBid() {
     const nav = useNav();
@@ -12,16 +13,6 @@ export default function ViewAllActiveBid() {
     const totalBids = activeBids.length;
     const totalAmount = activeBids.reduce((sum, bid) => sum + bid.yourBid, 0);
     const winningCount = activeBids.filter(bid => bid.isWinning).length;
-    
-    const formatTime = (endTime) => {
-        const now = new Date();
-        const diff = endTime - now;
-        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-        const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-        if (days > 0) return `${days}d ${hours}h`;
-        if (hours > 0) return `${hours}h`;
-        return 'Ending soon';
-    };
     
     // Apply filters
     const filteredBids = activeBids.filter(item => {
@@ -154,50 +145,11 @@ export default function ViewAllActiveBid() {
                         ) : (
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 {sortedBids.map(bid => (
-                                    <div key={bid.id} className="rounded-xl overflow-hidden transition-all hover:shadow-lg" style={{ backgroundColor: 'var(--bg-soft)', border: '1px solid var(--border)' }}>
-                                        <div className="relative">
-                                            <img src={bid.image} alt={bid.title} className="w-full h-48 object-cover" />
-                                            {bid.isWinning ? (
-                                                <div className="absolute top-3 right-3 px-3 py-1 rounded-full text-xs font-bold" style={{ backgroundColor: 'var(--success)', color: 'var(--bg)' }}>
-                                                    Winning
-                                                </div>
-                                            ) : (
-                                                <div className="absolute top-3 right-3 px-3 py-1 rounded-full text-xs font-bold" style={{ backgroundColor: 'var(--danger)', color: 'var(--bg)' }}>
-                                                    Outbid
-                                                </div>
-                                            )}
-                                        </div>
-                                        <div className="p-4">
-                                            <h3 className="text-lg font-bold mb-2" style={{ color: 'var(--text)' }}>{bid.title}</h3>
-                                            <div className="space-y-2">
-                                                <div className="flex justify-between items-center">
-                                                    <span className="text-sm" style={{ color: 'var(--text-muted)' }}>Your Bid</span>
-                                                    <span className="font-bold" style={{ color: 'var(--text)' }}>${bid.yourBid.toLocaleString()}</span>
-                                                </div>
-                                                <div className="flex justify-between items-center">
-                                                    <span className="text-sm" style={{ color: 'var(--text-muted)' }}>Current Price</span>
-                                                    <span className="font-bold" style={{ color: bid.isWinning ? 'var(--success)' : 'var(--danger)' }}>
-                                                        ${bid.currentPrice.toLocaleString()}
-                                                    </span>
-                                                </div>
-                                                <div className="flex justify-between items-center pt-2 border-t" style={{ borderColor: 'var(--border)' }}>
-                                                    <div className="flex items-center gap-1" style={{ color: 'var(--text-muted)' }}>
-                                                        <Clock size={16} />
-                                                        <span className="text-sm">{formatTime(bid.endTime)}</span>
-                                                    </div>
-                                                    <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                                                        {bid.totalBids} bids
-                                                    </span>
-                                                </div>
-                                            </div>
-                                            <button 
-                                                className="w-full mt-4 px-4 py-2 rounded-lg font-medium transition-colors"
-                                                style={{ backgroundColor: 'var(--accent)', color: 'var(--bg)' }}
-                                            >
-                                                {bid.isWinning ? 'View Auction' : 'Increase Bid'}
-                                            </button>
-                                        </div>
-                                    </div>
+                                    <AuctionCard
+                                        key={bid.id} 
+                                        product={bid} 
+                                        variant="activeBids"
+                                    />
                                 ))}
                             </div>
                         )}

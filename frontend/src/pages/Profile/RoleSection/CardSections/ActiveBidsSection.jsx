@@ -17,8 +17,7 @@ export default function ActiveBidsSection({products, formatTime}) {
             <AuctionCard 
                 key={product.id} 
                 product={product} 
-                type="activeBids" 
-                formatTime={formatTime} 
+                variant="activeBids"  
             />
             ))}
         </div>

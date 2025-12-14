@@ -18,7 +18,7 @@ export default function SoldItemSection({ products, setReviewModal, handleCancel
             <AuctionCard
                 key={product.id} 
                 product={product}
-                type="soldItem"
+                variant="soldItem"
                 onReview={(item) => setReviewModal({ isOpen: true, item, type: 'seller' })}
                 onCancel={handleCancelTransaction}
             />

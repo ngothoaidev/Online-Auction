@@ -25,7 +25,7 @@ export default function ViewAll() {
             return <ViewAllActiveBid />;
         case 'favorites-products':
             return <ViewAllFavoriteProducts/>;
-        case 'won-items':
+        case 'won-auctions':
             return <ViewAllWonItems />;
         case 'sold-items':
             return <ViewAllSoldItems />;

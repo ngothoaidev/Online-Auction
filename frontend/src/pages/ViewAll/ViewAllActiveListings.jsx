@@ -3,6 +3,7 @@ import { Clock, Eye, Users, TrendingUp, Edit, Trash2, ArrowLeft } from "lucide-r
 import { useNav } from "../../hooks/useNavigate";
 import FilterSection from "../../components/FilterSection";
 import { mockUserData } from "../../data/users";
+import AuctionCard from "../../components/AuctionCard"
 
 export default function ViewAllActiveListings() {
     const nav = useNav();
@@ -12,16 +13,6 @@ export default function ViewAllActiveListings() {
     const totalListings = activeListings.length;
     const totalBids = activeListings.reduce((sum, item) => sum + item.totalBids, 0);
     const totalViews = activeListings.reduce((sum, item) => sum + (item.views || 0), 0);
-    
-    const formatTime = (endTime) => {
-        const now = new Date();
-        const diff = endTime - now;
-        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-        const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-        if (days > 0) return `${days}d ${hours}h`;
-        if (hours > 0) return `${hours}h`;
-        return 'Ending soon';
-    };
     
     // Apply filters
     const filteredListings = activeListings.filter(item => {
@@ -164,39 +155,11 @@ export default function ViewAllActiveListings() {
                             ) : (
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     {sortedListings.map(item => (
-                                        <div key={item.id} className="rounded-xl overflow-hidden border hover:shadow-xl transition-all" style={{ backgroundColor: 'var(--bg-soft)', borderColor: 'var(--border)' }}>
-                                            <div className="relative">
-                                                <img src={item.image} alt={item.title} className="w-full h-48 object-cover" />
-                                                <div className="absolute top-2 right-2 flex gap-2">
-                                                    <button className="p-2 rounded-full" style={{ backgroundColor: 'var(--bg)', border: '1px solid var(--border)' }}>
-                                                        <Edit size={16} style={{ color: 'var(--accent)' }} />
-                                                    </button>
-                                                    <button className="p-2 rounded-full" style={{ backgroundColor: 'var(--bg)', border: '1px solid var(--border)' }}>
-                                                        <Trash2 size={16} style={{ color: 'var(--danger)' }} />
-                                                    </button>
-                                                </div>
-                                            </div>
-                                            <div className="p-4">
-                                                <h3 className="font-bold mb-2" style={{ color: 'var(--text)' }}>{item.title}</h3>
-                                                <div className="flex items-center justify-between mb-4">
-                                                    <div>
-                                                        <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Current Bid</p>
-                                                        <p className="text-xl font-bold" style={{ color: 'var(--accent)' }}>${item.currentBid}</p>
-                                                    </div>
-                                                    <div className="text-right">
-                                                        <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Bids</p>
-                                                        <p className="font-bold" style={{ color: 'var(--text)' }}>{item.totalBids}</p>
-                                                    </div>
-                                                </div>
-                                                <div className="flex items-center justify-between text-sm" style={{ color: 'var(--text-muted)' }}>
-                                                    <span className="flex items-center gap-1">
-                                                        <Clock size={14} />
-                                                        {formatTime(item.endTime)}
-                                                    </span>
-                                                    <span>Watchers: {item.watchers || 0}</span>
-                                                </div>
-                                            </div>
-                                        </div>
+                                        <AuctionCard
+                                            key={item.id} 
+                                            product={item} 
+                                            variant="activeListings"
+                                        />
                                     ))}
                                 </div>
                             )}

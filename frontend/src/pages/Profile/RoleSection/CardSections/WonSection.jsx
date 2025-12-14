@@ -17,8 +17,8 @@ export default function WonSection({products, setReviewModal}) {
             {products.map(product => (
             <AuctionCard 
                 key={product.id} 
-                type="wonItem"
                 product={product} 
+                variant="wonItem"
                 onReview={(item) => setReviewModal({ isOpen: true, item, type: 'buyer' })}
             />
             ))}

@@ -3,6 +3,7 @@ import { Trophy, DollarSign, Star, ArrowLeft, Calendar } from "lucide-react";
 import { useNav } from "../../hooks/useNavigate.js";
 import FilterSection from "../../components/FilterSection";
 import { mockUserData } from "../../data/users";
+import AuctionCard from "../../components/AuctionCard"
 
 export default function ViewAllWonItems() {
     const nav = useNav();
@@ -13,14 +14,6 @@ export default function ViewAllWonItems() {
     const totalWon = wonAuctions.length;
     const totalSpent = wonAuctions.reduce((sum, item) => sum + item.winningBid, 0);
     const pendingReviews = wonAuctions.filter(item => !item.reviewed).length;
-    
-    const formatDate = (date) => {
-        return new Date(date).toLocaleDateString('en-US', { 
-            month: 'short', 
-            day: 'numeric', 
-            year: 'numeric' 
-        });
-    };
     
     // Apply filters
     const filteredWonItems = wonAuctions.filter(item => {
@@ -85,108 +78,82 @@ export default function ViewAllWonItems() {
 
     return (
         <div className="min-h-screen py-8" style={{ backgroundColor: 'var(--bg)' }}>
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                
+                <button onClick={() => nav.back()} className="flex items-center gap-2 mb-6 transition-colors" style={{ color: 'var(--text-muted)' }}>
+                    <ArrowLeft size={20} />
+                    <span>Back to Profile</span>
+                </button>
+
+                <div className="mb-8">
+                    <h1 className="text-3xl font-bold mb-2 flex items-center gap-3" style={{ color: 'var(--text)' }}>
+                        <Trophy size={32} style={{ color: 'var(--accent)' }} />
+                        Won Auctions
+                    </h1>
+                    <p style={{ color: 'var(--text-muted)' }}>Congratulations on your winning bids!</p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <div className="p-6 rounded-xl" style={{ backgroundColor: 'var(--bg-soft)', borderLeft: '4px solid var(--accent)' }}>
+                        <div className="flex items-center gap-3">
+                            <Trophy size={24} style={{ color: 'var(--accent)' }} />
+                            <div>
+                                <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Total Won</p>
+                                <p className="text-2xl font-bold" style={{ color: 'var(--text)' }}>{totalWon}</p>
+                            </div>
+                        </div>
+                    </div>
                     
-                    <button onClick={() => nav.back()} className="flex items-center gap-2 mb-6 transition-colors" style={{ color: 'var(--text-muted)' }}>
-                        <ArrowLeft size={20} />
-                        <span>Back to Profile</span>
-                    </button>
-
-                    <div className="mb-8">
-                        <h1 className="text-3xl font-bold mb-2 flex items-center gap-3" style={{ color: 'var(--text)' }}>
-                            <Trophy size={32} style={{ color: 'var(--accent)' }} />
-                            Won Auctions
-                        </h1>
-                        <p style={{ color: 'var(--text-muted)' }}>Congratulations on your winning bids!</p>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                        <div className="p-6 rounded-xl" style={{ backgroundColor: 'var(--bg-soft)', borderLeft: '4px solid var(--accent)' }}>
-                            <div className="flex items-center gap-3">
-                                <Trophy size={24} style={{ color: 'var(--accent)' }} />
-                                <div>
-                                    <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Total Won</p>
-                                    <p className="text-2xl font-bold" style={{ color: 'var(--text)' }}>{totalWon}</p>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div className="p-6 rounded-xl" style={{ backgroundColor: 'var(--bg-soft)', borderLeft: '4px solid var(--success)' }}>
-                            <div className="flex items-center gap-3">
-                                <DollarSign size={24} style={{ color: 'var(--success)' }} />
-                                <div>
-                                    <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Total Spent</p>
-                                    <p className="text-2xl font-bold" style={{ color: 'var(--text)' }}>${totalSpent.toLocaleString()}</p>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div className="p-6 rounded-xl" style={{ backgroundColor: 'var(--bg-soft)', borderLeft: '4px solid var(--warning)' }}>
-                            <div className="flex items-center gap-3">
-                                <Star size={24} style={{ color: 'var(--warning)' }} />
-                                <div>
-                                    <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Pending Reviews</p>
-                                    <p className="text-2xl font-bold" style={{ color: 'var(--text)' }}>{pendingReviews}</p>
-                                </div>
+                    <div className="p-6 rounded-xl" style={{ backgroundColor: 'var(--bg-soft)', borderLeft: '4px solid var(--success)' }}>
+                        <div className="flex items-center gap-3">
+                            <DollarSign size={24} style={{ color: 'var(--success)' }} />
+                            <div>
+                                <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Total Spent</p>
+                                <p className="text-2xl font-bold" style={{ color: 'var(--text)' }}>${totalSpent.toLocaleString()}</p>
                             </div>
                         </div>
                     </div>
-
-                    <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-                        <div className="lg:col-span-1">
-                            <div className="p-6 rounded-xl sticky top-8" style={{ backgroundColor: 'var(--bg-soft)' }}>
-                                <h3 className="text-lg font-bold mb-4" style={{ color: 'var(--text)' }}>Filters</h3>
-                                <FilterSection type="wonItem" onFilterChange={setFilters} />
+                    
+                    <div className="p-6 rounded-xl" style={{ backgroundColor: 'var(--bg-soft)', borderLeft: '4px solid var(--warning)' }}>
+                        <div className="flex items-center gap-3">
+                            <Star size={24} style={{ color: 'var(--warning)' }} />
+                            <div>
+                                <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Pending Reviews</p>
+                                <p className="text-2xl font-bold" style={{ color: 'var(--text)' }}>{pendingReviews}</p>
                             </div>
-                        </div>
-
-                        <div className="lg:col-span-3">
-                            {filteredWonItems.length === 0 ? (
-                                <div className="text-center py-16 rounded-xl" style={{ backgroundColor: 'var(--bg-soft)' }}>
-                                    <Trophy size={64} style={{ color: 'var(--text-muted)', margin: '0 auto 1rem' }} />
-                                    <h3 className="text-xl font-bold mb-2" style={{ color: 'var(--text)' }}>No Won Auctions</h3>
-                                    <p style={{ color: 'var(--text-muted)' }}>Keep bidding to win amazing items!</p>
-                                </div>
-                            ) : (
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    {sortedWonItems.map(item => (
-                                        <div key={item.id} className="rounded-xl overflow-hidden border hover:shadow-xl transition-all" style={{ backgroundColor: 'var(--bg-soft)', borderColor: 'var(--border)' }}>
-                                            <img src={item.image} alt={item.title} className="w-full h-48 object-cover" />
-                                            <div className="p-4">
-                                                <h3 className="font-bold mb-2" style={{ color: 'var(--text)' }}>{item.title}</h3>
-                                                
-                                                <div className="flex items-center justify-between mb-4">
-                                                    <div>
-                                                        <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Winning Bid</p>
-                                                        <p className="text-xl font-bold" style={{ color: 'var(--accent)' }}>${item.winningBid}</p>
-                                                    </div>
-                                                </div>
-                                                
-                                                <div className="flex items-center justify-between text-sm mb-4" style={{ color: 'var(--text-muted)' }}>
-                                                    <span className="flex items-center gap-1">
-                                                        <Calendar size={14} />
-                                                        {formatDate(item.endTime)}
-                                                    </span>
-                                                    <span>Seller: {item.sellerName}</span>
-                                                </div>
-                                                
-                                                {!item.reviewed ? (
-                                                    <button className="w-full py-2 rounded-lg font-medium transition-all" style={{ backgroundColor: 'var(--accent)', color: 'var(--bg)' }}>
-                                                        Leave Review
-                                                    </button>
-                                                ) : (
-                                                    <div className="text-center py-2 rounded-lg" style={{ backgroundColor: 'var(--success-soft)', color: 'var(--success)' }}>
-                                                        ✓ Reviewed
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
                         </div>
                     </div>
                 </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+                    <div className="lg:col-span-1">
+                        <div className="p-6 rounded-xl sticky top-8" style={{ backgroundColor: 'var(--bg-soft)' }}>
+                            <h3 className="text-lg font-bold mb-4" style={{ color: 'var(--text)' }}>Filters</h3>
+                            <FilterSection type="wonItem" onFilterChange={setFilters} />
+                        </div>
+                    </div>
+
+                    <div className="lg:col-span-3">
+                        {filteredWonItems.length === 0 ? (
+                            <div className="text-center py-16 rounded-xl" style={{ backgroundColor: 'var(--bg-soft)' }}>
+                                <Trophy size={64} style={{ color: 'var(--text-muted)', margin: '0 auto 1rem' }} />
+                                <h3 className="text-xl font-bold mb-2" style={{ color: 'var(--text)' }}>No Won Auctions</h3>
+                                <p style={{ color: 'var(--text-muted)' }}>Keep bidding to win amazing items!</p>
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                {sortedWonItems.map(item => (
+                                    <AuctionCard 
+                                        key={item.id} 
+                                        product={item} 
+                                        variant="wonItem"
+                                    />
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                </div>
             </div>
+        </div>
     );
 }

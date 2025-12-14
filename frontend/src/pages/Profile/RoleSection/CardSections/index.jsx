@@ -21,7 +21,6 @@ import WonSection from "./WonSection";
 
 export default function CardSection({
     products,
-    formatTime,
     setReviewModal,
     handleCancelTransaction,
     type,
@@ -30,13 +29,13 @@ export default function CardSection({
     products = products.slice(0, 2);
     switch (type) {
         case 'activeListings':
-            return <ActiveListingSection products={products} formatTime={formatTime} />;
+            return <ActiveListingSection products={products} />;
         case 'activeBids':
-            return <ActiveBidsSection products={products} formatTime={formatTime} />;
+            return <ActiveBidsSection products={products} />;
         case 'wonItems':
-            return <WonSection products={products} formatTime={formatTime} setReviewModal={setReviewModal} />;
+            return <WonSection products={products} setReviewModal={setReviewModal} />;
         case 'favorites':
-            return <FavoriteSection products={products} formatTime={formatTime} />;
+            return <FavoriteSection products={products} />;
         case 'soldItems':
             return <SoldItemSection products={products} setReviewModal={setReviewModal} handleCancelTransaction={handleCancelTransaction} />;
         default:

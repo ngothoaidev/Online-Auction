@@ -17,8 +17,7 @@ export default function FavoriteSection({products, formatTime}) {
                 <AuctionCard 
                 key={product.id} 
                 product={product} 
-                type="favorites" 
-                formatTime={formatTime} 
+                variant="favorites" 
                 />
             ))}
             </div>

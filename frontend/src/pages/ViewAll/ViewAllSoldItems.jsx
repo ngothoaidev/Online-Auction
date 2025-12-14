@@ -3,6 +3,7 @@ import { CheckCircle, DollarSign, Star, Calendar, ArrowLeft, XCircle } from "luc
 import { useNav } from "../../hooks/useNavigate";
 import FilterSection from "../../components/FilterSection";
 import { mockUserData } from "../../data/users";
+import AuctionCard from "../../components/AuctionCard";
 
 export default function ViewAllSoldItems() {
     const nav = useNav();
@@ -12,14 +13,6 @@ export default function ViewAllSoldItems() {
     const totalSales = soldItems.length;
     const totalRevenue = soldItems.reduce((sum, item) => sum + item.soldPrice, 0);
     const pendingReviews = soldItems.filter(item => !item.reviewed).length;
-    
-    const formatDate = (date) => {
-        return new Date(date).toLocaleDateString('en-US', { 
-            month: 'short', 
-            day: 'numeric', 
-            year: 'numeric' 
-        });
-    };
     
     // Apply filters
     const filteredSoldItems = soldItems.filter(item => {
@@ -148,44 +141,11 @@ export default function ViewAllSoldItems() {
                             ) : (
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     {sortedSoldItems.map(item => (
-                                        <div key={item.id} className="rounded-xl overflow-hidden border hover:shadow-xl transition-all" style={{ backgroundColor: 'var(--bg-soft)', borderColor: 'var(--border)' }}>
-                                            <img src={item.image} alt={item.title} className="w-full h-48 object-cover" />
-                                            <div className="p-4">
-                                                <h3 className="font-bold mb-2" style={{ color: 'var(--text)' }}>{item.title}</h3>
-                                                
-                                                <div className="flex items-center justify-between mb-4">
-                                                    <div>
-                                                        <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Final Sale Price</p>
-                                                        <p className="text-xl font-bold" style={{ color: 'var(--success)' }}>${item.soldPrice}</p>
-                                                    </div>
-                                                </div>
-                                                
-                                                <div className="flex items-center justify-between text-sm mb-4" style={{ color: 'var(--text-muted)' }}>
-                                                    <span className="flex items-center gap-1">
-                                                        <Calendar size={14} />
-                                                        {formatDate(item.endTime)}
-                                                    </span>
-                                                    <span>Buyer: {item.buyerName}</span>
-                                                </div>
-                                                
-                                                <div className="flex gap-2">
-                                                    {!item.reviewed ? (
-                                                        <button className="flex-1 py-2 rounded-lg font-medium transition-all" style={{ backgroundColor: 'var(--accent)', color: 'var(--bg)' }}>
-                                                            Review Buyer
-                                                        </button>
-                                                    ) : (
-                                                        <div className="flex-1 text-center py-2 rounded-lg" style={{ backgroundColor: 'var(--success-soft)', color: 'var(--success)' }}>
-                                                            ✓ Reviewed
-                                                        </div>
-                                                    )}
-                                                    {item.status === 'completed' && (
-                                                        <button className="px-4 py-2 rounded-lg font-medium border" style={{ borderColor: 'var(--border)', color: 'var(--text-muted)' }}>
-                                                            <XCircle size={16} />
-                                                        </button>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        </div>
+                                        <AuctionCard 
+                                            key={item.id} 
+                                            product={item} 
+                                            variant="soldItem"
+                                        />
                                     ))}
                                 </div>
                             )}

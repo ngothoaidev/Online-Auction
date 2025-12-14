@@ -17,8 +17,7 @@ export default function ActiveListingSection({products, formatTime}) {
             <AuctionCard 
                 key={product.id} 
                 product={product} 
-                type="activeListings"
-                formatTime={formatTime} 
+                variant="activeListings"
             />
             ))}
         </div>

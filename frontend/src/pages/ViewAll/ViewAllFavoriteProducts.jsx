@@ -11,18 +11,6 @@ export default function ViewAllFavoriteProducts() {
     const [filters, setFilters] = useState({});
     const [favorites, setFavorites] = useState(user?.favoriteProducts || []);
     
-    // Format time remaining
-    const formatTime = (endTime) => {
-        const now = new Date();
-        const diff = endTime - now;
-        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-        const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-        
-        if (days > 0) return `${days}d ${hours}h`;
-        if (hours > 0) return `${hours}h`;
-        return 'Ending soon';
-    };
-    
     const handleRemoveFavorite = (productId) => {
         setFavorites(favorites.filter(item => item.id !== productId));
     };
@@ -162,47 +150,12 @@ export default function ViewAllFavoriteProducts() {
                             ) : (
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     {sortedFavorites.map(product => (
-                                        <div key={product.id} className="relative group">
-                                            {/* Remove Button */}
-                                            <button
-                                                onClick={() => handleRemoveFavorite(product.id)}
-                                                className="absolute top-4 right-4 z-10 p-2 rounded-full transition-all opacity-0 group-hover:opacity-100"
-                                                style={{ backgroundColor: 'var(--bg)', border: '1px solid var(--border)' }}
-                                            >
-                                                <X size={16} style={{ color: 'var(--danger)' }} />
-                                            </button>
-                                            
-                                            <div className="rounded-xl overflow-hidden border hover:shadow-xl transition-all"
-                                                 style={{ backgroundColor: 'var(--bg-soft)', borderColor: 'var(--border)' }}>
-                                                <img src={product.image} alt={product.title} className="w-full h-48 object-cover" />
-                                                <div className="p-4">
-                                                    <h3 className="font-bold mb-2" style={{ color: 'var(--text)' }}>
-                                                        {product.title}
-                                                    </h3>
-                                                    
-                                                    <div className="flex items-center justify-between mb-4">
-                                                        <div>
-                                                            <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Current Price</p>
-                                                            <p className="text-xl font-bold" style={{ color: 'var(--accent)' }}>
-                                                                ${product.currentBid}
-                                                            </p>
-                                                        </div>
-                                                    </div>
-                                                    
-                                                    <div className="flex items-center justify-between text-sm mb-4" style={{ color: 'var(--text-muted)' }}>
-                                                        <span>{formatTime(product.endTime)}</span>
-                                                        <span>{product.totalBids} bids</span>
-                                                    </div>
-                                                    
-                                                    <button
-                                                        className="w-full py-2 rounded-lg font-medium transition-all"
-                                                        style={{ backgroundColor: 'var(--accent)', color: 'var(--bg)' }}
-                                                    >
-                                                        Bid Now
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
+                                        <AuctionCard 
+                                            key={product.id} 
+                                            product={product} 
+                                            variant="favorites" 
+                                            onRemove={handleRemoveFavorite}
+                                        />
                                     ))}
                                 </div>
                             )}
