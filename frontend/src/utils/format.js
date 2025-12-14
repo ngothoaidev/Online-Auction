@@ -13,21 +13,11 @@ export const formatCurrency = (amount) => {
 };
 
 /**
- * Format time duration in seconds to readable string
+ * Calculate and format time left - Determine urgency level
+ * @param {string|Date} endTime - The auction end time (ISO string or Date object)
  * @param {number} seconds - Number of seconds
  * @returns {string} Formatted time string (e.g., "2d 5h", "3h 45m", "30m 15s")
  */
-export const formatTime = (seconds) => {
-  if (seconds <= 0) return "Ended";
-  const d = Math.floor(seconds / (3600 * 24));
-  const h = Math.floor((seconds % (3600 * 24)) / 3600);
-  const m = Math.floor((seconds % 3600) / 60);
-  const s = Math.floor(seconds % 60);
-
-  if (d > 0) return `${d}d ${h}h`;
-  if (h > 0) return `${h}h ${m}m`;
-  return `${m}m ${s}s`;
-};
 
 /**
  * Calculate time left from end date and determine urgency level
@@ -35,16 +25,17 @@ export const formatTime = (seconds) => {
  * @returns {Object} Object with timeLeft string and urgencyLevel
  * @returns {string} Object.timeLeft - Formatted time remaining
  * @returns {string} Object.urgencyLevel - One of: 'normal', 'warning', 'critical'
- * @returns {number} Object.difference - Raw milliseconds difference
  */
-export const calculateTimeLeft = (endTime) => {
-  const difference = new Date(endTime) - new Date();
-  
+export const formatTimeLeft = (endTime) => {
+  const end = new Date(endTime);
+  const now = new Date();
+  const difference = end - now;
+
+  // 1. Check if Ended
   if (difference <= 0) {
-    return {
-      timeLeft: 'Ended',
-      urgencyLevel: 'ended',
-      difference: 0,
+    return { 
+      timeLeft: 'Ended', 
+      urgencyLevel: 'ended' 
     };
   }
 
@@ -52,18 +43,34 @@ export const calculateTimeLeft = (endTime) => {
   const hours = Math.floor((difference / (1000 * 60 * 60)) % 24);
   const minutes = Math.floor((difference / 1000 / 60) % 60);
 
-  let urgencyLevel = 'normal';
-  if (days === 0 && hours < 1) {
-    urgencyLevel = 'critical';
-  } else if (days === 0) {
-    urgencyLevel = 'warning';
+  // 2. If > 3 Days: Return specific Date (dd/mm/yyyy)
+  if (days > 3) {
+    const d = String(end.getDate()).padStart(2, '0');
+    const m = String(end.getMonth() + 1).padStart(2, '0');
+    const y = end.getFullYear();
+    return {
+      timeLeft: `${d}/${m}/${y}`,
+      urgencyLevel: 'normal' // Not urgent yet
+    };
   }
 
-  const timeLeft = days > 0 ? `${days}d ${hours}h left` : `${hours}h ${minutes}m left`;
+  // 3. Determine Urgency (< 3 Days)
+  let urgencyLevel = 'normal';
+  if (days === 0 && hours < 1) {
+    urgencyLevel = 'critical'; // Less than 1 hour
+  } else if (days === 0) {
+    urgencyLevel = 'warning';  // Less than 24 hours
+  }
 
-  return {
-    timeLeft,
-    urgencyLevel,
-    difference,
-  };
+  // 4. Format the Countdown Text
+  let timeLeft = '';
+  if (days > 0) {
+    timeLeft = `${days}d ${hours}h`;
+  } else if (hours > 0) {
+    timeLeft = `${hours}h ${minutes}m`;
+  } else {
+    timeLeft = minutes > 0 ? `${minutes}m` : '< 1m';
+  }
+
+  return { timeLeft, urgencyLevel };
 };
