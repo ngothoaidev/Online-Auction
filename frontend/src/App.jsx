@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import ProtectedRoute from './components/ProtectedRoute';
 import AuthLayout from './layouts/AuthLayout';
 import MainLayout from './layouts/MainLayout';
+import AdminLayout from './layouts/AdminLayout';
 import HomePage from './pages/HomePage';
 import ProductDetail from './pages/ProductDetail';
 import ListProducts from './pages/ListProducts';
@@ -25,6 +26,12 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
         </Route>
+
+        <Route element={<AdminLayout />}>
+          <Route element={<ProtectedRoute requiredRole="admin" />}>
+            <Route path="/admin" element={<AdminDashboard />} />
+          </Route>
+        </Route>
         
         <Route element={<MainLayout />}>
           {/* Public Routes */}
@@ -45,9 +52,9 @@ function App() {
           </Route>
 
           {/* --- LEVEL 3: ADMIN ONLY (Needs 'admin' role) --- */}
-          <Route element={<ProtectedRoute requiredRole="admin" />}>
+          {/* <Route element={<ProtectedRoute requiredRole="admin" />}>
             <Route path="/admin" element={<AdminDashboard />} />
-          </Route>
+          </Route> */}
 
           {/* Fallback Route */}
           <Route path="*" element={<NotFound />} />
