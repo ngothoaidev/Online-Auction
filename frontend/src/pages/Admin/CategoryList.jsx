@@ -25,72 +25,80 @@ export default function CategoryList() {
   };
 
   return (
-    <div className="p-6">
+    <div className="p-6" style={{ backgroundColor: 'var(--bg)', color: 'var(--text)' }}>
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="profile-name text-3xl font-bold">Category Management</h1>
-          <p className="profile-text-muted mt-1">Manage product categories and subcategories</p>
+          <h1 className="text-3xl font-bold" style={{ color: 'var(--text)' }}>Category Management</h1>
+          <p className="mt-1" style={{ color: 'var(--text-muted)' }}>Manage product categories and subcategories</p>
         </div>
-        <button className="profile-btn-primary px-6 py-3 rounded-lg font-medium flex items-center gap-2 hover:shadow-lg transition-all">
+        <button className="px-6 py-3 rounded-lg font-medium flex items-center gap-2 hover:shadow-lg transition-all" style={{ backgroundColor: 'var(--accent)', color: 'var(--bg)' }}>
           <Plus size={20} />
           Add Category
         </button>
       </div>
 
       {/* Search Bar */}
-      <div className="profile-card rounded-xl p-4 mb-6">
+      <div className="rounded-xl p-4 mb-6" style={{ backgroundColor: 'var(--bg-soft)', borderWidth: '1px', borderColor: 'var(--border)' }}>
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-muted)' }} size={20} />
           <input
             type="text"
             placeholder="Search categories..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="profile-input w-full pl-10 pr-4 py-3 rounded-lg border focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
+            className="w-full pl-10 pr-4 py-3 rounded-lg focus:outline-none focus:ring-2"
+            style={{ 
+              backgroundColor: 'var(--bg-soft)', 
+              borderWidth: '1px',
+              borderColor: 'var(--border)',
+              color: 'var(--text)'
+            }}
           />
         </div>
       </div>
 
       {/* Categories Table */}
-      <div className="profile-card rounded-xl overflow-hidden">
+      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: 'var(--bg-soft)', borderWidth: '1px', borderColor: 'var(--border)' }}>
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="profile-subtle-box">
+            <thead style={{ backgroundColor: 'var(--bg-subtle)' }}>
               <tr>
-                <th className="profile-label px-6 py-4 text-left text-sm font-semibold">ID</th>
-                <th className="profile-label px-6 py-4 text-left text-sm font-semibold">Category Name</th>
-                <th className="profile-label px-6 py-4 text-left text-sm font-semibold">Subcategories</th>
-                <th className="profile-label px-6 py-4 text-left text-sm font-semibold">Products</th>
-                <th className="profile-label px-6 py-4 text-right text-sm font-semibold">Actions</th>
+                <th className="px-6 py-4 text-left text-sm font-semibold" style={{ color: 'var(--text)' }}>ID</th>
+                <th className="px-6 py-4 text-left text-sm font-semibold" style={{ color: 'var(--text)' }}>Category Name</th>
+                <th className="px-6 py-4 text-left text-sm font-semibold" style={{ color: 'var(--text)' }}>Subcategories</th>
+                <th className="px-6 py-4 text-left text-sm font-semibold" style={{ color: 'var(--text)' }}>Products</th>
+                <th className="px-6 py-4 text-right text-sm font-semibold" style={{ color: 'var(--text)' }}>Actions</th>
               </tr>
             </thead>
-            <tbody className="profile-divider divide-y">
+            <tbody className="divide-y" style={{ borderColor: 'var(--border-subtle)' }}>
               {filteredCategories.map((category) => (
-                <tr key={category.id} className="hover:bg-[var(--bg-hover)] transition-colors">
-                  <td className="profile-text-muted px-6 py-4 text-sm">{category.id}</td>
+                <tr key={category.id} className="hover:opacity-90 transition-colors" style={{ backgroundColor: 'var(--bg-soft)' }}>
+                  <td className="px-6 py-4 text-sm" style={{ color: 'var(--text-muted)' }}>{category.id}</td>
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
-                      <div className="profile-icon-accent w-10 h-10 rounded-lg flex items-center justify-center">
+                      <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'var(--accent-soft)', color: 'var(--accent)' }}>
                         <Package size={20} />
                       </div>
-                      <span className="profile-name font-medium">{category.name}</span>
+                      <span className="font-medium" style={{ color: 'var(--text)' }}>{category.name}</span>
                     </div>
                   </td>
-                  <td className="profile-text-muted px-6 py-4 text-sm">{category.subcategories}</td>
+                  <td className="px-6 py-4 text-sm" style={{ color: 'var(--text-muted)' }}>{category.subcategories}</td>
                   <td className="px-6 py-4">
-                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                      category.productCount > 0 
-                        ? 'bg-[var(--info-soft)] text-[var(--info)]' 
-                        : 'bg-[var(--bg-subtle)] text-[var(--text-muted)]'
-                    }`}>
+                    <span 
+                      className="px-3 py-1 rounded-full text-xs font-medium"
+                      style={{
+                        backgroundColor: category.productCount > 0 ? 'var(--info-soft)' : 'var(--bg-subtle)',
+                        color: category.productCount > 0 ? 'var(--info)' : 'var(--text-muted)'
+                      }}
+                    >
                       {category.productCount} products
                     </span>
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center justify-end gap-2">
-                      <button className="p-2 rounded-lg hover:bg-[var(--accent-soft)] transition-colors group">
-                        <Edit2 size={18} className="profile-icon-accent" />
+                      <button className="p-2 rounded-lg hover:opacity-80 transition-colors" style={{ backgroundColor: 'var(--accent-soft)' }}>
+                        <Edit2 size={18} style={{ color: 'var(--accent)' }} />
                       </button>
                       <button
                         onClick={() => handleDelete(category.id, category.productCount)}
@@ -98,12 +106,15 @@ export default function CategoryList() {
                         className={`p-2 rounded-lg transition-colors ${
                           category.productCount > 0
                             ? 'opacity-50 cursor-not-allowed'
-                            : 'hover:bg-[var(--danger-soft)] group'
+                            : 'hover:opacity-80'
                         }`}
+                        style={{ 
+                          backgroundColor: category.productCount > 0 ? 'transparent' : 'var(--danger-soft)'
+                        }}
                       >
                         <Trash2 
                           size={18} 
-                          className={category.productCount > 0 ? 'text-gray-400' : 'text-[var(--danger)]'}
+                          style={{ color: category.productCount > 0 ? '#9ca3af' : 'var(--danger)' }}
                         />
                       </button>
                     </div>
@@ -115,14 +126,14 @@ export default function CategoryList() {
         </div>
 
         {filteredCategories.length === 0 && (
-          <div className="notification-empty-text text-center py-12">
+          <div className="text-center py-12" style={{ color: 'var(--text-muted)' }}>
             No categories found
           </div>
         )}
       </div>
 
       {/* Summary */}
-      <div className="mt-4 profile-text-muted text-sm">
+      <div className="mt-4 text-sm" style={{ color: 'var(--text-muted)' }}>
         Showing {filteredCategories.length} of {categories.length} categories
       </div>
     </div>

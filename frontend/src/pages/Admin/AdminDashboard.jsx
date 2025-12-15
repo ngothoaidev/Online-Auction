@@ -27,7 +27,6 @@ import CategoryList from './CategoryList.jsx';
 import ProductList from './ProductList.jsx';
 import UserList from './UserList.jsx';
 import UpgradeRequests from './UpgradeRequests.jsx';
-import NotificationDropper from '../../components/NotificationDropper.jsx';
 
 export default function AdminDashboard() {
   const nav = useNav();
@@ -88,7 +87,7 @@ export default function AdminDashboard() {
             {activeTab === 'auctions' && <LiveAuctionsView />}
             {activeTab === 'categories' && <CategoryList />}
             {activeTab === 'products' && <ProductList />}
-            {activeTab === 'users' && <UserList />}
+            {activeTab === 'users' && <UserList setActiveTab={setActiveTab} />}
             {activeTab === 'upgrades' && <UpgradeRequests />}
             {activeTab === 'disputes' && (
               <div className="profile-card rounded-xl p-12 text-center">
