@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Heart, Clock, Gavel, Zap, ArrowRight, Crown } from 'lucide-react';
+import { Heart, Clock, Gavel, Zap, ArrowRight, User, Calendar, Sparkles } from 'lucide-react';
 import { useNav } from '../../hooks/useNavigate.js';
 import { formatCurrency, formatTimeLeft } from '../../utils/format.js';
 
@@ -8,6 +8,8 @@ export default function DefaultAuctionCard({ product }) {
   const [isLiked, setIsLiked] = useState(false);
   const [timeLeft, setTimeLeft] = useState('');
   const [urgencyLevel, setUrgencyLevel] = useState('normal');
+
+  const isNew = (new Date() - new Date(product.createdAt) < 96 * 60 * 60 * 1000);
 
   useEffect(() => {
     const updateTimeLeft = () => {
@@ -26,12 +28,23 @@ export default function DefaultAuctionCard({ product }) {
     critical: 'bg-red-600/90 text-white animate-pulse'
   };
 
+  // Format Date (e.g., "Oct 24, 2023")
+  const formatDate = (dateString) => {
+    if (!dateString) return 'Unknown Date';
+    return new Date(dateString).toLocaleDateString('en-US', {
+      month: 'short', day: 'numeric', year: 'numeric'
+    });
+  };
+
   return (
-    <div className="group relative w-full max-w-sm rounded-2xl border shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-200 overflow-hidden flex flex-col"
+    <div 
+      className={`group relative w-full max-w-sm rounded-2xl border transition-all duration-300 overflow-hidden flex flex-col hover:-translate-y-1 hover:shadow-2xl
+        ${isNew ? 'ring-2 ring-offset-2 ring-[var(--auction-accent)]' : 'shadow-sm'}
+      `}
       style={{ 
         backgroundColor: 'var(--auction-bg)', 
-        borderColor: 'var(--auction-border)',
-        boxShadow: 'var(--auction-shadow)'
+        borderColor: isNew ? 'var(--auction-accent)' : 'var(--auction-border)',
+        boxShadow: isNew ? '0 0 15px -3px var(--auction-accent)' : 'var(--auction-shadow)'
       }}
     >
       
@@ -40,13 +53,23 @@ export default function DefaultAuctionCard({ product }) {
         <img 
           src={product.image} 
           alt={product.title} 
-          className="w-full h-full object-cover transition-all duration-500 group-hover:scale-105"
+          className="w-full h-full object-cover transition-all duration-700 group-hover:scale-110"
         />
         
-        <div className="absolute top-3 left-3 flex gap-2">
-          <span className="px-2.5 py-1 backdrop-blur-sm text-xs font-bold rounded-full shadow-sm bg-white/90" style={{ color: 'var(--auction-text-muted)' }}>
+        {/* Top Badges */}
+        <div className="absolute top-3 left-3 flex flex-col gap-2 items-start">
+           {/* Category Badge */}
+          <span className="px-2.5 py-1 backdrop-blur-md text-[10px] uppercase tracking-wider font-bold rounded-full shadow-sm bg-white/90" style={{ color: 'var(--auction-text-muted)' }}>
             {product.category}
           </span>
+
+          {/* NEW ARRIVAL BADGE (Only for new items) */}
+          {isNew && (
+            <span className="px-3 py-1 flex items-center gap-1 backdrop-blur-md text-xs font-bold rounded-full shadow-lg animate-pulse" 
+              style={{ backgroundColor: 'var(--auction-accent)', color: 'var(--auction-accent-fg)' }}>
+              <Sparkles size={12} className="fill-current" /> NEW
+            </span>
+          )}
         </div>
 
         <button 
@@ -65,10 +88,24 @@ export default function DefaultAuctionCard({ product }) {
       </div>
 
       {/* --- Content Section --- */}
-      <div className="p-5 flex flex-col flex-grow">
-        <h3 className="text-lg font-bold line-clamp-1 mb-4 transition-colors duration-100" style={{ color: 'var(--auction-text)' }}>
+      <div className="p-5 flex flex-col flex-grow relative">
+        
+        {/* Title */}
+        <h3 className="text-lg font-bold line-clamp-1 mb-2 transition-colors duration-100" style={{ color: 'var(--auction-text)' }}>
           {product.title}
         </h3>
+
+        {/* --- NEW: Seller & Date Info --- */}
+        <div className="flex items-center gap-4 text-xs font-medium mb-4 pb-4 border-b border-dashed" style={{ borderColor: 'var(--auction-border)', color: 'var(--auction-text-muted)' }}>
+            <div className="flex items-center gap-1.5">
+                <User size={14} />
+                <span className="truncate max-w-[100px]">{product.seller?.name || "Unknown Seller"}</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+                <Calendar size={14} />
+                <span>{formatDate(product.createdAt)}</span>
+            </div>
+        </div>
         
         {/* --- DUAL PRICE BOX --- */}
         <div className="grid grid-cols-2 gap-px rounded-xl overflow-hidden border mb-5" style={{ backgroundColor: 'var(--auction-border)', borderColor: 'var(--auction-border)' }}>
@@ -84,13 +121,14 @@ export default function DefaultAuctionCard({ product }) {
                 </span>
             </div>
 
-            {/* Hover View: The Person */}
+            {/* Hover View: The Bidder */}
             <div className="absolute inset-0 flex flex-col justify-center items-center transition-all duration-200 transform translate-y-full opacity-0 group-hover/bid:translate-y-0 group-hover/bid:opacity-100" style={{ backgroundColor: 'var(--auction-bid-bg)' }}>
                  {product.highestBidder ? (
                     <div className="flex flex-col items-center gap-1">
                         <span className="text-xs font-bold" style={{ color: 'var(--auction-bid-text)' }}>
                             {product.highestBidder.name}
                         </span>
+                        <span className="text-[10px] opacity-75" style={{ color: 'var(--auction-bid-text)' }}>Top Bidder</span>
                     </div>
                  ) : (
                     <span className="text-xs font-medium" style={{ color: 'var(--auction-text-subtle)' }}>No Bids Yet</span>
@@ -117,16 +155,16 @@ export default function DefaultAuctionCard({ product }) {
         </div>
 
         {/* --- Footer --- */}
-        <div className="mt-auto flex items-center justify-between border-t pt-3" style={{ borderColor: 'var(--auction-border)' }}>
+        <div className="mt-auto flex items-center justify-between">
           <div className="text-xs font-medium" style={{ color: 'var(--auction-text-muted)' }}>
-             <span className="font-bold" style={{ color: 'var(--auction-text)' }}>{product.bidCount || 0}</span> bids
+             <span className="font-bold" style={{ color: 'var(--auction-text)' }}>{product.bidCount || 0}</span> bids placed
           </div>
 
           <button 
             className="flex items-center gap-2 px-4 py-2 text-sm font-bold rounded-full transition-all duration-200 shadow-md hover:shadow-lg group/btn hover:scale-105" 
             style={{ 
-              backgroundColor: 'var(--auction-accent)', 
-              color: 'var(--auction-accent-fg)' 
+              backgroundColor: isNew ? 'var(--auction-accent)' : 'var(--auction-text)', 
+              color: isNew ? 'var(--auction-accent-fg)' : 'var(--auction-bg)' 
             }}
             onClick={() => nav.auction(product.id)}>
             Place Bid
