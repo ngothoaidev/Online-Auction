@@ -18,11 +18,12 @@ export const formatCurrency = (amount) => {
  * @returns {string} Formatted date string
  */
 export const formatDate = (date) => {
-    return new Date(date).toLocaleDateString('en-US', { 
-        month: 'short', 
-        day: 'numeric', 
-        year: 'numeric' 
-    });
+  if (!date) return 'Unknown';
+  return new Date(date).toLocaleDateString('en-US', { 
+    month: 'short', 
+    day: 'numeric', 
+    year: 'numeric' 
+  });
 };
 
 /**
