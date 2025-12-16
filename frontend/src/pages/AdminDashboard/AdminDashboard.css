@@ -1,0 +1,36 @@
+/* --- ADMIN DASHBOARD THEME --- */
+:root {
+  /* LIGHT MODE */
+  --admin-bg: #f1f5f9;            /* Slate-100: Main canvas */
+  --admin-sidebar-bg: #ffffff;    /* White sidebar */
+  --admin-sidebar-border: #e2e8f0;/* Slate-200 */
+  --admin-sidebar-text: #64748b;  /* Slate-500 */
+  --admin-sidebar-hover: #f8fafc; /* Slate-50 */
+  --admin-sidebar-active-bg: #eff6ff; /* Blue-50 */
+  --admin-sidebar-active-text: #4f46e5; /* Indigo-600 */
+  
+  --admin-header-bg: #ffffff;
+  
+  --admin-card-bg: #ffffff;
+  --admin-card-border: #e2e8f0;
+  --admin-text-main: #0f172a;     /* Slate-900 */
+  --admin-text-muted: #64748b;    /* Slate-500 */
+}
+
+:root.dark {
+  /* DARK MODE */
+  --admin-bg: #020617;            /* Slate-950: Main canvas */
+  --admin-sidebar-bg: #0f172a;    /* Slate-900 */
+  --admin-sidebar-border: #1e293b;/* Slate-800 */
+  --admin-sidebar-text: #94a3b8;  /* Slate-400 */
+  --admin-sidebar-hover: #1e293b; /* Slate-800 */
+  --admin-sidebar-active-bg: #1e1b4b; /* Indigo-950 */
+  --admin-sidebar-active-text: #818cf8; /* Indigo-400 */
+  
+  --admin-header-bg: #0f172a;
+  
+  --admin-card-bg: #0f172a;       /* Slate-900 */
+  --admin-card-border: #1e293b;   /* Slate-800 */
+  --admin-text-main: #f8fafc;     /* Slate-50 */
+  --admin-text-muted: #94a3b8;    /* Slate-400 */
+}
