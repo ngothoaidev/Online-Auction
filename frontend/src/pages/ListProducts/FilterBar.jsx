@@ -4,7 +4,7 @@ import { categories } from "../../data/constants";
 
 export default function FilterBar() {
   const [activeDropdown, setActiveDropdown] = useState(null);
-  const [selectedCategory, setSelectedCategory] = useState("All");
+  const [selectedCategory, setSelectedCategory] = useState(null);
   const [priceRange, setPriceRange] = useState({ min: "", max: "" });
   const barRef = useRef(null);
 
@@ -52,8 +52,8 @@ export default function FilterBar() {
             <div className="relative">
               <FilterButton 
                 name="category" 
-                label={selectedCategory === "All" ? "Category" : selectedCategory} 
-                isActive={selectedCategory !== "All"}
+                label={!selectedCategory ? "Category" : selectedCategory} 
+                isActive={selectedCategory}
               />
               {activeDropdown === "category" && (
                 <div className="filter-dropdown-panel absolute top-full mt-2 left-0 w-64 rounded-xl p-2 z-40 max-h-80 overflow-y-auto custom-scrollbar animate-in fade-in zoom-in-95 duration-100">
@@ -143,24 +143,30 @@ export default function FilterBar() {
         </div>
 
         {/* Active Filters Tag Row */}
-        {(selectedCategory !== "All" || priceRange.min) && (
+        {(selectedCategory || priceRange.min) && (
             <div className="flex gap-2 mt-3 pt-3 border-t animate-in fade-in slide-in-from-top-1" style={{ borderColor: 'var(--border)' }}>
-                {selectedCategory !== "All" && (
+                {selectedCategory && (
                     <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium" style={{ backgroundColor: 'var(--accent-soft)', color: 'var(--accent-strong)' }}>
                         {selectedCategory}
                         <X size={12} className="cursor-pointer hover:scale-110" onClick={() => setSelectedCategory("All")} />
                     </span>
                 )}
-                 {priceRange.min && (
+                {priceRange.min && (
                     <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium" style={{ backgroundColor: 'var(--accent-soft)', color: 'var(--accent-strong)' }}>
                         &gt; {priceRange.min}
                         <X size={12} className="cursor-pointer hover:scale-110" onClick={() => setPriceRange({...priceRange, min: ''})} />
                     </span>
                 )}
-                 <button onClick={() => { setSelectedCategory("All"); setPriceRange({min:'', max:''}) }}
-                    className="text-xs underline ml-auto hover:text-[var(--danger)] transition-colors" style={{ color: 'var(--text-muted)' }}>
-                    Clear all
-                 </button>
+                {priceRange.max && (
+                    <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium" style={{ backgroundColor: 'var(--accent-soft)', color: 'var(--accent-strong)' }}>
+                        &lt; {priceRange.max}
+                        <X size={12} className="cursor-pointer hover:scale-110" onClick={() => setPriceRange({...priceRange, min: ''})} />
+                    </span>
+                )}
+                <button onClick={() => { setSelectedCategory(null); setPriceRange({min:'', max:''}) }}
+                  className="text-xs underline ml-auto hover:text-[var(--danger)] transition-colors" style={{ color: 'var(--text-muted)' }}>
+                  Clear all
+                </button>
             </div>
         )}
       </div>
