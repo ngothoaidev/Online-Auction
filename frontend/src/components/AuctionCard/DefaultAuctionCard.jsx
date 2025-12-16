@@ -95,11 +95,11 @@ export default function DefaultAuctionCard({ product }) {
           {product.title}
         </h3>
 
-        {/* --- NEW: Seller & Date Info --- */}
-        <div className="flex items-center gap-4 text-xs font-medium mb-4 pb-4 border-b border-dashed" style={{ borderColor: 'var(--auction-border)', color: 'var(--auction-text-muted)' }}>
+        {/* --- Seller & Date Info --- */}
+        <div className="flex items-center justify-between gap-4 text-xs font-medium mb-4 pb-4 border-b border-dashed" style={{ borderColor: 'var(--auction-border)', color: 'var(--auction-text-muted)' }}>
             <div className="flex items-center gap-1.5">
                 <User size={14} />
-                <span className="truncate max-w-[100px]">{product.seller?.name || "Unknown Seller"}</span>
+                <span className="truncate max-w-[100px]">{product.seller?.name || "Unknown"}</span>
             </div>
             <div className="flex items-center gap-1.5">
                 <Calendar size={14} />
@@ -113,7 +113,7 @@ export default function DefaultAuctionCard({ product }) {
           {/* === LEFT: Highest Bid === */}
           <div className="relative group/bid cursor-help overflow-hidden" style={{ backgroundColor: 'var(--auction-price-bg)' }}>
             <div className="absolute inset-0 flex flex-col justify-center px-3 transition-all duration-200 transform group-hover/bid:-translate-y-full group-hover/bid:opacity-0">
-                <span className="text-[10px] uppercase font-bold tracking-wider mb-1 flex items-center gap-1" style={{ color: 'var(--auction-text-subtle)' }}>
+                <span className="min-w-30 text-[10px] uppercase font-bold tracking-wider mb-1 flex items-center gap-1" style={{ color: 'var(--auction-text-subtle)' }}>
                     <Gavel size={12} /> Highest Bid
                 </span>
                 <span className="text-xl font-black" style={{ color: 'var(--auction-text)' }}>
@@ -144,7 +144,7 @@ export default function DefaultAuctionCard({ product }) {
             }}
           >
              <div className="h-full flex flex-col justify-center">
-                <span className="text-[10px] uppercase font-bold tracking-wider mb-1 flex items-center gap-1" style={{ color: 'var(--auction-success)' }}>
+                <span className="min-w-30 text-[10px] uppercase font-bold tracking-wider mb-1 flex items-center gap-1" style={{ color: 'var(--auction-success)' }}>
                     <Zap size={12} className="fill-current" /> Buy Now
                 </span>
                 <span className="text-lg font-bold" style={{ color: 'var(--auction-success)' }}>
@@ -157,7 +157,7 @@ export default function DefaultAuctionCard({ product }) {
         {/* --- Footer --- */}
         <div className="mt-auto flex items-center justify-between">
           <div className="text-xs font-medium" style={{ color: 'var(--auction-text-muted)' }}>
-             <span className="font-bold" style={{ color: 'var(--auction-text)' }}>{product.bidCount || 0}</span> bids placed
+             <span className="font-bold" style={{ color: 'var(--auction-text)' }}>{product.bidCount || 0}</span> bids
           </div>
 
           <button 

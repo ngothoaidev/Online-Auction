@@ -50,10 +50,10 @@ export default function ProductTabs() {
         })}
       </div>
       
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5 animate-fade-in">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-5 animate-fade-in">
         {displayProducts.length > 0 ? (
           displayProducts.map((item) => (
-            <div key={item.id} className="transform transition-all duration-500 hover:-translate-y-1">
+            <div key={item.id} className='flex justify-center'>
               <AuctionCard product={item} variant="default"/>
             </div>
           ))

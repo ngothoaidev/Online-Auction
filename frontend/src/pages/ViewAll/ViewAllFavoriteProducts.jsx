@@ -140,7 +140,7 @@ export default function ViewAllFavoriteProducts() {
                                     <h3 className="text-xl font-bold mb-2" style={{ color: 'var(--text)' }}>No Favorites Yet</h3>
                                     <p style={{ color: 'var(--text-muted)' }}>Start adding items to your favorites</p>
                                     <button
-                                        onClick={() => navigate('/products')}
+                                        onClick={() => nav.search('/products')}
                                         className="mt-4 px-6 py-2 rounded-lg font-medium"
                                         style={{ backgroundColor: 'var(--accent)', color: 'var(--bg)' }}
                                     >
