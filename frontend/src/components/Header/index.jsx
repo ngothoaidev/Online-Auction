@@ -2,10 +2,11 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useNav } from '../../hooks/useNavigate.js';
 import { 
-  Search, Menu, X, ChevronDown, LogOut, ArrowRight, Plus
+  Search, Menu, X, ChevronDown, LogOut, ArrowRight, Plus, LayoutDashboard 
 } from 'lucide-react';
 
 import { categories } from '../../data/constants.js';
+import CategoryDropper from './CategoryDropper.jsx';
 import NotificationDropper from './NotificationDropper.jsx';
 import ProfileDropper from './ProfileDropper.jsx';
 import ThemeToggle from '../ThemeToggle.jsx';
@@ -47,56 +48,7 @@ export default function Header() {
               </div>
 
               {/* Desktop Categories */}
-              <div className="hidden lg:block relative group">
-                <button className="flex items-center gap-1 transition-colors py-6 font-medium text-sm uppercase tracking-wide hover:opacity-80" 
-                  style={{ color: 'var(--header-text)' }}
-                >
-                  Categories
-                </button>
-
-                {/* Dropdown Panel */}
-                <div className="absolute top-full left-0 w-64 rounded-xl shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 transform translate-y-4 group-hover:translate-y-0 flex flex-col gap-1 p-3 backdrop-blur-xl border"
-                   style={{ 
-                     backgroundColor: 'var(--card-bg)', 
-                     borderColor: 'var(--border)' 
-                   }}
-                >
-                  {categories.map((cat) => (
-                    <div className="group/item relative" key={cat.id}>
-                      <Link 
-                        to="/search"
-                        className="px-4 py-3 rounded-lg flex justify-between items-center transition-colors text-sm font-medium"
-                        style={{ color: 'var(--text)' }}
-                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-hover)'}
-                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-                      >
-                          {cat.name}
-                          {cat.subcategories.length > 0 && <ArrowRight className="w-3 h-3 opacity-50" />}
-                      </Link>
-                      
-                      {/* Subcategories Flyout */}
-                      {cat.subcategories.length > 0 && (
-                        <div className="hidden group-hover/item:block absolute left-full top-0 w-52 pl-2">
-                          <div className="shadow-xl rounded-lg py-2 border overflow-hidden" 
-                            style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--border)' }}
-                          >
-                            {cat.subcategories.map((sub, sIdx) => (
-                              <Link 
-                                key={sIdx} 
-                                to="/search"
-                                className="block px-4 py-2 text-sm transition-colors duration-100 hover:bg-[var(--bg-hover)]"
-                                style={{ color: 'var(--text-muted)' }}
-                              >
-                                {sub.name}
-                              </Link>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
+              <CategoryDropper />
             </div>
 
             {/* CENTER: Search Bar (Themed) */}
@@ -134,16 +86,22 @@ export default function Header() {
 
               {user ? (
                 <div className="flex items-center gap-4">
-                  {user.role === 'seller' && (
-                    <Link
-                      to="/create"
-                      className="hidden sm:flex items-center gap-2 font-bold py-2 px-4 rounded-lg transition text-sm shadow-lg hover:shadow-xl hover:-translate-y-0.5"
-                      style={{ backgroundColor: 'var(--theme-secondary)', color: '#fff' }}
-                    >
-                      <Plus size={18} />
-                      <span className="hidden md:inline">Create</span>
-                    </Link>
-                  )}
+                  
+                  {/* DYNAMIC ACTION BUTTONS */}
+                  <Link
+                    to={user.role === 'admin' ? "/admin" : (user.role === 'seller') ? "/create-auction" : "/become-seller"}
+                    className="hidden sm:flex items-center gap-2 font-bold py-2 px-4 rounded-lg transition text-sm shadow-lg hover:shadow-xl hover:-translate-y-0.5"
+                    style={{ 
+                      backgroundColor: user.role === 'admin' ? 'var(--text)' : (user.role === 'seller') ? 'var(--theme-secondary)' : 'var(--accent)', 
+                      color: user.role === 'admin' ? 'var(--bg)' : (user.role === 'seller') ? '#fff' : '#1A1205'
+                    }}
+                  >
+                    {user.role === 'admin' ? <LayoutDashboard size={18} /> : (user.role === 'seller') ? <Plus size={18} /> : <ArrowRight size={18} />}
+                    <span className="hidden md:inline">
+                      {user.role === 'admin' ? "Dashboard" : (user.role === 'seller') ? "Create" : "Start Selling"}
+                    </span>
+                  </Link>
+
                   <NotificationDropper />
                   <ProfileDropper />
                 </div>

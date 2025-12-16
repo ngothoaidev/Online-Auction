@@ -6,7 +6,8 @@ import ViewAllSoldItems from "./ViewAllSoldItems";
 import ViewAllWonItems from "./ViewAllWonItems";
 import ViewAllReviews from "./ViewAllReviews";
 
-import { Navigate, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
+import { useNav } from "../../hooks/useNavigate";
 
 /**
  * Section Controller Component
@@ -33,7 +34,7 @@ export default function ViewAll() {
         case 'reviews':
             return <ViewAllReviews />;
         default:
-            return <Navigate to="/404" replace />;
+            return useNav().notFound();
     }
 }
 
