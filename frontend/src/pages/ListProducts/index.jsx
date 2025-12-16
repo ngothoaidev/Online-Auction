@@ -1,4 +1,4 @@
-import {useState} from "react";
+import { useState, useEffect } from "react";
 import { House, ChevronLeft, ChevronRight } from "lucide-react";
 import { products } from "../../data/index.js";
 import AuctionCard from "../../components/AuctionCard/DefaultAuctionCard";
@@ -11,6 +11,15 @@ export default function ListProduct() {
 
     const [filteredProducts, setItems] = useState(products);
     const [currentPage, setCurrentPage] = useState(1);
+
+    useEffect(() => {
+        window.scrollTo({
+            top: 0,
+            left: 0,
+            behavior: 'smooth'
+        });
+    }, [currentPage]);
+
     const itemsPerPage = 12;
     const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
     const items = filteredProducts.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
@@ -50,7 +59,7 @@ export default function ListProduct() {
                 ))}
               </div>
 
-              {/* THEME: Pagination */}
+              {/* Pagination */}
               {totalPages > 1 && (
                 <div className="flex justify-center mt-12 gap-2">
                   <button 
