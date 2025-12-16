@@ -148,7 +148,7 @@ export default function FilterBar() {
                 {selectedCategory && (
                     <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium" style={{ backgroundColor: 'var(--accent-soft)', color: 'var(--accent-strong)' }}>
                         {selectedCategory}
-                        <X size={12} className="cursor-pointer hover:scale-110" onClick={() => setSelectedCategory("All")} />
+                        <X size={12} className="cursor-pointer hover:scale-110" onClick={() => setSelectedCategory(null)} />
                     </span>
                 )}
                 {priceRange.min && (
