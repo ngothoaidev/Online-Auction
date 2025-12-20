@@ -77,7 +77,7 @@ export default function WonAuctionCard({ product, onRate }) {
                         className="flex items-center gap-2 px-6 py-2 rounded-lg bg-[var(--accent)] text-[var(--bg)] font-bold text-sm hover:brightness-110 transition-all shadow-sm active:scale-95"
                     >
                         <Star size={16} className="fill-current" />
-                        Rate Seller
+                        Rate
                     </button>
                 ) : (
                     <button disabled className="flex items-center gap-2 px-6 py-2 rounded-lg bg-[var(--bg-soft)] text-[var(--text-muted)] font-medium text-sm cursor-default">
