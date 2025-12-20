@@ -1,6 +1,3 @@
-// const data = []
-
-import { toJSONSchema } from "zod";
 import db from "../db/index.js"
 import {auctions} from "../db/schema/auctions.js"
 

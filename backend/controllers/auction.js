@@ -1,5 +1,4 @@
 import auctionService from "../services/auction.js";
-import auction_schema from "../schema/auction.js"
 const controller = {
     listAuction: function(req, res, next){
         auctionService.findAll().then((auctions) => {
