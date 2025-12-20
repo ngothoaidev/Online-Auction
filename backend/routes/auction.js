@@ -1,20 +1,24 @@
 import { Router } from "express";
 import auctionController from "../controllers/auction.js"
+
 const route = new Router();
 
-// GET: List Auction
-route.get('/', auctionController.listAuction);
+// GET: All Auctions
+route.get('/', auctionController.listAuctions);
+
+// GET: Find Auctions
+route.get('/search', auctionController.findAuctions);
 
 // Get: Specific Auction
 route.get('/:id', auctionController.getAuction);
 
-// POST: Create  Auction
+// POST: Create New Auction
 route.post('/', auctionController.createAuction);
 
-// PUT: Update Auction
+// PUT: Update Specific Auction
 route.put('/:id', auctionController.updateAuction);
 
-// DELETE: Remove Auction
+// DELETE: Remove Specific Auction
 route.delete('/:id', auctionController.deleteAuction);
 
 export default route;

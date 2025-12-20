@@ -1,86 +1,112 @@
 import auctionService from "../services/auction.js";
-import auction_schema from "../schema/auction.js"
+
 const controller = {
-    listAuction: function(req, res, next){
-        auctionService.findAll().then((auctions) => {
+    
+    // GET /auctions
+    listAuctions: async function(req, res, next) {
+        try {
+            const auctions = await auctionService.findAll();
             res.json(auctions);
-        }).catch(next);
+        } catch (error) {
+            next(error);
+        }
     },
 
-    getAuction: function(req, res, next){
-        const id = Number(req.params.id);
-        auctionService.getById(id).then((auction) => {
-            if(auction){
-                res.json(auction);
-            }
-            else{
-                res.status(404).json({
-                    message: 'Auction not Found',
-                });
-            }
-        })
+    // GET /auctions/search
+    findAuctions: async function(req, res, next) {
+        try {
+            const { q, category, minPrice, maxPrice, sortBy, page } = req.query;
+            
+            const pageNum = parseInt(page) || 1;
+            const limit = 12;
+            const offset = (pageNum - 1) * limit;
+
+            const { data, total } = await auctionService.findAuctions({
+                q,
+                category,
+                minPrice: minPrice ? parseFloat(minPrice) : null,
+                maxPrice: maxPrice ? parseFloat(maxPrice) : null,
+                sortBy,
+                limit,
+                offset
+            });
+
+            res.json({
+                data,
+                total,
+                currentPage: pageNum,
+                totalPages: Math.ceil(total / limit)
+            });
+        } catch (error) {
+            next(error);
+        }
     },
 
-    createAuction: function(req, res){
-        console.log(req.body);
-        auctionService.create(req.body).then((auction) => {
-            if(auction){
-                res.status(201).json(auction);
+    // GET /auctions/:id
+    getAuction: async function(req, res, next) {
+        try {
+            const id = Number(req.params.id);
+            const auction = await auctionService.findById(id);
+            
+            if (!auction) {
+                res.status(404);
+                throw new Error('Auction Not Found');
             }
-            else{
-                res.status(404).json({
-                    message: 'Auction can not created',
-                });
-            }
-        });
+            
+            res.json(auction);
+        } catch (error) {
+            next(error);
+        }
     },
 
-    updateAuction: function(req, res){
-        const id = Number(req.params.id);
-        const {body} = req;
-        auctionService.getById(id).then((auction) => {
-            if(!auction){
-                res.status(404).json({
-                    message: 'Auction Not Found'
-                });
-            }
-            else{
-                auctionService.update(id, body).then((result) => {
-                    if(result){
-                        res.json(result);
-                    }
-                    else{
-                        res.status(404).json({
-                            message: 'Auction Not Found'
-                        });
-                    }
-                });
-            }
-        })    
-        
+    // POST /auctions
+    createAuction: async function(req, res, next) {
+        try {
+            const auction = await auctionService.create(req.body);
+            res.status(201).json(auction);
+        } catch (error) {
+            next(error);
+        }
     },
 
-    deleteAuction: function(req, res){
-        const id = Number(req.params.id);
-        auctionService.getById(id).then((auction) =>{
-            if(!auction){
-                res.status(404).json({
-                    message: 'Auction Not Found'
-                });
+    // PUT /auctions/:id
+    updateAuction: async function(req, res, next) {
+        try {
+            const id = Number(req.params.id);
+            
+            // 1. Check if it exists
+            const existingAuction = await auctionService.findById(id);
+            if (!existingAuction) {
+                res.status(404);
+                throw new Error('Auction Not Found');
             }
-            else{
-                auctionService.delete(id).then((result) =>{
-                    if(result){
-                        res.json({});
-                    }
-                    else{
-                        res.status(404).json({
-                            message: 'Auction Not Found'
-                        });
-                    }
-                });
+
+            // 2. Update
+            const updatedAuction = await auctionService.update(id, req.body);
+            res.json(updatedAuction);
+        } catch (error) {
+            next(error);
+        }
+    },
+
+    // DELETE /auctions/:id
+    deleteAuction: async function(req, res, next) {
+        try {
+            const id = Number(req.params.id);
+
+            // 1. Check if it exists
+            const existingAuction = await auctionService.findById(id);
+            if (!existingAuction) {
+                res.status(404);
+                throw new Error('Auction Not Found');
             }
-        });
+
+            // 2. Delete
+            await auctionService.delete(id);
+            res.json({}); // Return empty JSON on success
+        } catch (error) {
+            next(error);
+        }
     }
 }
 

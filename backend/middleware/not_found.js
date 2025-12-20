@@ -1,5 +1,7 @@
-export default function not_found (req, res, next){
-    res.status(404).json({
-        message: "Not found",
-    });
-}
+const notFound = (req, res, next) => {
+  const error = new Error(`Not Found - ${req.originalUrl}`);
+  res.status(404);
+  next(error); // Passes error to the next middleware (the errorHandler)
+};
+
+export default notFound;
