@@ -1,28 +1,54 @@
+import { useState } from 'react';
+import { useAuth } from '../../contexts/AuthContext'; //
+import { useNav } from '../../hooks/useNavigate';     //
+
 import { 
   MapPin, 
   Calendar, 
   Link as LinkIcon, 
   Share2, 
   MoreHorizontal, 
+  ShieldCheck, 
   MessageCircle, 
   UserPlus, 
   Camera, 
   ThumbsUp, 
-  ThumbsDown 
+  ThumbsDown,
+  LogOut // Added Icon
 } from "lucide-react";
 
+import ImageUploadModal from '../../components/ImageUploadModal';
+
 export default function ProfileSidebar({ userData, isOwnProfile }) {
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const { logout } = useAuth();
+  const nav = useNav();
+  
+  const handleAvatarUpload = (file) => {
+    console.log("Uploading file:", file);
+    alert(`Ready to upload: ${file.name}`);
+    setIsUploadModalOpen(false);
+  };
+
+  // Logout Handler
+  const handleLogout = () => {
+    if(confirm("Are you sure you want to log out?")) {
+        logout();
+        nav.home();
+    }
+  };
+
   return (
     <div className="relative overflow-hidden">
 
-        {/* 2. Content Section */}
+        {/* Content Section */}
         <div className="px-6 pb-6 relative text-center">
             
             {/* AVATAR AREA */}
             <div className="relative mt-8 mb-6 inline-block transition-all">
                 <div className="relative group">
-                    {/* Larger Size: w-40 h-40 */}
-                    <div className="w-50 h-50 rounded-full border-[6px] border-[var(--card-bg)] shadow-md overflow-hidden bg-white">
+                    {/* Avatar Image */}
+                    <div className="w-40 h-40 rounded-full border-[6px] border-[var(--card-bg)] shadow-md overflow-hidden bg-white">
                         <img 
                             src={userData.avatar} 
                             alt={userData.name} 
@@ -32,9 +58,11 @@ export default function ProfileSidebar({ userData, isOwnProfile }) {
 
                     {/* DYNAMIC AVATAR BUTTON */}
                     {isOwnProfile ? (
-                        /* OWNER: Change Image Button */
-                        <button className="absolute bottom-2 right-2 p-2 rounded-full bg-[var(--text)] text-[var(--bg)] shadow-lg hover:scale-110 transition-transform border-4 border-[var(--card-bg)]">
-                            <Camera size={18} />
+                        <button 
+                            onClick={() => setIsUploadModalOpen(true)}
+                            className="absolute bottom-2 right-2 p-2 rounded-full bg-[var(--card-bg)] text-[var(--text)] shadow-lg hover:scale-110 transition-transform border-4 border-[var(--card-bg)]"
+                        >
+                            <Camera size={20} />
                         </button>
                     ) : (
                         /* VISITOR: Like / Dislike Pill */
@@ -113,9 +141,19 @@ export default function ProfileSidebar({ userData, isOwnProfile }) {
             {/* Main CTA Buttons */}
             <div className="flex gap-3">
                 {isOwnProfile ? (
-                    <button className="flex-1 py-3 rounded-xl font-bold bg-[var(--text)] text-[var(--bg)] hover:opacity-90 transition-all shadow-lg flex items-center justify-center gap-2">
-                        Edit Profile
-                    </button>
+                    <>
+                        <button className="flex-1 py-3 rounded-xl font-bold bg-[var(--text)] text-[var(--bg)] hover:opacity-90 transition-all shadow-lg flex items-center justify-center gap-2">
+                            Edit Profile
+                        </button>
+                        {/* LOGOUT BUTTON ADDED HERE */}
+                        <button 
+                            onClick={handleLogout}
+                            title="Log Out"
+                            className="p-3 rounded-xl border border-[var(--border)] hover:bg-red-50 dark:hover:bg-red-900/10 text-[var(--text)] hover:text-red-600 hover:border-red-200 transition-colors"
+                        >
+                            <LogOut size={20} />
+                        </button>
+                    </>
                 ) : (
                     <>
                         <button className="flex-1 py-3 rounded-xl font-bold bg-[var(--accent)] text-[#1a1205] hover:brightness-110 transition-all shadow-lg shadow-[var(--accent)]/20 flex items-center justify-center gap-2">
@@ -130,6 +168,14 @@ export default function ProfileSidebar({ userData, isOwnProfile }) {
             </div>
 
         </div>
+
+        {/* IMAGE UPLOAD MODAL */}
+        <ImageUploadModal 
+            isOpen={isUploadModalOpen} 
+            onClose={() => setIsUploadModalOpen(false)} 
+            onUpload={handleAvatarUpload}
+            title="Update Profile Picture"
+        />
     </div>
   );
 }

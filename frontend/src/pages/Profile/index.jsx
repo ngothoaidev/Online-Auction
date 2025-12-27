@@ -76,7 +76,7 @@ export default function Profile() {
             <ProfileSidebar userData={userData} isOwnProfile={true} />
           </div>
 
-          <div className="flex-1 mt-4 lg:mt-0 pt-32 lg:pt-0">
+          <div className="flex-1 mt-4 lg:mt-0">
              
              <div className="flex items-center gap-8 border-b border-[var(--border)] mb-8 overflow-x-auto no-scrollbar">
                 {tabs.map((tab) => {

@@ -1,5 +1,9 @@
 @import 'tailwindcss';
 
+button {
+  @apply cursor-pointer;
+}
+
 /* --- UTILITIES --- */
 .custom-scrollbar {
     scrollbar-width: thin;
@@ -70,8 +74,6 @@
   --input-bg: #F8FAFC;
   --input-border: #E2E8F0;
   --input-border-focus: #B45309;
-  
-  --auction-badge-bg: #F3F4F6;
 }
 
 :root.dark {
@@ -117,8 +119,6 @@
   --input-bg: #020617;
   --input-border: #1E293B;
   --input-border-focus: #FBBF24;
-  
-  --auction-badge-bg: #1E293B;
 }
 
 body {

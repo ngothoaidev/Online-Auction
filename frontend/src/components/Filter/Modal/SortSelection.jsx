@@ -8,7 +8,7 @@ export default function SortSelection({orderBy, setOrderBy}){
                     <ArrowUpDown size={16} />
                     <span className="text-xs uppercase font-bold order-list">Sort by:</span>
                 </div>
-                <select value={orderBy} className="bg-transparent text-sm font-medium outline-none cursor-pointer p-1" style={{ color: 'var(--text)' }} onChange={(e) => setOrderBy(e.target.value)}>
+                <select value={orderBy} className='bg-transparent text-sm font-medium text-[var(--text)] outline-none cursor-pointer p-1' onChange={(e) => setOrderBy(e.target.value)}>
                     <option value="default" disabled>-- Select --</option>
                     <option value="popularity">Popularity</option>
                     <option value="priceLowToHigh">Price: Low to High</option>

@@ -1,16 +1,16 @@
 import { useState } from "react";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Upload, X } from "lucide-react";
 import { useNav } from "../hooks/useNavigate";
-
-const API_URL = import.meta.env.VITE_API_URL;
+import ImageUploadModal from '../components/ImageUploadModal'
 
 export default function CreateAuction() {
   const nav = useNav();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
-  const [formData, setFormData] = useState({ name: "", description: "", price: "", startingBid: "", category: "", imageUrl: "", auctionEndTime: "" });
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
 
+  const [formData, setFormData] = useState({ name: "", description: "", price: "", startingBid: "", category: "", imageUrl: "", auctionEndTime: "" });
   const categories = ["Electronics", "Furniture", "Collectibles", "Art", "Fashion", "Sports", "Books", "Jewelry", "Home & Garden", "Toys"];
 
   const handleChange = (e) => {
@@ -18,9 +18,27 @@ export default function CreateAuction() {
     setError(null);
   };
 
+  const handleImageUpload = (file) => {
+    // Create a local preview URL
+    const objectUrl = URL.createObjectURL(file);
+    setFormData(prev => ({ 
+        ...prev, 
+        imageUrl: objectUrl, 
+        // In a real app, you would also store the 'file' object here to send to backend
+        imageFile: file 
+    }));
+    setIsUploadModalOpen(false);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    // ... logic remains identical ...
+    setLoading(true);
+    // Note: In a real implementation, you'd handle the file upload here (e.g., FormData)
+    setTimeout(() => {
+        setLoading(false);
+        setSuccess(true);
+        setTimeout(() => nav.home(), 2000);
+    }, 1500);
   };
 
   const inputStyle = {
@@ -30,7 +48,7 @@ export default function CreateAuction() {
   };
 
   return (
-    <div className="min-h-screen py-12" style={{ backgroundColor: "var(--bg)" }}>
+    <div className="min-h-screen py-12 bg-[var(--bg)]">
       <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="flex items-center gap-4 mb-8">
@@ -70,7 +88,7 @@ export default function CreateAuction() {
                 className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-[var(--accent)] outline-none transition"
                 style={inputStyle} disabled={loading}
               >
-                <option value="">Select a category</option>
+                <option value="" disabled>-- Select a category --</option>
                 {categories.map((cat) => <option key={cat} value={cat}>{cat}</option>)}
               </select>
             </div>
@@ -93,11 +111,39 @@ export default function CreateAuction() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2" style={{ color: "var(--text)" }}>Image URL</label>
-              <input type="url" name="imageUrl" value={formData.imageUrl} onChange={handleChange} placeholder="https://..."
-                className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-[var(--accent)] outline-none transition"
-                style={inputStyle} disabled={loading}
-              />
+              <label className="block text-sm font-medium mb-2" style={{ color: "var(--text)" }}>Product Image *</label>
+              
+              {formData.imageUrl ? (
+                  // Preview State
+                  <div className="relative w-full h-64 rounded-xl overflow-hidden border group" style={{ borderColor: "var(--border)" }}>
+                      <img src={formData.imageUrl} alt="Preview" className="w-full h-full object-cover" />
+                      
+                      {/* Remove Button */}
+                      <button 
+                          type="button"
+                          onClick={() => setFormData(prev => ({ ...prev, imageUrl: "" }))}
+                          className="absolute top-2 right-2 p-2 bg-black/50 text-white rounded-full hover:bg-red-600 transition backdrop-blur-sm"
+                      >
+                          <X size={20} />
+                      </button>
+                  </div>
+              ) : (
+                  // Upload Button State
+                  <button 
+                      type="button"
+                      onClick={() => setIsUploadModalOpen(true)}
+                      className="w-full h-40 border-2 border-dashed border-[var(--border-subtle)] rounded-xl flex flex-col items-center justify-center gap-3 transition hover:bg-[var(--bg-subtle)] group"
+                      style={inputStyle}
+                  >
+                      <div className="p-3 rounded-full bg-[var(--bg)] shadow-sm group-hover:scale-110 transition-transform">
+                        <Upload size={24} style={{ color: "var(--text-muted)" }} />
+                      </div>
+                      <div className="text-center">
+                        <span className="font-bold block" style={{ color: "var(--text)" }}>Click to upload</span>
+                        <span className="text-xs" style={{ color: "var(--text-muted)" }}>SVG, PNG, JPG or GIF (max. 10MB)</span>
+                      </div>
+                  </button>
+              )}
             </div>
 
             <div>
@@ -134,6 +180,15 @@ export default function CreateAuction() {
           </ul>
         </div>
       </div>
+
+      {/* MODAL COMPONENT */}
+      <ImageUploadModal 
+        isOpen={isUploadModalOpen} 
+        onClose={() => setIsUploadModalOpen(false)} 
+        onUpload={handleImageUpload}
+        title="Upload Product Image"
+      />
+
     </div>
   );
 }
