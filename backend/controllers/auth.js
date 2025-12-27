@@ -1,5 +1,5 @@
 import userService from "../services/user.js";
-
+import authService from "../services/auth.js";
 const controller = {
     listUser: function(req, res, next){
         userService.findAll().then((users) => {
@@ -11,22 +11,27 @@ const controller = {
         const {username, password} = req.body;
         console.log(username);
         const found = await userService.getByUsername(username);
-        console.log(found);
+        // console.log(found);
         if (!found){
             return res.status(409).json({
                 message: "Account is not exist"
             })
         }
-
-        if(!userService.comparedPassword(password, found)){
-            res.status(404).json({
+        console.log(password);
+        const result = await authService.validatePassword(password, found.encryptedPassword);
+        if(!result){
+            return res.status(404).json({
                 message: 'Wrong Password',
             });
         }
-        res.status(201).json({
+        const token = await authService.generateToken({
             userId: found.userId,
             username: found.username,
             email: found.email,
+        }) 
+        res.status(201).json({
+            token,
+            
         })
     },
 
@@ -45,7 +50,7 @@ const controller = {
         const result = await userService.create({
             username,
             email,
-            encryptedPassword: await userService.hashPassword(password),
+            encryptedPassword: await authService.hashPassword(password),
             fullName: null,
             role: "buyer",
             avatarUrl: null,
@@ -110,6 +115,20 @@ const controller = {
                 });
             }
         });
+    },
+    getCurrentUser: async function(req, res){
+        const authorization = req.header('Authorization');
+        // Authorization: Bearer ey...
+        const token = authorization.replace('Bearer ', '').trim();
+        // Validate Token
+        try {
+            const result = await authService.validateToken(token);
+            res.status(200).json(result);
+        } catch (error) {
+            return res.status(401).json({
+                message: 'Invalid Token',
+            });
+        }
     }
 }
 

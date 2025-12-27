@@ -16,7 +16,7 @@ app.use(morgan('dev'));
 
 app.use(bodyParser.json());
 
-app.use('/auction'. auctionRoute);
+// app.use('/auction'. auctionRoute);
 app.use('/auth', authRoute);
 
 app.get('/', (req, res) => {

@@ -4,20 +4,14 @@ import {users} from "../db/schema/user.js"
 
 import { eq } from "drizzle-orm";
 
-import bcrypt from 'bcrypt'
-
 import dotenv from 'dotenv'
 
 dotenv.config();
 
-const PASSWORD_SALT_ROUNDS = Number(process.env.PASSWORD_SALT_ROUNDS || 10);
 
 
 
 const service = {
-    hashPassword: async function(password) {
-        return bcrypt.hash(password, PASSWORD_SALT_ROUNDS);
-    },
     findAll: async function(){
         return db.select().from(users);
     },
@@ -31,9 +25,6 @@ const service = {
     getByUsername: async function(username){
         const result = await db.select().from(users).where(eq(users.username, username));
         return result.length > 0 ? result[0] : null;
-    },
-    comparedPassword: async function(password, user){
-        return bcrypt.hash(password, PASSWORD_SALT_ROUNDS) === user.encryptedPassword
     },
     create: async function(userData){
         const user = {
