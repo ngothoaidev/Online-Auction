@@ -6,6 +6,19 @@ import { AppError } from "../utils/errors.js";
 import { planTransition } from "../domain/orderTransitions.js";
 import { runIdempotent } from "./idempotency.js";
 import { enqueue } from "./outbox.js";
+import { attachAsset } from "./media.js";
+
+// Proof URLs are NEVER taken from the client: only a pending upload owned by the actor for this order can become a proof.
+async function resolveProofs(tx, order, command, actor, payload) {
+  const out = { ...payload, paymentProofUrl: undefined, shippingProofUrl: undefined };
+  if (command === "submit_payment" && payload.paymentProofAssetId) {
+    out.paymentProofUrl = await attachAsset(tx, { assetId: payload.paymentProofAssetId, orderId: order.id, ownerId: actor.id, purpose: "payment" });
+  }
+  if ((command === "confirm_with_shipping" || command === "submit_shipping") && payload.shippingProofAssetId) {
+    out.shippingProofUrl = await attachAsset(tx, { assetId: payload.shippingProofAssetId, orderId: order.id, ownerId: actor.id, purpose: "shipping" });
+  }
+  return out;
+}
 
 const clock = async (tx) => new Date((await tx.execute(sql`SELECT clock_timestamp() AS now`))[0].now);
 
@@ -25,7 +38,9 @@ export async function transitionOrder({ orderId, command, actor, payload = {}, e
     if (expectedVersion !== undefined && expectedVersion !== null && Number(expectedVersion) !== order.version) {
       throw new AppError(409, "VERSION_CONFLICT", "The order changed; refresh and try again");
     }
-    const plan = planTransition(order, command, actor, now, payload);
+    // authorise/validate first so a refused command never touches an upload
+    planTransition(order, command, actor, now, { ...payload, paymentProofUrl: payload.paymentProofAssetId ? "pending" : undefined, shippingProofUrl: payload.shippingProofAssetId ? "pending" : undefined });
+    const plan = planTransition(order, command, actor, now, await resolveProofs(tx, order, command, actor, payload));
 
     const [updated] = await tx.update(orders)
       .set({ ...plan.set, status: plan.to, version: order.version + 1, updatedAt: now })

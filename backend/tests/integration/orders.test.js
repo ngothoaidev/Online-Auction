@@ -17,7 +17,17 @@ before(async () => {
 });
 after(() => t.stop());
 
-const proof = { paymentProofUrl: "https://img.example/proof.png", shippingAddress: "1 Main St", buyerPhone: "0123456789" };
+const PNG = Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), Buffer.alloc(32, 1)]);
+// body for commands that must be refused before any upload is looked at
+const proof = { paymentProofAssetId: "00000000-0000-0000-0000-000000000000", shippingAddress: "1 Main St", buyerPhone: "0123456789" };
+// a real private upload bound to this order, as the SPA does it
+const withProof = async (orderId, extra = {}) => {
+  const fd = new FormData();
+  fd.append("file", new Blob([PNG], { type: "image/png" }), "p.png");
+  const res = await fetch(`${t.base}/order/${orderId}/proofs?purpose=payment`, { method: "POST", headers: { Authorization: `Bearer ${tokens.buyer}` }, body: fd });
+  assert.equal(res.status, 201);
+  return { ...proof, paymentProofAssetId: (await res.json()).assetId, ...extra };
+};
 
 /** An ended lot with an order in the given status. */
 const makeOrder = async (status = "pending_payment", { dueInHours = 48, auctionStatus = "ended" } = {}) => {
@@ -34,7 +44,7 @@ const post = (id, action, who, body = {}) => t.call("POST", `/order/${id}/${acti
 
 test("manual happy path through the API: proof -> confirm+ship -> receipt, every step audited, lot becomes sold", async () => {
   const { id, auctionId } = await makeOrder();
-  assert.equal((await post(id, "payment", "buyer", proof)).status, 200);
+  assert.equal((await post(id, "payment", "buyer", await withProof(id))).status, 200);
   assert.equal((await get(id)).status, "pending_confirmation");
   assert.equal((await auction(auctionId)).status, "ended", "proof alone does not make the lot sold");
 
@@ -66,24 +76,26 @@ test("wrong actor / wrong state is refused with a stable status and nothing chan
 
 test("duplicate commands: the second payment / receipt / cancel is a clean 409, never a second transition", async () => {
   const { id } = await makeOrder();
-  const results = await Promise.all(Array.from({ length: 8 }, () => post(id, "payment", "buyer", proof)));
+  const body = await withProof(id);
+  const results = await Promise.all(Array.from({ length: 8 }, () => post(id, "payment", "buyer", body)));
   assert.equal(results.filter((r) => r.status === 200).length, 1);
   assert.ok(results.filter((r) => r.status !== 200).every((r) => r.status === 409));
   assert.equal((await transitions(id)).length, 1);
 
   // same Idempotency-Key replays the stored response instead of 409
   const o2 = await makeOrder();
-  const call = () => fetch(`${t.base}/order/${o2.id}/payment`, { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${tokens.buyer}`, "Idempotency-Key": "pay-key-0001" }, body: JSON.stringify(proof) }).then((r) => r.status);
+  const key1 = await withProof(o2.id);
+  const call = () => fetch(`${t.base}/order/${o2.id}/payment`, { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${tokens.buyer}`, "Idempotency-Key": "pay-key-0001" }, body: JSON.stringify(key1) }).then((r) => r.status);
   assert.deepEqual(await Promise.all([call(), call(), call()]), [200, 200, 200]);
   assert.equal((await transitions(o2.id)).length, 1);
 });
 
 test("stale client: expectedVersion mismatch is rejected", async () => {
   const { id } = await makeOrder();
-  const stale = await post(id, "payment", "buyer", { ...proof, expectedVersion: 5 });
+  const stale = await post(id, "payment", "buyer", await withProof(id, { expectedVersion: 5 }));
   assert.equal(stale.status, 409);
   assert.equal(stale.body.code, "VERSION_CONFLICT");
-  assert.equal((await post(id, "payment", "buyer", { ...proof, expectedVersion: 0 })).status, 200);
+  assert.equal((await post(id, "payment", "buyer", await withProof(id, { expectedVersion: 0 }))).status, 200);
 });
 
 test("cancel (B09): seller while unpaid, admin until shipping; reason mandatory; no review is created", async () => {
@@ -146,9 +158,10 @@ test("payment expiry (B08): after the deadline the worker expires the order; pro
 test("payment × expiry race (25 rounds): exactly one of them wins, the order never ends up inconsistent", async () => {
   for (let round = 0; round < 25; round++) {
     const { id } = await makeOrder("pending_payment", { dueInHours: 0 });
+    const body = await withProof(id); // prepared before the clock starts so the race is about the deadline, not the upload
     await t.sql`UPDATE orders SET payment_due_at = now() + interval '${t.sql.unsafe(String(40 + (round % 5) * 10))} milliseconds' WHERE order_id = ${id}`;
     await new Promise((r) => setTimeout(r, 30 + (round % 5) * 10));
-    const [pay] = await Promise.all([post(id, "payment", "buyer", proof), orderSvc.expireDuePayments(), orderSvc.expireDuePayments()]);
+    const [pay] = await Promise.all([post(id, "payment", "buyer", body), orderSvc.expireDuePayments(), orderSvc.expireDuePayments()]);
     // an expiry pass that ran a hair before the deadline correctly skipped; the next pass (worker poll) settles it
     await new Promise((r) => setTimeout(r, 120));
     await orderSvc.expireDuePayments();

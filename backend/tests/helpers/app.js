@@ -10,6 +10,7 @@ export async function startApp(env = {}) {
     SESSION_SECRET: "test-session-secret",
     EMAIL_TRANSPORT: "local",
     AUTH_RATE_LIMIT_MAX: "1000",
+    UPLOAD_RATE_LIMIT_MAX: "100000",
     NODE_ENV: "test",
     ...env,
   });

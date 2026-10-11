@@ -3,9 +3,8 @@ import { urlSchema, phoneSchema } from './common.schemas';
 
 // Payment submission schema
 export const paymentFormSchema = z.object({
-  paymentProofUrl: z.string()
-    .min(1, 'Payment proof is required')
-    .url('Invalid payment proof URL'),
+  paymentProofAssetId: z.string()
+    .uuid('Payment proof is required: upload an image first'),
   shippingAddress: z.string()
     .min(20, 'Shipping address must be at least 20 characters')
     .max(500, 'Shipping address must not exceed 500 characters'),
@@ -17,9 +16,8 @@ export const paymentFormSchema = z.object({
 
 // Confirm payment schema (seller)
 export const confirmPaymentSchema = z.object({
-  shippingProofUrl: z.string()
-    .min(1, 'Shipping invoice is required')
-    .url('Invalid shipping invoice URL'),
+  shippingProofAssetId: z.string()
+    .uuid('Shipping invoice is required: upload an image first'),
   trackingNumber: z.string()
     .min(5, 'Tracking number must be at least 5 characters')
     .max(50, 'Tracking number must not exceed 50 characters')

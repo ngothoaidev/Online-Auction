@@ -4,6 +4,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import orderService from '../../services/orderService';
 import { formatCurrency, formatDate, formatTimeAgo } from '../../utils/format';
 import ImageUploadModal from '../../components/ImageUploadModal';
+import ProofLink from '../../components/ProofLink';
 import auctionService from '../../services/auctionService';
 import { paymentFormSchema, confirmPaymentSchema, reviewFormSchema, cancelOrderSchema, chatMessageSchema } from '../../schemas/order.schemas';
 import { validateForm } from '../../utils/validation';
@@ -43,13 +44,15 @@ export default function OrderCompletion() {
 
   // Form states
   const [paymentForm, setPaymentForm] = useState({
-    paymentProofUrl: '',
+    paymentProofAssetId: '',
+    paymentProofPreview: '', // local blob preview of the selected file only
     shippingAddress: '',
     buyerPhone: '',
     notes: '',
   });
   const [confirmForm, setConfirmForm] = useState({
-    shippingProofUrl: '',
+    shippingProofAssetId: '',
+    shippingProofPreview: '',
     trackingNumber: '',
     shippingNotes: '',
   });
@@ -131,6 +134,7 @@ export default function OrderCompletion() {
     try {
       const data = await orderService.getMessages(order.id);
       setMessages(data.messages || []);
+      orderService.markMessagesRead(order.id).catch(() => {});
     } catch (err) {
       console.error('Error loading messages:', err);
     }
@@ -246,13 +250,14 @@ export default function OrderCompletion() {
 
   const handleImageUpload = async (file) => {
     try {
-      const result = await auctionService.uploadImage(file);
-      const imageUrl = result.url;
+      // Private upload bound to this order and purpose; only the returned asset id is ever sent back to the API.
+      const uploaded = await orderService.uploadProof(order.id, imageUploadType, file);
+      const preview = URL.createObjectURL(file);
 
       if (imageUploadType === 'payment') {
-        setPaymentForm({ ...paymentForm, paymentProofUrl: imageUrl });
+        setPaymentForm({ ...paymentForm, paymentProofAssetId: uploaded.assetId, paymentProofPreview: preview });
       } else if (imageUploadType === 'shipping') {
-        setConfirmForm({ ...confirmForm, shippingProofUrl: imageUrl });
+        setConfirmForm({ ...confirmForm, shippingProofAssetId: uploaded.assetId, shippingProofPreview: preview });
       }
     } catch (error) {
       console.error('Image upload error:', error);
@@ -498,13 +503,13 @@ export default function OrderCompletion() {
                     <label className="block text-sm font-medium text-(--text) mb-2">
                       Payment Proof (Receipt/Screenshot)
                     </label>
-                    {paymentForm.paymentProofUrl ? (
+                    {paymentForm.paymentProofPreview ? (
                       <div className="space-y-2">
                         <div className="relative rounded-xl overflow-hidden border border-(--border)">
-                          <img src={paymentForm.paymentProofUrl} alt="Payment proof" className="w-full h-48 object-cover" />
+                          <img src={paymentForm.paymentProofPreview} alt="Payment proof" className="w-full h-48 object-cover" />
                           <button
                             type="button"
-                            onClick={() => setPaymentForm({ ...paymentForm, paymentProofUrl: '' })}
+                            onClick={() => setPaymentForm({ ...paymentForm, paymentProofAssetId: '', paymentProofPreview: '' })}
                             className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-full hover:bg-red-600 transition"
                           >
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -605,9 +610,7 @@ export default function OrderCompletion() {
                   <h3 className="font-medium text-blue-700 dark:text-blue-300 mb-2">Buyer's Payment Info</h3>
                   <div className="space-y-2 text-sm">
                     <p><span className="text-(--text-muted)">Payment Proof:</span>{' '}
-                      <a href={order?.paymentProofUrl} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
-                        View Receipt
-                      </a>
+                      <ProofLink path={order?.paymentProofUrl}>View Receipt</ProofLink>
                     </p>
                     <p><span className="text-(--text-muted)">Shipping Address:</span>{' '}
                       <span className="text-(--text)">{order?.shippingAddress}</span>
@@ -628,13 +631,13 @@ export default function OrderCompletion() {
                     <label className="block text-sm font-medium text-(--text) mb-2">
                       Shipping Invoice
                     </label>
-                    {confirmForm.shippingProofUrl ? (
+                    {confirmForm.shippingProofPreview ? (
                       <div className="space-y-2">
                         <div className="relative rounded-xl overflow-hidden border border-(--border)">
-                          <img src={confirmForm.shippingProofUrl} alt="Shipping proof" className="w-full h-48 object-cover" />
+                          <img src={confirmForm.shippingProofPreview} alt="Shipping proof" className="w-full h-48 object-cover" />
                           <button
                             type="button"
-                            onClick={() => setConfirmForm({ ...confirmForm, shippingProofUrl: '' })}
+                            onClick={() => setConfirmForm({ ...confirmForm, shippingProofAssetId: '', shippingProofPreview: '' })}
                             className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-full hover:bg-red-600 transition"
                           >
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -732,9 +735,7 @@ export default function OrderCompletion() {
                   <h3 className="font-medium text-blue-700 dark:text-blue-300 mb-2">Shipping Information</h3>
                   <div className="space-y-2 text-sm">
                     <p><span className="text-(--text-muted)">Shipping Invoice:</span>{' '}
-                      <a href={order?.shippingProofUrl} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
-                        View Invoice
-                      </a>
+                      <ProofLink path={order?.shippingProofUrl}>View Invoice</ProofLink>
                     </p>
                     <p><span className="text-(--text-muted)">Tracking Number:</span>{' '}
                       <span className="text-(--text) font-mono">{order?.trackingNumber}</span>

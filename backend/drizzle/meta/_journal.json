@@ -29,6 +29,13 @@
       "when": 1791753257278,
       "tag": "0003_order_state_machine",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1791753795755,
+      "tag": "0004_media_assets",
+      "breakpoints": true
     }
   ]
 }

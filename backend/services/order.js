@@ -1,6 +1,7 @@
 import db from "../db/index.js";
 import { orders, orderMessages, users, auctions, reviews } from "../db/schema.js";
-import { eq, and, or, desc } from "drizzle-orm";
+import { eq, and, or, ne, desc } from "drizzle-orm";
+import { attachAsset } from "./media.js";
 
 const service = {
     // Get order by ID
@@ -68,17 +69,15 @@ const service = {
 
     // ============ MESSAGES ============
 
-    // Send message
-    sendMessage: async function(orderId, senderId, message, imageUrl = null) {
-        const result = await db.insert(orderMessages).values({
-            orderId,
-            senderId,
-            message,
-            imageUrl,
-            isRead: false,
-            createdAt: new Date(),
-        }).returning();
-        return result[0];
+    // Send message (an optional image must be a pending upload of the sender, attached in the same transaction)
+    sendMessage: async function(orderId, senderId, message, imageAssetId = null) {
+        return db.transaction(async (tx) => {
+            const imageUrl = imageAssetId ? await attachAsset(tx, { assetId: imageAssetId, orderId, ownerId: senderId, purpose: 'message' }) : null;
+            const result = await tx.insert(orderMessages).values({
+                orderId, senderId, message, imageUrl, isRead: false, createdAt: new Date(),
+            }).returning();
+            return result[0];
+        });
     },
 
     // Get messages for an order
@@ -97,26 +96,22 @@ const service = {
         .orderBy(orderMessages.createdAt);
     },
 
-    // Mark messages as read
-    markMessagesAsRead: async function(orderId, userId) {
+    // Mark the OTHER party's messages as read for this reader
+    markMessagesAsRead: async function(orderId, readerId) {
         await db.update(orderMessages)
             .set({ isRead: true })
             .where(and(
                 eq(orderMessages.orderId, orderId),
-                eq(orderMessages.senderId, userId)
+                ne(orderMessages.senderId, readerId),
+                eq(orderMessages.isRead, false)
             ));
     },
 
-    // Get unread message count
+    // Unread messages sent by the other party
     getUnreadCount: async function(orderId, userId) {
-        const result = await db.select()
-            .from(orderMessages)
-            .where(and(
-                eq(orderMessages.orderId, orderId),
-                eq(orderMessages.isRead, false),
-                // Messages NOT from this user (i.e., from the other party)
-            ));
-        return result.filter(m => m.senderId !== userId).length;
+        const result = await db.select().from(orderMessages)
+            .where(and(eq(orderMessages.orderId, orderId), eq(orderMessages.isRead, false), ne(orderMessages.senderId, userId)));
+        return result.length;
     },
 
     // ============ REVIEWS ============

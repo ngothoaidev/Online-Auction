@@ -192,6 +192,24 @@ export const orders = pgTable('orders', {
   closeReason: varchar('close_reason', { length: 32 }),
 });
 
+// Uploaded proofs / message images. Never public: read only through the order's participant-checked endpoint.
+export const mediaAssets = pgTable('media_assets', {
+  id: uuid('id').primaryKey(),
+  ownerId: integer('owner_id').notNull().references(() => users.id),
+  orderId: integer('order_id').notNull().references(() => orders.id, { onDelete: 'cascade' }),
+  purpose: varchar('purpose', { length: 16 }).notNull(), // payment | shipping | message
+  storageKey: varchar('storage_key', { length: 64 }).notNull(),
+  mime: varchar('mime', { length: 32 }).notNull(),
+  size: integer('size').notNull(),
+  accessScope: varchar('access_scope', { length: 24 }).notNull().default('order_participants'),
+  state: varchar('state', { length: 16 }).notNull().default('pending'), // pending -> attached
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  attachedAt: timestamp('attached_at', { withTimezone: true }),
+}, (t) => ({
+  byOrder: index('media_assets_order_idx').on(t.orderId, t.ownerId, t.purpose, t.state),
+  pendingIdx: index('media_assets_pending_idx').on(t.createdAt).where(sql`state = 'pending'`),
+}));
+
 // Append-only audit of every order state change; unique per logical command so retries cannot double-write.
 export const orderTransitions = pgTable('order_transitions', {
   id: serial('id').primaryKey(),

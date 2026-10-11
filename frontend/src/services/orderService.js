@@ -150,14 +150,44 @@ const orderService = {
    * @param {string} message - Message content
    * @returns {Promise<Object>} Created message
    */
-  sendMessage: async (orderId, message) => {
+  sendMessage: async (orderId, message, imageAssetId) => {
     const response = await fetch(`${API_BASE_URL}/order/${orderId}/messages`, {
       method: 'POST',
       headers: getAuthHeaders(),
-      body: JSON.stringify({ message }),
+      body: JSON.stringify({ message, imageAssetId }),
     });
     return handleResponse(response);
   },
+};
+
+// --- private proofs (T11) ---
+orderService.uploadProof = async (orderId, purpose, file) => {
+  const token = localStorage.getItem('authToken');
+  const form = new FormData();
+  form.append('file', file);
+  const response = await fetch(`${API_BASE_URL}/order/${orderId}/proofs?purpose=${encodeURIComponent(purpose)}`, {
+    method: 'POST',
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    body: form,
+  });
+  return handleResponse(response); // { assetId, previewPath, mime, size }
+};
+
+orderService.fetchProofBlobUrl = async (path) => {
+  const token = localStorage.getItem('authToken');
+  const response = await fetch(`${API_BASE_URL}${path}`, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
+  if (!response.ok) throw new Error('Could not load the file');
+  return URL.createObjectURL(await response.blob());
+};
+
+orderService.markMessagesRead = async (orderId) => {
+  const response = await fetch(`${API_BASE_URL}/order/${orderId}/messages/read`, { method: 'POST', headers: getAuthHeaders(), body: '{}' });
+  return handleResponse(response);
+};
+
+orderService.submitShipping = async (orderId, data) => {
+  const response = await fetch(`${API_BASE_URL}/order/${orderId}/shipping`, { method: 'POST', headers: getAuthHeaders(), body: JSON.stringify(data) });
+  return handleResponse(response);
 };
 
 export default orderService;

@@ -97,19 +97,6 @@ const auctionService = {
     return res.json();
   },
 
-  uploadImage: async (file) => {
-    const token = localStorage.getItem('authToken');
-    const formData = new FormData();
-    formData.append('image', file);
-    const res = await fetch(`${API_URL}/upload`, {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${token}` },
-      body: formData
-    });
-    if (!res.ok) throw new Error('Image upload failed');
-    return res.json();
-  },
-
   //Add comment
   addComment: async (auctionId, content, parentId = null) => {
     const token = localStorage.getItem('authToken');

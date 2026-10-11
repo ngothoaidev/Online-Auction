@@ -5,6 +5,15 @@ import { sendEmail } from "../utils/email.js";
 import { transitionOrder } from "../services/orderCommands.js";
 import { validKey } from "../services/idempotency.js";
 import { AppError } from "../utils/errors.js";
+import { storeOrderUpload, readOrderAsset } from "../services/media.js";
+
+/** Load the order and make sure the caller is its buyer or seller (404 unknown, 403 outsider). */
+async function participantOrder(req) {
+    const order = await orderService.getById(parseInt(req.params.id));
+    if (!order) throw new AppError(404, 'NOT_FOUND', 'Order not found');
+    if (order.buyerId !== req.user.id && order.sellerId !== req.user.id) throw new AppError(403, 'FORBIDDEN', 'Access denied');
+    return order;
+}
 
 const asActor = (user) => ({ type: 'user', id: user.id, role: user.role });
 function idempotencyKey(req) {
@@ -101,9 +110,6 @@ const controller = {
             const orderDetails = await orderService.getOrderWithDetails(order.id);
             const reviews = await orderService.getOrderReviews(order.auctionId);
             const messages = await orderService.getMessages(order.id);
-
-            // Mark messages as read
-            await orderService.markMessagesAsRead(order.id, userData.userId);
 
             res.status(200).json({
                 order: orderDetails,
@@ -269,7 +275,7 @@ const controller = {
             const userData = { userId: req.user.id };
 
             const { id } = req.params;
-            const { message, imageUrl } = req.body;
+            const { message, imageAssetId } = req.body;
 
             if (!message || message.trim() === '') {
                 return res.status(400).json({ message: 'Message is required' });
@@ -289,7 +295,7 @@ const controller = {
                 parseInt(id),
                 userData.userId,
                 message.trim(),
-                imageUrl
+                imageAssetId
             );
 
             // Get sender info
@@ -335,7 +341,6 @@ const controller = {
             const messages = await orderService.getMessages(parseInt(id));
 
             // Mark as read
-            await orderService.markMessagesAsRead(parseInt(id), userData.userId);
 
             res.status(200).json({
                 messages: messages.map(m => ({
@@ -351,6 +356,41 @@ const controller = {
             res.status(500).json({ message: 'An error occurred. Please try again.' });
         }
     },
+
+    // POST /order/:id/proofs?purpose=payment|shipping|message  (multipart field "file"; gate + multer run in the router)
+    uploadProof: async function(req, res, next) {
+        try {
+            if (!req.file) throw new AppError(400, 'VALIDATION_ERROR', 'A file is required (multipart field "file")');
+            const result = await storeOrderUpload({ orderId: req.order.id, ownerId: req.user.id, purpose: req.query.purpose, buffer: req.file.buffer });
+            res.status(201).json(result);
+        } catch (error) {
+            next(error);
+        }
+    },
+
+    // GET /order/:id/proofs/:assetId  - participants only, never cached, never sniffed
+    getProof: async function(req, res, next) {
+        try {
+            await participantOrder(req);
+            const { asset, data } = await readOrderAsset(parseInt(req.params.id), req.params.assetId);
+            res.set({ 'Content-Type': asset.mime, 'Content-Length': String(data.length), 'Cache-Control': 'private, no-store', 'X-Content-Type-Options': 'nosniff', 'Content-Disposition': 'inline' });
+            res.send(data);
+        } catch (error) {
+            next(error);
+        }
+    },
+
+    // POST /order/:id/messages/read - the explicit write that GET used to do implicitly
+    markMessagesRead: async function(req, res, next) {
+        try {
+            const order = await participantOrder(req);
+            await orderService.markMessagesAsRead(order.id, req.user.id);
+            res.status(200).json({ message: 'Messages marked as read' });
+        } catch (error) {
+            next(error);
+        }
+    },
+
 };
 
 export default controller;
