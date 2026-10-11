@@ -1,81 +1,57 @@
-import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
-import { useNav } from '../../hooks/useNavigate.js';
-import auctionService from '../../services/auctionService.js';
-
-// Import Components
+import { useParams, Link } from 'react-router-dom';
+import { useAuction } from '../../hooks/useAuction.js';
+import { useAuth } from '../../contexts/AuthContext.jsx';
 import ImageGallery from './ImageGallery';
 import BiddingSection from './BiddingSection';
 import Description from './Description';
 import CommentsSection from './CommentsSection';
-import BidHistory from './BidHistory'; // 
-import { useAuth } from '../../contexts/AuthContext.jsx';
-
+import BidHistory from './BidHistory';
+import { EmptyState, Skeleton, Button } from '../../components/ui';
 
 export default function ProductDetail() {
-  const { user } = useAuth();
+  const { user } = useAuth() ?? {};
   const { id } = useParams();
-  const nav = useNav();
-  const [productCore, setProductCore] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const { status, data: product, refresh, applyCommandResult } = useAuction(id);
 
-  useEffect(() => {
-    const loadCoreData = async () => {
-      setLoading(true);
-      try {
-        const data = await auctionService.getById(id);
-        setProductCore(data);
-      } catch (error) {
-        console.error('Error loading product core:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    if (id) loadCoreData();
-  }, [id, user]);
+  if (status === 'loading') {
+    return (
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-10" aria-busy="true">
+        <div className="grid gap-8 lg:grid-cols-12"><Skeleton className="h-96 lg:col-span-7" /><Skeleton className="h-96 lg:col-span-5" /></div>
+        <span className="sr-only" role="status">Loading lot</span>
+      </div>
+    );
+  }
+  if (status === 'missing') return <div className="mx-auto max-w-2xl px-4 py-16"><EmptyState title="Lot not found" action={<Link className="font-semibold text-(--brand) underline" to="/search">Browse lots</Link>}>This lot does not exist or was removed.</EmptyState></div>;
+  if (status === 'error') return <div className="mx-auto max-w-2xl px-4 py-16"><EmptyState title="The lot could not be loaded" action={<Button onClick={() => refresh({ silent: false })}>Try again</Button>}>Check your connection and try again.</EmptyState></div>;
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
-  if (!productCore) return <div className="min-h-screen flex items-center justify-center">Product not found</div>;
+  const ended = product.status !== 'active' || Boolean(product.serverTime && new Date(product.endTime) <= new Date(product.serverTime));
+  const categoryName = product.category?.name || product.categoryName || 'Category';
+  const me = user?.userId ?? user?.id;
+  // a command that changed canonical state (or a refusal) -> bump the history table too
+  const refreshKey = `${product.version}`;
 
-  // Flag to indicate if auction has ended
-  const ended = productCore.status === 'ended' || productCore.status === 'sold';
-
-  const categoryName = productCore.category?.name || productCore.categoryName || productCore.category || 'Category';
+  const onChanged = (result) => (result ? applyCommandResult(result) : refresh());
 
   return (
-    <div className="min-h-screen py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        
-        {/* Breadcrumb Navigation */}
-        <nav className="mb-6 flex items-center gap-2 text-sm text-[var(--text-muted)]">
-          <button onClick={() => nav.home()} className="hover:text-[var(--text)] transition">Auctions</button>
-          <span>/</span>
-          <span className="truncate max-w-xs">{categoryName}</span>
-          <span>/</span>
-          <span className="font-medium text-[var(--text)] truncate max-w-xs">{productCore.title}</span>
-        </nav>
+    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-10">
+      <nav aria-label="Breadcrumb" className="mb-6 text-sm text-(--muted)">
+        <Link to="/search" className="hover:underline">Lots</Link> <span aria-hidden="true">/</span> <span>{categoryName}</span> <span aria-hidden="true">/</span> <span aria-current="page" className="text-(--ink)">{product.title}</span>
+      </nav>
 
-        {/* GRID LAYOUT CHÍNH */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
-          
-          {/* --- CỘT TRÁI ---*/}
-          <div className="lg:col-span-7 space-y-10">
-            <ImageGallery productId={id} />
-            
-            <div className="space-y-8">
-              <Description productId={id} isOwner={user?.userId === productCore.sellerId} />
-              <CommentsSection productId={id} />
-            </div>
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-12 lg:gap-12">
+        <div className="space-y-10 lg:col-span-7">
+          <ImageGallery productId={id} title={product.title} />
+          <div className="space-y-8">
+            <Description productId={id} isOwner={me !== undefined && me === product.sellerId} />
+            <CommentsSection productId={id} />
           </div>
+        </div>
 
-          {/* --- CỘT PHẢI  --- */}
-          <div className="lg:col-span-5 relative">
-            <div className="top-24 space-y-6">
-                <BiddingSection product={productCore} ended={ended} />
-                <BidHistory productId={id} sellerId={productCore.sellerId} />
-            </div>
+        <div className="space-y-6 lg:col-span-5">
+          <div className="lg:sticky lg:top-24 space-y-6">
+            <BiddingSection product={product} ended={ended} onChanged={onChanged} />
+            <BidHistory productId={id} sellerId={product.sellerId} refreshKey={refreshKey} active={!ended} onChanged={() => refresh()} />
           </div>
-
         </div>
       </div>
     </div>

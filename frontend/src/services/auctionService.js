@@ -1,4 +1,5 @@
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+import { apiFetch } from './apiClient.js';
 
 const auctionService = {
   // Lấy thông tin cơ bản
@@ -124,35 +125,14 @@ const auctionService = {
     return response.json();
   },
 
-  placeBid: async (auctionId, amount) => {
-    const token = localStorage.getItem('authToken');
-    const res = await fetch(`${API_URL}/auction/${auctionId}/bid`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify({ amount: Number(amount) })
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.message || 'Failed to place bid');
-    return data;
-  },
+  // Commands carry an Idempotency-Key chosen by the caller for ONE reviewed intent; a retry must reuse it.
+  placeBid: (auctionId, amount, key) => apiFetch(`/auction/${auctionId}/bid`, {
+    method: 'POST', body: { amount: String(amount) }, headers: key ? { 'Idempotency-Key': key } : {}, auth: 'required',
+  }),
 
-  // Buy Now - End auction immediately at buyNowPrice
-  buyNow: async (auctionId) => {
-    const token = localStorage.getItem('authToken');
-    const res = await fetch(`${API_URL}/auction/${auctionId}/buy-now`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      }
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.message || 'Failed to buy now');
-    return data;
-  }
+  buyNow: (auctionId, key) => apiFetch(`/auction/${auctionId}/buy-now`, {
+    method: 'POST', body: {}, headers: key ? { 'Idempotency-Key': key } : {}, auth: 'required',
+  }),
 };
 
 export default auctionService;

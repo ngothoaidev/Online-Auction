@@ -1,365 +1,154 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { 
-  Clock, MapPin, Gavel, Heart, Share2, ShieldCheck, User, TrendingUp, 
-  Trophy, Zap, AlertCircle, ChevronRight, Crown, Star, CheckCircle, Lock,
-  ShoppingCart
-} from 'lucide-react';
-import { formatCurrency, formatTimeLeft } from '../../utils/format';
+import { Heart, ShoppingCart } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
-import { placeBidSchema } from '../../schemas/auction.schemas';
-import { validateForm } from '../../utils/validation';
+import { useWatchlist } from '../../contexts/WatchlistContext.jsx';
+import { formatTimeLeft } from '../../utils/format';
+import { formatVnd } from '../../utils/money.js';
+import { validateBid, REASON_TEXT } from '../../utils/bid.js';
 import auctionService from '../../services/auctionService';
-import userService from '../../services/userService'
+import { Button, Field, StatusBadge } from '../../components/ui';
+import ReviewDialog from '../../components/ui/ReviewDialog.jsx';
 
-export default function BiddingSection({ product, ended = false }) {
-  const { user } = useAuth();
+const OUTCOME = {
+  success: { tone: 'success', title: 'You are the highest bidder', message: (r) => `Your maximum is recorded. The current price is ${formatVnd(r.currentPrice)}.` },
+  updated: { tone: 'info', title: 'Maximum updated', message: (r) => `Your new maximum is recorded. The price stays at ${formatVnd(r.currentPrice)}.` },
+  // Accepted, but another bidder's maximum is higher: this must never read like a win.
+  outbid: { tone: 'warning', title: 'You were outbid', message: (r) => `Your bid was accepted, but a higher maximum was already in place. The price is now ${formatVnd(r.currentPrice)}. You can bid again with a higher maximum.` },
+};
+
+export default function BiddingSection({ product, ended = false, onChanged }) {
+  const { user } = useAuth() ?? {};
   const navigate = useNavigate();
-  
-  // --- TÍNH TOÁN GIÁ TRỊ BAN ĐẦU AN TOÀN ---
-  const currentPrice = Number(product?.currentPrice) || 0;
-  const stepPrice = Number(product?.biddingStep || product?.stepPrice) || 0;
-  const buyNowPrice = product?.buyNowPrice ? Number(product.buyNowPrice) : null;
-  const initialBid = currentPrice + stepPrice;
-  
-  const [bidAmount, setBidAmount] = useState(initialBid);
-  const [isWatchlisted, setIsWatchlisted] = useState(false);
-  
-  //Trạng thái hiển thị hiệu ứng Loading khi đang gửi bid
-  const [loading, setLoading] = useState(false); 
-  const [buyNowLoading, setBuyNowLoading] = useState(false); 
+  const watchlist = useWatchlist();
+  const [text, setText] = useState('');
+  const [touched, setTouched] = useState(false);
+  const [review, setReview] = useState(null); // { kind:'bid'|'buyNow', amount? }
+  const [announce, setAnnounce] = useState('');
 
-  // [CẬP NHẬT] Tự động cập nhật giá gợi ý nếu có người khác vừa bid xong \
-  useEffect(() => {
-    if (product) {
-        const newCurrent = Number(product.currentPrice) || 0;
-        const newStep = Number(product.biddingStep || product.stepPrice) || 0;
-        // Chỉ cập nhật nếu user chưa nhập gì (đang ở giá mặc định) hoặc giá mới cao hơn
-        setBidAmount(prev => {
-            const newMin = newCurrent + newStep;
-            return prev < newMin ? newMin : prev;
-        });
-    }
-  }, [product]);
+  const caps = product.capabilities ?? { canBid: false, canBuyNow: false, reasons: {} };
+  const min = product.minimumNextBid;
+  const hasBids = (product.bidCount ?? 0) > 0;
+  const closed = ended || product.status !== 'active';
+  const check = useMemo(() => validateBid(text, min), [text, min]);
 
-  const handleWatchlist = () => {
-    setIsWatchlisted(!isWatchlisted);
-  };
+  // keep the field empty-or-valid when the server floor moves under the person
+  useEffect(() => { if (touched && text && !validateBid(text, min).ok) setAnnounce(`The minimum bid is now ${formatVnd(min)}.`); }, [min]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // --- HÀM XỬ LÝ ĐẤU GIÁ TỰ ĐỘNG ---
-  const handlePlaceBid = async (e) => {
+  const saved = user ? watchlist.has(product.id) : false;
+  const time = formatTimeLeft(product.endTime);
+  const rating = product.seller?.rating;
+
+  const startReview = (e) => {
     e.preventDefault();
-    
-    // 1. Kiểm tra đăng nhập
-    if (!user) {
-        // Chuyển hướng login (dùng window.location để đảm bảo redirect mượt)
-        window.location.href = '/login'; 
-        return;
-    }
-
-    // 2. Validate dữ liệu ở Client (dùng Zod schema)
-    // Logic: Giá đặt phải >= Giá hiện tại + Bước giá
-    const validation = validateForm(placeBidSchema, { 
-      bidAmount: parseFloat(bidAmount),
-      currentPrice: currentPrice,
-      stepPrice: stepPrice 
-    });
-
-    if (!validation.success) {
-      alert(validation.message);
-      return;
-    }
-
-    //Yêu cầu xác nhận
-    const isConfirmed = window.confirm(
-        `CONFIRMATION:\n\nAre you sure you want to place a bid of ${formatCurrency(bidAmount)}?\n\n(This action cannot be undone)`
-    );
-    if (!isConfirmed) return; // Nếu user bấm Cancel thì dừng lại
-
-
-
-    // 3. Gọi API Đấu giá tự động (Backend Service)
-    setLoading(true); // Bật trạng thái loading 
-    try {
-        // Gọi hàm placeBid trong auctionService (Hàm này gọi API POST /auction/:id/bid)
-        // Hệ thống backend sẽ tự động tính toán logic Auto-bid
-        await auctionService.placeBid(product.id, bidAmount);
-        
-        // Thông báo thành công
-        alert(`Thành công! Hệ thống đã ghi nhận mức giá tối đa ${formatCurrency(bidAmount)} của bạn. Chúng tôi sẽ tự động trả giá giúp bạn.`);
-        
-        // Tải lại trang để cập nhật giá mới nhất và lịch sử đấu giá
-        window.location.reload(); 
-    } catch (err) {
-        console.error(err);
-        alert(err.message || "Đấu giá thất bại. Vui lòng thử lại.");
-    } finally {
-        setLoading(false); // Tắt loading dù thành công hay thất bại
-    }
+    setTouched(true);
+    if (!check.ok) return;
+    setReview({ kind: 'bid', amount: check.amount });
   };
 
-  // --- HÀM XỬ LÝ MUA NGAY ---
-  const handleBuyNow = async () => {
-    // 1. Kiểm tra đăng nhập
-    if (!user) {
-      window.location.href = '/login';
-      return;
-    }
-
-    // 2. Xác nhận mua
-    const confirmed = window.confirm(
-      `Are you sure you want to buy this item now for ${formatCurrency(buyNowPrice)}?\n\nThis will end the auction immediately.`
-    );
-    
-    if (!confirmed) return;
-
-    // 3. Gọi API Buy Now
-    setBuyNowLoading(true);
-    try {
-      const result = await auctionService.buyNow(product.id);
-      
-      alert('Purchase successful! Redirecting to payment...');
-      
-      // Redirect to order/payment page
-      navigate(`/order/${result.orderId}`);
-    } catch (err) {
-      console.error(err);
-      alert(err.message || "Buy Now failed. Please try again.");
-    } finally {
-      setBuyNowLoading(false);
-    }
+  const confirmBid = async (key) => {
+    const r = await auctionService.placeBid(product.id, review.amount, key);
+    const o = OUTCOME[r.outcome] ?? OUTCOME.success;
+    onChanged?.(r);
+    setText('');
+    setTouched(false);
+    return { tone: o.tone, title: o.title, message: o.message(r) };
   };
 
-  // Bảo vệ component không render nếu thiếu dữ liệu
-  if (!product) return null;
+  const confirmBuyNow = async (key) => {
+    const r = await auctionService.buyNow(product.id, key);
+    onChanged?.(r);
+    setTimeout(() => navigate(`/order/${r.auctionId ?? product.id}`), 600);
+    return { tone: 'success', title: 'Purchase complete', message: `The lot is yours for ${formatVnd(r.finalPrice)}. Taking you to the order page.` };
+  };
+
+  const onSettled = (result, error) => {
+    if (result) setAnnounce(result.title);
+    if (error) onChanged?.(null); // refused: pull the canonical state so the page shows why
+  };
+
+  const reason = !caps.canBid ? REASON_TEXT[caps.reasons?.bid] : '';
 
   return (
-    <div className="rounded-3xl border overflow-hidden relative shadow-2xl backdrop-blur-sm transition-all duration-300"
-         style={{ 
-           backgroundColor: 'var(--bg-soft)',
-           borderColor: 'var(--border)'
-         }}>
-      
-      {/* Top Gradient Line - Red when ended */}
-      <div className={`h-1 w-full bg-gradient-to-r ${ended ? 'from-red-500 via-orange-500 to-red-500' : 'from-[var(--accent)] via-orange-500 to-[var(--accent)]'}`}></div>
-
-      <div className="p-6 md:p-8">
-        
-        {/* --- Auction Ended Notification --- */}
-        {ended && (
-          <div className="mb-6 p-4 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-full bg-red-100 dark:bg-red-800">
-                <Lock size={20} className="text-red-600 dark:text-red-400" />
-              </div>
-              <div>
-                <p className="font-semibold text-red-700 dark:text-red-400">Auction Has Ended</p>
-                <p className="text-sm text-red-600 dark:text-red-300">Bidding is closed. Only the seller and winner can proceed to order completion.</p>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* --- HEADER: Trạng thái & Tiêu đề --- */}
-        <div className="mb-8">
-          <div className="flex justify-between items-start gap-4 mb-4">
-             {/* Trạng thái đấu giá (Active/Ended) */}
-             <div className={`flex items-center gap-2 text-sm font-medium px-3 py-1 rounded-full border w-fit ${ended ? 'border-red-300 bg-red-50 dark:bg-red-900/20' : ''}`}
-                  style={{ borderColor: ended ? undefined : 'var(--border)', backgroundColor: ended ? undefined : 'var(--bg)' }}>
-                <span className={`w-2 h-2 rounded-full ${ended ? 'bg-red-500' : (product.status === 'active' ? 'bg-green-500 animate-pulse' : 'bg-gray-400')}`}></span>
-                <span className={`uppercase tracking-wider text-xs font-bold ${ended ? 'text-red-600 dark:text-red-400' : ''}`}>{ended ? 'ENDED' : product.status}</span>
-             </div>
-             
-             {/* Nút Like & Share */}
-             <div className="flex gap-2">
-               <button 
-                 onClick={handleWatchlist}
-                 className="p-2.5 rounded-full border transition-all hover:scale-110 active:scale-95"
-                 style={{ 
-                   borderColor: 'var(--border)',
-                   backgroundColor: isWatchlisted ? 'var(--danger-soft)' : 'transparent',
-                   color: isWatchlisted ? 'var(--danger)' : 'var(--text-muted)'
-                 }}>
-                 <Heart size={20} className={isWatchlisted ? "fill-current" : ""} />
-               </button>
-               <button className="p-2.5 rounded-full border transition-all hover:bg-[var(--bg-hover)]"
-                 style={{ borderColor: 'var(--border)', color: 'var(--text-muted)' }}>
-                 <Share2 size={20} />
-               </button>
-             </div>
-          </div>
-
-          <h1 className="text-2xl md:text-3xl font-bold leading-tight mb-4" style={{ color: 'var(--text)' }}>
-            {product.title}
-          </h1>
-
-          {/* Thông tin người bán */}
-          <div className="flex items-center gap-3 text-sm">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-gray-700 to-gray-900 flex items-center justify-center text-white font-bold overflow-hidden">
-               {product.seller?.avatarUrl ? (
-                 <img src={product.seller.avatarUrl} alt={product.sellerName} className="w-full h-full object-cover" />
-               ) : (
-                 product.sellerName ? product.sellerName[0].toUpperCase() : 'S'
-               )}
-            </div>
-            <div>
-              <p className="text-[var(--text-muted)] text-xs">Seller</p>
-              <Link to={`/profile/${product.sellerName}`} className="font-bold hover:text-[var(--accent)] transition-colors" style={{ color: 'var(--text)' }}>
-                @{product.sellerName || 'Unknown'}
-              </Link>
-            </div>
-            <div className="ml-auto flex items-center gap-1 text-xs font-medium px-2 py-1 rounded bg-[var(--bg)] border border-[var(--border)]">
-               <Star size={12} className="text-[var(--accent)] fill-current" />
-               <span>{product.seller?.rating || 100}%</span>
-               <span className="text-[var(--text-muted)]">({product.seller?.ratingCount || 0})</span>
-            </div>
-          </div>
-        </div>
-
-        {/* --- PRICING CARD (Khu vực đấu giá chính) --- */}
-        <div className="p-6 rounded-2xl mb-8 relative overflow-hidden group"
-             style={{ backgroundColor: 'var(--bg)' }}>
-           
-           {/* Icon nền mờ trang trí (Gavel lớn) */}
-           <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity pointer-events-none">
-              <Gavel size={80} />
-           </div>
-
-           <div className="relative z-10">
-              <p className="text-sm font-medium mb-1" style={{ color: 'var(--text-muted)' }}>Current Bid</p>
-              
-              {/* Giá hiện tại to rõ */}
-              <div className="flex items-baseline gap-2 mb-4">
-                <span className="text-4xl font-black tracking-tight" style={{ color: 'var(--text)' }}>
-                  {formatCurrency(currentPrice)}
-                </span>
-                <span className="text-sm font-medium text-[var(--text-muted)]">
-                  {product.bidCount || 0} bids
-                </span>
-              </div>
-
-              {/* Giá mua ngay (nếu có) - Now a clickable button */}
-              {buyNowPrice && !ended && (
-                <button
-                  onClick={handleBuyNow}
-                  disabled={buyNowLoading || product.sellerId === user?.id}
-                  className="flex items-center gap-2 text-sm font-bold px-4 py-3 rounded-lg bg-green-500 hover:bg-green-600 text-white w-full justify-center transition-all hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed mb-4"
-                >
-                  {buyNowLoading ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                      Processing...
-                    </>
-                  ) : (
-                    <>
-                      <ShoppingCart size={18} />
-                      Buy Now for {formatCurrency(buyNowPrice)}
-                    </>
-                  )}
-                </button>
-              )}
-              
-              {/* Show Buy Now price as info when auction ended */}
-              {buyNowPrice && ended && (
-                <div className="flex items-center gap-2 text-sm font-medium px-3 py-2 rounded-lg bg-gray-500/10 text-gray-500 w-fit mb-4">
-                   <Zap size={16} />
-                   Buy Now was: {formatCurrency(buyNowPrice)}
-                </div>
-              )}
-              
-              <div className="h-px w-full bg-[var(--border)] my-4"></div>
-
-              {/* --- [FORM NHẬP GIÁ] Đã tích hợp Auto Bid --- */}
-              <form onSubmit={handlePlaceBid} className={`space-y-4 mb-6 ${ended ? 'opacity-50 pointer-events-none' : ''}`}>
-                
-                {/* Label có Badge Auto-Bid để người dùng hiểu tính năng */}
-                <div className="flex justify-between items-center">
-                    <label className="text-sm font-bold text-[var(--text)]">{ended ? 'Final Price' : 'Your Maximum Bid'}</label>
-                    {!ended && (
-                      <span className="text-[10px] bg-[var(--accent)] text-black px-2 py-0.5 rounded-full font-bold shadow-sm flex items-center gap-1 cursor-help" title="System will bid for you automatically up to this amount">
-                          <Zap size={10} fill="black" /> AUTO-BID
-                      </span>
-                    )}
-                </div>
-
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                    <span className="text-gray-500 font-bold">₫</span>
-                  </div>
-                  <input 
-                    type="number"
-                    value={bidAmount}
-                    onChange={(e) => setBidAmount(e.target.value)}
-                    disabled={ended}
-                    className="block w-full pl-8 pr-4 py-4 rounded-xl font-bold text-lg focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent transition-all outline-none disabled:cursor-not-allowed"
-                    style={{ backgroundColor: 'var(--input-bg)', color: 'var(--text)', border: '1px solid var(--border)' }}
-                    placeholder={`Min ${formatCurrency(initialBid)}`}
-                  />
-                </div>
-                
-                {/* Giải thích cơ chế tự động */}
-                <p className="text-xs text-center" style={{ color: 'var(--text-muted)' }}>
-                  {ended ? 'This auction has ended. Bidding is no longer available.' : `Enter ${formatCurrency(initialBid)} or more. We'll bid automatically for you.`}
-                </p>
-
-                {/* Nút đặt giá */}
-                <button 
-                    type="submit" 
-                    disabled={loading || product.status !== 'active' || ended}
-                    className="w-full py-4 rounded-xl font-bold text-lg shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
-                    style={{ backgroundColor: ended ? '#9CA3AF' : 'var(--accent)', color: ended ? '#fff' : '#1A1205' }}
-                >
-                    {loading ? (
-                        <>
-                            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-[#1A1205]"></div>
-                            Processing...
-                        </>
-                    ) : ended ? (
-                        <>
-                            <Lock size={20} />
-                            Bidding Closed
-                        </>
-                    ) : (
-                        <>
-                            Place Bid
-                            <Gavel size={20} />
-                        </>
-                    )}
-                </button>
-              </form>
-           </div>
-        </div>
-
-        {/* --- FOOTER INFO (Thời gian & Bước giá) --- */}
-        <div className="grid grid-cols-2 gap-4 text-center">
-           <div className="p-3 rounded-xl border" style={{ borderColor: 'var(--border)' }}>
-              <p className="text-xs text-[var(--text-muted)] mb-1">Time Left</p>
-              <div className="font-bold flex items-center justify-center gap-1" style={{ color: 'var(--text)' }}>
-                 <Clock size={14} />
-                 {formatTimeLeft(product.endTime).timeLeft}
-              </div>
-           </div>
-           <div className="p-3 rounded-xl border" style={{ borderColor: 'var(--border)' }}>
-              <p className="text-xs text-[var(--text-muted)] mb-1">Step</p>
-              <div className="font-bold flex items-center justify-center gap-1" style={{ color: 'var(--text)' }}>
-                 <TrendingUp size={14} />
-                 {formatCurrency(stepPrice)}
-              </div>
-           </div>
-        </div>
-
-        {/* Trust Indicators */}
-        <div className="mt-6 pt-6 border-t border-[var(--border)] flex items-center justify-center gap-6 text-xs text-[var(--text-muted)] font-semibold">
-          <div className="flex items-center gap-1.5">
-            <ShieldCheck size={14} className="text-green-600" />
-            Secure Bidding
-          </div>
-          <div className="flex items-center gap-1.5">
-            <Star size={14} style={{ color: 'var(--accent)' }} />
-            Verified Item
-          </div>
-        </div>
+    <section aria-labelledby="bid-panel-title" className="rounded-(--radius-card) border border-(--line) bg-(--surface) p-5 md:p-6">
+      <div className="flex items-start justify-between gap-3">
+        <StatusBadge tone={closed ? 'neutral' : 'success'}>{closed ? 'Closed' : 'Open for bidding'}</StatusBadge>
+        <button
+          type="button"
+          aria-pressed={saved}
+          aria-label={saved ? 'Remove from watchlist' : 'Save to watchlist'}
+          onClick={() => (user ? watchlist.toggle(product.id).catch(() => setAnnounce('Could not update your watchlist')) : setAnnounce('Sign in to save lots'))}
+          className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-(--line) hover:bg-(--surface-hover)"
+        >
+          <Heart size={20} aria-hidden="true" className={saved ? 'fill-(--danger) text-(--danger)' : ''} />
+        </button>
       </div>
-    </div>
+
+      <h1 id="bid-panel-title" className="mt-3 text-2xl font-semibold leading-tight text-(--ink)">{product.title}</h1>
+      <p className="mt-2 text-sm text-(--muted)">
+        Seller <Link to={`/profile/${product.sellerName}`} className="font-semibold text-(--ink) underline">@{product.sellerName}</Link>
+        {' · '}
+        {rating === null || rating === undefined ? 'No reviews yet' : `${rating}% positive (${product.seller?.ratingCount ?? 0})`}
+      </p>
+
+      <dl className="mt-5 grid grid-cols-2 gap-4 rounded-(--radius-control) bg-(--surface-sunken) p-4">
+        <div className="col-span-2">
+          <dt className="text-sm text-(--muted)">{hasBids ? 'Current bid' : 'Starting price'}</dt>
+          <dd className="font-lot text-3xl font-semibold text-(--ink)">{formatVnd(product.currentPrice)}</dd>
+          <dd className="text-sm text-(--muted)">{product.bidCount ?? 0} {product.bidCount === 1 ? 'bid' : 'bids'}</dd>
+        </div>
+        <div>
+          <dt className="text-sm text-(--muted)">Minimum next bid</dt>
+          <dd className="font-lot text-sm font-semibold text-(--ink)">{closed ? '—' : formatVnd(min)}</dd>
+        </div>
+        <div>
+          <dt className="text-sm text-(--muted)">Bid step</dt>
+          <dd className="font-lot text-sm font-semibold text-(--ink)">{formatVnd(product.stepPrice)}</dd>
+        </div>
+        <div className="col-span-2">
+          <dt className="text-sm text-(--muted)">{closed ? 'Closed' : 'Time left'}</dt>
+          <dd className="font-lot text-sm font-semibold text-(--ink)">{closed ? (product.closeReason === 'buy_now' ? 'Bought now' : 'Bidding closed') : time.timeLeft}</dd>
+        </div>
+      </dl>
+
+      {!closed && (
+        <form onSubmit={startReview} noValidate className="mt-5 space-y-3">
+          <Field
+            label="Your maximum bid (₫)"
+            hint="The most you would pay. We raise your bid one step at a time, only as far as needed; others never see this amount."
+            error={touched && !check.ok ? check.error : ''}
+          >
+            <input inputMode="numeric" autoComplete="off" value={text} disabled={!caps.canBid} onChange={(e) => setText(e.target.value)} placeholder={min ? formatVnd(min).replace(' ₫', '') : ''} className="font-lot text-lg" />
+          </Field>
+          {reason && <p className="text-sm text-(--muted)">{reason}{!user && <> <Link to="/login" className="font-semibold text-(--brand) underline">Log in</Link></>}</p>}
+          <Button type="submit" size="lg" className="w-full" disabled={!caps.canBid}>Review bid</Button>
+        </form>
+      )}
+
+      {product.buyNowPrice && !closed && (
+        <div className="mt-4 border-t border-(--line) pt-4">
+          <Button variant="secondary" size="lg" className="w-full" disabled={!caps.canBuyNow} onClick={() => setReview({ kind: 'buyNow' })}>
+            <ShoppingCart size={18} aria-hidden="true" /> Buy now for {formatVnd(product.buyNowPrice)}
+          </Button>
+          {!caps.canBuyNow && REASON_TEXT[caps.reasons?.buyNow] && caps.reasons?.buyNow !== caps.reasons?.bid && <p className="mt-2 text-sm text-(--muted)">{REASON_TEXT[caps.reasons.buyNow]}</p>}
+        </div>
+      )}
+
+      <p role="status" aria-live="polite" className="sr-only">{announce}</p>
+
+      <ReviewDialog
+        open={Boolean(review)}
+        onClose={() => setReview(null)}
+        onSettled={onSettled}
+        title={review?.kind === 'buyNow' ? 'Review purchase' : 'Review your bid'}
+        description={review?.kind === 'buyNow' ? 'This ends the auction immediately.' : 'You are committing to pay up to this amount if you win.'}
+        rows={review?.kind === 'buyNow'
+          ? [['Lot', product.title], ['Buy now price', formatVnd(product.buyNowPrice)]]
+          : [['Lot', product.title], ['Current price', formatVnd(product.currentPrice)], ['Your maximum', formatVnd(review?.amount)]]}
+        note={review?.kind === 'buyNow' ? 'Payment and delivery are arranged on the order page.' : 'Your maximum stays private. You only pay what is needed to stay ahead, never more than this.'}
+        confirmLabel={review?.kind === 'buyNow' ? 'Buy now' : 'Place bid'}
+        onConfirm={review?.kind === 'buyNow' ? confirmBuyNow : confirmBid}
+      />
+    </section>
   );
 }

@@ -94,6 +94,7 @@ export default function Comment({ comment, onReplySubmit }) {
         <div className="ml-12 mt-3 flex gap-2 animate-in fade-in slide-in-from-top-2 duration-200">
           <input
             type="text"
+            aria-label="Write a reply"
             autoFocus
             value={replyText}
             onChange={(e) => setReplyText(e.target.value)}

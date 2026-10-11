@@ -11,7 +11,9 @@ export function formatVnd(value) {
 
 /** Parse what a person typed ("1.500.000", "1 500 000", "1500000") into a digit string, or null when it is not a whole positive amount. */
 export function parseAmountInput(text) {
-  const s = String(text ?? '').replace(/[\s.,_]/g, '');
+  // '.' ',' and spaces count as thousands separators only in proper groups of three (1.500.000); '12.5' is not an amount.
+  let s = String(text ?? '').trim();
+  if (/^\d{1,3}([.,\s]\d{3})+$/.test(s)) s = s.replace(/[.,\s]/g, '');
   return /^[1-9]\d{0,14}$/.test(s) ? s : null;
 }
 

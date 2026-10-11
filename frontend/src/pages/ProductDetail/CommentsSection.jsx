@@ -125,6 +125,7 @@ export default function CommentsSection({ productId }) {
       <div className="mb-6 flex gap-2">
         <input
           type="text"
+          aria-label="Ask a question about this lot"
           value={commentText}
           onChange={(e) => setCommentText(e.target.value)}
           onKeyPress={(e) => e.key === 'Enter' && handleComment()}
@@ -138,9 +139,11 @@ export default function CommentsSection({ productId }) {
           }}
         />
         <button
+          type="button"
+          aria-label="Post question"
           onClick={handleComment}
           disabled={isSubmitting || !commentText.trim()}
-          className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors shadow-md disabled:opacity-50"
+          className="min-h-11 px-4 rounded-(--radius-control) bg-(--ink) text-(--on-ink) hover:opacity-90 disabled:opacity-50"
         >
           {isSubmitting ? '...' : <Send className="w-5 h-5" />}
         </button>
