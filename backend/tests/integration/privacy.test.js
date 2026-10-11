@@ -97,9 +97,12 @@ test("seller mass assignment is rejected and nothing changes; allowlisted fields
     assert.equal(r.body.code, "VALIDATION_ERROR");
   }
   assert.deepEqual(await t.sql`SELECT winner_id, current_price, seller_id, status, bid_count FROM auctions WHERE auction_id=${auctionId}`, before);
-  const ok = await t.call("PUT", `/auction/${auctionId}`, { token: sellerToken, body: { title: "Renamed lot" } });
+  const locked = await t.call("PUT", `/auction/${auctionId}`, { token: sellerToken, body: { title: "Renamed lot" } });
+  assert.equal(locked.status, 409, "title is frozen once bidding has started");
+  assert.equal(locked.body.code, "LISTING_LOCKED");
+  const ok = await t.call("PUT", `/auction/${auctionId}`, { token: sellerToken, body: { description: "<p>More detail</p>" } });
   assert.equal(ok.status, 200);
-  assert.equal((await t.call("GET", `/auction/${auctionId}`)).body.title, "Renamed lot");
+  assert.match((await t.call("GET", `/auction/${auctionId}`)).body.description, /More detail/);
   const stranger = await t.call("PUT", `/auction/${auctionId}`, { token, body: { title: "x" } });
   assert.equal(stranger.status, 403);
 });

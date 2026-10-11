@@ -125,18 +125,12 @@ const controller = {
         }
     },
 
+    // DELETE /auction/reject?auctionId=&bidId=[&reason=]  (kept for compatibility; semantics = disqualify the bidder, B11)
     rejectBid: async (req, res, next) => {
         try {
-            const auctionId = Number(req.query.auctionId);
-            const bidId = Number(req.query.bidId);
-            const sellerId = req.user?.id;
-
-            await auctionService.rejectBid(auctionId, bidId, sellerId);
-
-            res.status(200).json({ 
-                message: "Bid rejected successfully",
-                bidId: bidId 
-            });
+            const { auctionId, bidId, reason } = req.query;
+            const result = await commands.rejectBidder({ auctionId, bidId, actor: req.user, reason });
+            res.status(200).json({ ...result, bidId });
         } catch (error) {
             next(error);
         }
@@ -170,23 +164,12 @@ const controller = {
         }
     },
 
-    // PUT /auctions/:id
+    // PUT /auction/:id  (body already restricted to title/description/categoryId)
     update: async function(req, res, next) {
         try {
-            const id = Number(req.params.id);
-            
-            // Check quyền sở hữu (chỉ người bán mới được sửa)
-            const existingAuction = await auctionService.findById(id);
-            if (!existingAuction) {
-                return res.status(404).json({ message: 'Auction Not Found' });
-            }
-            
-            if (existingAuction.sellerId !== req.user.id) {
-                return res.status(403).json({ message: 'Unauthorized to update this auction' });
-            }
-
-            const updatedAuction = await auctionService.update(id, req.body); // body already restricted to the seller allowlist
-            res.json(updatedAuction);
+            const id = req.params.id;
+            await commands.updateListing({ auctionId: id, actor: req.user, fields: req.body });
+            res.json(await auctionService.findById(id, req.user));
         } catch (error) {
             next(error);
         }
@@ -210,48 +193,23 @@ const controller = {
         }
     },
 
-    // PUT /auctions/:id/description
+    // PUT /auction/:id/description
     updateDescription: async function(req, res, next) {
         try {
-            const id = Number(req.params.id);
-            const { description } = req.body;
-            
-            // Check if auction exists
-            const existingAuction = await auctionService.findById(id);
-            if (!existingAuction) {
-                return res.status(404).json({ message: 'Auction Not Found' });
-            }
-            
-            // Check ownership (only seller can update)
-            if (existingAuction.sellerId !== req.user.id) {
-                return res.status(403).json({ message: 'Unauthorized to update this auction' });
-            }
-
-            // Update description
-            const updatedAuction = await auctionService.updateDescription(id, description);
-            res.json({ message: 'Description updated successfully', description: updatedAuction.description });
+            const id = req.params.id;
+            await commands.updateListing({ auctionId: id, actor: req.user, fields: { description: req.body.description } });
+            const { description } = await auctionService.findDescription(id);
+            res.json({ message: 'Description updated successfully', description });
         } catch (error) {
             next(error);
         }
     },
 
-    // DELETE /auctions/:id
+    // DELETE /auction/:id  — cancels the lot (soft); bids, history and orders are never hard-deleted
     delete: async function(req, res, next) {
         try {
-            const id = Number(req.params.id);
-
-            const existingAuction = await auctionService.findById(id);
-            if (!existingAuction) {
-                return res.status(404).json({ message: 'Auction Not Found' });
-            }
-
-            // Check quyền (Admin hoặc chính chủ mới được xóa)
-            if (req.user.role !== 'admin' && existingAuction.sellerId !== req.user.id) {
-                return res.status(403).json({ message: 'Unauthorized' });
-            }
-
-            await auctionService.delete(id);
-            res.json({ message: 'Deleted successfully' });
+            const result = await commands.cancelListing({ auctionId: req.params.id, actor: req.user, reason: req.query.reason ?? req.body?.reason });
+            res.json({ ...result, message: 'Cancelled successfully' });
         } catch (error) {
             next(error);
         }

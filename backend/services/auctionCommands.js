@@ -2,13 +2,14 @@
 // -> write state/history/audit/outbox -> commit. Nothing external is called inside the transaction.
 import { and, eq, sql } from "drizzle-orm";
 import db from "../db/index.js";
-import { auctions, bids, bidderMaxima, orders, users, auctionCommandAudit } from "../db/schema.js";
+import { auctions, bids, bidderMaxima, orders, users, auctionCommandAudit, descriptionLogs } from "../db/schema.js";
 import { AppError } from "../utils/errors.js";
 import { fromDb, toStr, formatVnd, parseMoney, MoneyError } from "../domain/money.js";
-import { decideBid, BidRejection, minimumNextBid, extendedEndTime } from "../domain/bidding.js";
+import { decideBid, recompute, BidRejection, minimumNextBid, extendedEndTime } from "../domain/bidding.js";
 import { checkBidderEligibility, buyNowAvailable } from "../domain/eligibility.js";
 import { runIdempotent } from "./idempotency.js";
 import { enqueue } from "./outbox.js";
+import { sanitizeRichText } from "../utils/sanitize.js";
 
 // Decision time comes from the DB clock AFTER the lock was acquired. "ended" is evaluated in SQL on the same instant,
 // so sub-millisecond precision is never lost to JS Date rounding.
@@ -172,5 +173,99 @@ export const commands = {
         },
       };
     }));
+  },
+  /**
+   * Seller disqualifies the bidder behind `bidId` (B11): the history is kept (their rows are flagged), their ceiling stops
+   * counting, leader and price are recomputed from the remaining ceilings under the same lock, and they cannot bid again.
+   * Retrying is a no-op: nothing is decremented twice.
+   */
+  async rejectBidder({ auctionId, bidId, actor, reason }) {
+    return db.transaction(async (tx) => {
+      const auction = await lockAuction(tx, auctionId);
+      if (auction.sellerId !== actor.id) throw new AppError(403, "FORBIDDEN", "Only the seller can reject bids");
+      if (auction.status !== "active") throw new AppError(409, "AUCTION_NOT_ACTIVE", "Cannot reject bids on finished auctions");
+      if (auction.commandSequence === 0 && auction.bidCount > 0) {
+        throw new AppError(409, "LEGACY_UNVERIFIED", "This auction's bid history is awaiting migration");
+      }
+      const [bid] = await tx.select().from(bids).where(and(eq(bids.id, bidId), eq(bids.auctionId, auctionId)));
+      if (!bid) throw new AppError(404, "NOT_FOUND", "Bid not found");
+
+      const clock = await dbClock(tx, auctionId);
+      const maximaRows = await tx.select().from(bidderMaxima).where(eq(bidderMaxima.auctionId, auctionId));
+      const target = maximaRows.find((m) => m.bidderId === bid.bidderId);
+      const current = { currentPrice: toStr(fromDb(auction.currentPrice)), winnerId: auction.winnerId ?? null, version: auction.version };
+      if (!target || target.disqualifiedAt) {
+        return { message: "Bid rejected successfully", bidId, alreadyRejected: true, ...current };
+      }
+
+      const sequence = auction.commandSequence + 1;
+      await tx.update(bidderMaxima).set({ disqualifiedAt: clock.now, disqualifiedReason: reason ?? null })
+        .where(and(eq(bidderMaxima.auctionId, auctionId), eq(bidderMaxima.bidderId, bid.bidderId)));
+      await tx.update(bids).set({ invalidatedAt: clock.now })
+        .where(and(eq(bids.auctionId, auctionId), eq(bids.bidderId, bid.bidderId), sql`${bids.invalidatedAt} IS NULL`));
+
+      const remaining = maximaRows.filter((m) => m.bidderId !== bid.bidderId && !m.disqualifiedAt)
+        .map((m) => ({ bidderId: m.bidderId, max: fromDb(m.maxAmount), priority: m.prioritySequence }));
+      const next = recompute({ startingPrice: fromDb(auction.startingPrice), step: fromDb(auction.stepPrice), maxima: remaining });
+
+      // A moderation correction (not a new bid): keeps the "latest public event" in step with the recomputed state.
+      if (next.leaderId !== null) {
+        await tx.insert(bids).values({ auctionId, bidderId: next.leaderId, amount: toStr(next.currentPrice), bidTime: clock.now, auctionSequence: sequence, type: "adjust" });
+      }
+      const version = auction.version + 1;
+      await tx.update(auctions).set({ winnerId: next.leaderId, currentPrice: toStr(next.currentPrice), version, commandSequence: sequence })
+        .where(eq(auctions.id, auctionId));
+
+      await audit(tx, {
+        commandId: `reject-${auctionId}-${sequence}`, auctionId, actorId: actor.id, sequence, kind: "disqualify", decision: "success",
+        privatePayload: { bidId, bidderId: bid.bidderId, reason: reason ?? null, leaderBefore: auction.winnerId, leaderAfter: next.leaderId }, versionBefore: auction.version, versionAfter: version,
+      });
+      await enqueue(tx, { aggregateType: "auction", aggregateId: auctionId, aggregateVersion: version, eventType: "auction.bid_rejected",
+        publicPayload: { auctionId, version, status: auction.status, currentPrice: toStr(next.currentPrice), bidCount: auction.bidCount, endTime: auction.endTime, winnerId: next.leaderId, serverTime: clock.now } });
+
+      return { message: "Bid rejected successfully", bidId, alreadyRejected: false, currentPrice: toStr(next.currentPrice), winnerId: next.leaderId, version };
+    });
+  },
+
+  /** Seller edits that do not touch economics. Title/category only while nobody has bid; description is append-safe (history kept). */
+  async updateListing({ auctionId, actor, fields }) {
+    return db.transaction(async (tx) => {
+      const auction = await lockAuction(tx, auctionId);
+      if (auction.sellerId !== actor.id) throw new AppError(403, "FORBIDDEN", "Unauthorized to update this auction");
+      if (auction.status !== "active") throw new AppError(409, "AUCTION_NOT_ACTIVE", "Only active auctions can be edited");
+      if ((fields.title !== undefined || fields.categoryId !== undefined) && auction.bidCount > 0) {
+        throw new AppError(409, "LISTING_LOCKED", "Title and category cannot change after bidding has started");
+      }
+      const set = {};
+      if (fields.title !== undefined) set.title = fields.title;
+      if (fields.categoryId !== undefined) set.categoryId = fields.categoryId;
+      if (fields.description !== undefined) {
+        if (auction.description) await tx.insert(descriptionLogs).values({ auctionId, contentSnapshot: auction.description });
+        set.description = sanitizeRichText(fields.description);
+      }
+      await tx.update(auctions).set({ ...set, version: auction.version + 1 }).where(eq(auctions.id, auctionId));
+      return { auctionId, version: auction.version + 1 };
+    });
+  },
+
+  /** Cancel instead of delete: history, bids and any order are preserved; the lot stops being biddable. Seller (owner) or admin. */
+  async cancelListing({ auctionId, actor, reason }) {
+    return db.transaction(async (tx) => {
+      const auction = await lockAuction(tx, auctionId);
+      if (actor.role !== "admin" && auction.sellerId !== actor.id) throw new AppError(403, "FORBIDDEN", "Unauthorized");
+      if (auction.status !== "active") throw new AppError(409, "AUCTION_NOT_ACTIVE", "Only active auctions can be cancelled");
+      const clock = await dbClock(tx, auctionId);
+      const sequence = auction.commandSequence + 1;
+      const version = auction.version + 1;
+      await tx.update(auctions).set({ status: "cancelled", winnerId: null, closeReason: "cancelled", settledAt: clock.now, version, commandSequence: sequence })
+        .where(eq(auctions.id, auctionId));
+      await audit(tx, {
+        commandId: `cancel-${auctionId}-${sequence}`, auctionId, actorId: actor.id, sequence, kind: "cancel", decision: "success",
+        privatePayload: { reason: reason ?? null, bidCount: auction.bidCount }, versionBefore: auction.version, versionAfter: version,
+      });
+      await enqueue(tx, { aggregateType: "auction", aggregateId: auctionId, aggregateVersion: version, eventType: "auction.cancelled",
+        publicPayload: { auctionId, version, status: "cancelled", currentPrice: toStr(fromDb(auction.currentPrice)), bidCount: auction.bidCount, endTime: auction.endTime, winnerId: null, serverTime: clock.now } });
+      return { message: "Auction cancelled", auctionId, version };
+    });
   },
 };

@@ -1,7 +1,7 @@
 import db from "../db/index.js"
 import { catalogAuction } from "../serializers/index.js";
 import { auctions, categories, userFavorites, bids } from "../db/schema.js"
-import { sql, eq, or, and, desc, asc, count, inArray, gte, lte } from "drizzle-orm";
+import { sql, eq, or, and, desc, asc, count, inArray, gte, lte, isNull } from "drizzle-orm";
 
 const service = {
     findAll: async function(){
@@ -139,6 +139,7 @@ const service = {
                 images: true,
                 // Fetch only the highest bid
                 bids: {
+                    where: isNull(bids.invalidatedAt),
                     orderBy: [sql`${bids.auctionSequence} DESC NULLS LAST`, desc(bids.amount), desc(bids.id)],
                     limit: 1,
                     with: {

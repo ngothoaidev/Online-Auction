@@ -27,4 +27,5 @@ export const profileQuery = z.object({
 export const rejectQuery = z.object({
   auctionId: z.coerce.number().int().positive(),
   bidId: z.coerce.number().int().positive(),
+  reason: z.string().trim().max(500).optional(),
 }).passthrough();

@@ -6,7 +6,7 @@ import { minimumNextBid } from "../domain/bidding.js";
 import { checkBidderEligibility, buyNowAvailable } from "../domain/eligibility.js";
 import { AppError } from "../utils/errors.js";
 import { sanitizeRichText } from "../utils/sanitize.js";
-import { sql, and, or, eq, gte, asc, desc, inArray } from "drizzle-orm";
+import { sql, and, or, eq, gte, asc, desc, inArray, isNull } from "drizzle-orm";
 
 // Latest public price/leader event first (committed per-auction sequence); legacy rows without a sequence fall back to amount, id.
 const bidOrder = () => [sql`${bids.auctionSequence} DESC NULLS LAST`, desc(bids.amount), desc(bids.id)];
@@ -59,6 +59,7 @@ const service = {
                 seller: { columns: { username: true, ratingCount: true, positiveRatingCount: true } },
                 category: true,
                 bids: {
+                    where: isNull(bids.invalidatedAt),
                     orderBy: bidOrder(),
                     limit: 1,
                     with: { bidder: { columns: { id: true, username: true, fullName: true, avatarUrl: true } } }
@@ -166,6 +167,7 @@ const service = {
                 seller: { columns: { username: true, ratingCount: true, positiveRatingCount: true } },
                 category: true,
                 bids: {
+                    where: isNull(bids.invalidatedAt),
                     orderBy: bidOrder(),
                     limit: 1,
                     with: { bidder: { columns: { id: true, username: true, fullName: true, avatarUrl: true } } }
@@ -436,91 +438,6 @@ const service = {
 
     upload: async function(images) {
         return await db.insert(auctionImages).values(images).returning();
-    },
-
-    rejectBid: async function (auctionId, bidId, sellerId) {
-        return await db.transaction(async (tx) => {
-        const auction = await tx.query.auctions.findFirst({
-            where: eq(auctions.id, auctionId),
-            columns: {
-                sellerId: true,
-                startingPrice: true,
-                status: true
-            }
-        });
-
-        if (!auction) throw new AppError(404, 'NOT_FOUND', "Auction not found");
-        if (auction.sellerId !== sellerId) throw new AppError(403, 'FORBIDDEN', "Unauthorized: Only the seller can reject bids");
-        if (auction.status !== 'active') throw new AppError(400, 'BUSINESS_RULE', "Cannot reject bids on finished auctions");
-
-        const deletedBid = await tx
-            .delete(bids)
-            .where(and(
-                eq(bids.id, bidId),
-                eq(bids.auctionId, auctionId)
-            ))
-            .returning();
-
-        if (deletedBid.length === 0) {
-            throw new AppError(404, 'NOT_FOUND', "Bid not found");
-        }
-
-        // Recalculate State (Find the NEW highest bid)
-        const newHighestBid = await tx.query.bids.findFirst({
-            where: eq(bids.auctionId, auctionId),
-            orderBy: bidOrder(),
-        });
-
-        // Update Auction (Price reverts to next bid OR starting price if there is no bids)
-        const newPrice = newHighestBid ? newHighestBid.amount : auction.startingPrice;
-
-        await tx.update(auctions)
-            .set({
-                currentPrice: newPrice,
-                bidCount: sql`${auctions.bidCount} - 1` // Decrement count safely
-            })
-            .where(eq(auctions.id, auctionId));
-
-        return { success: true, newPrice };
-        });
-    },
-    
-    // `fields` are pre-validated against the seller allowlist (title, description, categoryId).
-    update: async function(id, fields) {
-        const set = { ...fields };
-        if (set.description !== undefined) set.description = sanitizeRichText(set.description);
-        await db.update(auctions).set(set).where(eq(auctions.id, id));
-        return this.findById(id);
-    },
-
-    updateDescription: async function(id, description) {
-        // Get current description to log history
-        const auction = await db.query.auctions.findFirst({
-            where: eq(auctions.id, id),
-            columns: { description: true }
-        });
-
-        // Log current description to history before updating
-        if (auction?.description) {
-            await db.insert(descriptionLogs).values({
-                auctionId: id,
-                contentSnapshot: auction.description,
-                editedAt: new Date()
-            });
-        }
-
-        // Update to new description
-        const [updated] = await db.update(auctions)
-            .set({ description: sanitizeRichText(description) })
-            .where(eq(auctions.id, id))
-            .returning({ description: auctions.description });
-
-        return updated;
-    },
-
-    delete: async function(id){
-        await db.delete(auctionImages).where(eq(auctionImages.auctionId, id));
-        await db.delete(auctions).where(eq(auctions.id, id));
     },
 
     createComment: async function(userId, auctionId, content, parentId = null) {

@@ -11,7 +11,7 @@ export const selfUser = (u) => (u ? {
 
 // maxAmount (the private proxy ceiling) is intentionally absent.
 export const publicBid = (b) => (b ? {
-  id: b.id, auctionId: b.auctionId, bidderId: b.bidderId, amount: b.amount, bidTime: b.bidTime, bidder: publicUser(b.bidder),
+  id: b.id, auctionId: b.auctionId, bidderId: b.bidderId, amount: b.amount, bidTime: b.bidTime, type: b.type, invalidated: Boolean(b.invalidatedAt), bidder: publicUser(b.bidder),
 } : null);
 
 export const publicImage = (i) => ({ id: i.id, auctionId: i.auctionId, imageUrl: i.imageUrl, isPrimary: i.isPrimary });
