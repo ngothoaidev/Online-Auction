@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronDown, ChevronRight, LayoutGrid } from 'lucide-react';
+import { searchUrl } from '../../utils/searchUrl.js';
 
 export default function CategoryDropper({ categories }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -104,7 +105,7 @@ export default function CategoryDropper({ categories }) {
               {/* MAIN CATEGORY ITEM */}
               <div className="flex items-center justify-between group/item">
                   <Link 
-                    to={`/search?category=${cat.name}`}
+                    to={searchUrl({ category: cat.name })}
                     onClick={() => setIsOpen(false)} // Close menu on navigation
                     className={`grow flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200
                     ${isSubOpen ? 'bg-(--accent-soft) text-(--accent-strong)' : 'text-(--text) hover:bg-(--accent-soft) hover:text-(--accent-strong)'}`}
@@ -143,7 +144,7 @@ export default function CategoryDropper({ categories }) {
                     {cat.subcategories.map((sub, sIdx) => (
                       <Link 
                         key={sIdx} 
-                        to={`/search?category=${cat.name}&subcategory=${sub.name}`}
+                        to={searchUrl({ category: sub.name })}
                         onClick={() => setIsOpen(false)}
                         className="block px-4 py-2.5 rounded-lg text-sm transition-all duration-100
                         text-(--text-muted)

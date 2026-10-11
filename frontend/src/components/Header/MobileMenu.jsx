@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Search, X, ChevronDown, LogOut } from "lucide-react"
 import { useNav } from "../../hooks/useNavigate.js";
+import { searchUrl } from "../../utils/searchUrl.js";
 
 export default function MobileMenu({ user, setIsMobileMenuOpen, categories, searchInputRef, logout }) {
     const nav = useNav();
@@ -78,7 +79,7 @@ export default function MobileMenu({ user, setIsMobileMenuOpen, categories, sear
                       <ul className="pl-4 space-y-3 border-l-2 ml-2" style={{ borderColor: 'var(--border)' }}>
                         {cat.subcategories.map((sub) => (
                           <li key={sub.id}>
-                            <Link to={`/search/p=${sub.name}`} onClick={() => setIsMobileMenuOpen(false)} className="text-sm block hover:text-[var(--accent)] transition-colors" style={{ color: 'var(--text-muted)' }}>
+                            <Link to={searchUrl({ category: sub.name })} onClick={() => setIsMobileMenuOpen(false)} className="text-sm block hover:text-[var(--accent)] transition-colors" style={{ color: 'var(--text-muted)' }}>
                               {sub.name}
                             </Link>
                           </li>

@@ -3,6 +3,7 @@ import { Clock, Gavel, Star, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import AuctionCard from '../../components/AuctionCard';
 import auctionService from '../../services/auctionService';
+import { searchUrl, TAB_SEARCH_SORT } from '../../utils/searchUrl.js';
 
 export default function ProductTabs() {
   const [activeTab, setActiveTab] = useState('endingSoon');
@@ -25,7 +26,6 @@ export default function ProductTabs() {
                 sortBy: activeTab, 
                 limit: 5
             });
-            console.log('HOMEPAGE: ', data);
             setProducts(data);
         } catch (error) {
             console.error("Failed to load tab data", error);
@@ -78,7 +78,7 @@ export default function ProductTabs() {
 
       <div className="mt-12 text-center">
         <Link 
-          to={`/search?category=${activeTabData.label}`}
+          to={searchUrl({ sortBy: TAB_SEARCH_SORT[activeTab] })}
           className={`inline-flex items-center gap-2 font-bold uppercase tracking-widest text-md border-b-2 border-transparent hover:border-current pb-1 transition-all`}
           style={{ color: activeTabData.color }}
         >

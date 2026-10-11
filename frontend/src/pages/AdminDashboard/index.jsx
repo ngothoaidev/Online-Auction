@@ -3,6 +3,7 @@ import {
   Users,  FolderTree, ShoppingBag, UserPlus, LogOut, Home
 } from 'lucide-react';
 import { useNav } from '../../hooks/useNavigate.js';
+import { useAuth } from '../../contexts/AuthContext.jsx';
 import CategoryList from './CategoryList.jsx';
 import ProductList from './ProductList.jsx';
 import UserList from './UserList.jsx';
@@ -11,6 +12,7 @@ import './AdminDashboard.css'
 
 export default function AdminDashboard() {
   const nav = useNav();
+  const { logout } = useAuth();
   const [activeTab, setActiveTab] = useState('categories');
   const [isSidebarOpen, setSidebarOpen] = useState(true);
 
@@ -94,7 +96,7 @@ export default function AdminDashboard() {
         {/* Logout */}
         <div className="px-3 pb-3" style={{ borderColor: 'var(--admin-sidebar-border)' }}>
             <button 
-                onClick={() => nav.login()} 
+                onClick={() => { logout(); nav.logout(); }}
                 className="w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-colors"
                 style={{ color: 'var(--admin-sidebar-text)' }}
                 onMouseEnter={(e) => {

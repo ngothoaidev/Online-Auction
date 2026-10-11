@@ -53,6 +53,13 @@ test("no public/auth'd JSON exposes private bidder fields, password hashes, OTPs
   }
 });
 
+test("every sort option the SPA can send is accepted (previously unknown names silently fell back to relevance)", async () => {
+  for (const sortBy of ["popularity", "priceLowToHigh", "priceHighToLow", "timeEndingSoon", "timeNewlyListed", "aToZ", "zToA", "price-asc", "relevance"]) {
+    const r = await t.call("GET", `/search?sortBy=${sortBy}&category=All%20Categories&minPrice=100&maxPrice=99999999&page=1`);
+    assert.equal(r.status, 200, `${sortBy}: ${JSON.stringify(r.body)}`);
+  }
+});
+
 test("catalog and history still carry what the UI needs (amount, bidder username, seller rating, image)", async () => {
   const top = (await t.call("GET", "/auction/top")).body;
   assert.equal(top[0].bids.amount, "1200000");

@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+const SORT_ALIASES = { priceLowToHigh: "price-asc", priceHighToLow: "price-desc", timeEndingSoon: "ending-soon", timeNewlyListed: "newest" };
+
 const num = z.preprocess((v) => (v === "" || v === undefined ? undefined : v), z.coerce.number().min(0).max(999999999999999).optional());
 
 export const searchQuery = z.object({
@@ -7,7 +9,9 @@ export const searchQuery = z.object({
   category: z.string().trim().max(100).optional(),
   minPrice: num,
   maxPrice: num,
-  sortBy: z.enum(["relevance", "popularity", "price-asc", "price-desc", "ending-soon", "newest", "aToZ", "zToA"]).optional(),
+  // The SPA's sort menu uses the camelCase names on the right; both spellings are accepted and normalised.
+  sortBy: z.enum(["relevance", "popularity", "price-asc", "price-desc", "ending-soon", "newest", "aToZ", "zToA", "priceLowToHigh", "priceHighToLow", "timeEndingSoon", "timeNewlyListed"])
+    .transform((v) => SORT_ALIASES[v] ?? v).optional(),
   status: z.enum(["all", "active", "sold", "ended", "cancelled"]).optional(),
   page: z.coerce.number().int().min(1).max(10000).default(1),
 }).passthrough();

@@ -61,3 +61,10 @@ Hành vi: reject bid = **disqualification** (B11) trong `commands.rejectBidder`:
 Tests (PostgreSQL thật): moderation.test.js 10 pass — giá recompute khớp engine thuần, retry, loại hết bidder, quyền (seller-only, admin không reject), reject×bid 25 vòng (disqualified không bao giờ dẫn, winner = rank(eligible)), reject×Buy Now 15 vòng (không order cho người bị loại/không 2 order), cancel giữ lịch sử, edit freeze. Tổng: unit 21, integration 65 pass, lint 0 errors.
 Chưa làm ("reject/settlement scaffold"): kiểm thử race reject × settlement chuyển sang T09 khi worker tồn tại (cùng `lockAuction`).
 Tiếp theo: T08 (View All/sort map, mobile category link, admin logout), sau đó G1 review → T09.
+
+## T08 — XONG
+Sửa F17–F19 (frontend): "View All" trên Home giờ link `/search?sortBy=<timeEndingSoon|popularity|priceHighToLow>` theo tab (trước đó truyền nhãn sort làm category và gọi `setIsOpen` không tồn tại → crash); Mobile menu & dropdown dùng `/search?category=…` mã hóa bằng `URLSearchParams` (`utils/searchUrl.js`; subcategory dùng đúng tên category con mà backend hỗ trợ — parent/child đầy đủ ở T14); Admin Logout gọi `AuthContext.logout()` rồi `nav.logout()` (trước đó chỉ điều hướng, token còn nguyên); vào lại `/admin` sau logout bị ProtectedRoute chặn.
+Phát hiện thêm khi rà soát contract: UI gửi `sortBy=priceLowToHigh|priceHighToLow|timeEndingSoon|timeNewlyListed` nhưng backend chỉ hiểu tên khác nên sort **luôn rơi về relevance** (bug có sẵn). Backend validation nay chấp nhận cả hai bộ tên và chuẩn hóa (`validation/search.js`) + test; nếu không sửa thì validation T04 sẽ làm search đổi sort bị 400.
+Tests: vitest 16 pass (encoding tên có dấu/&, View All theo tab + đổi tab không crash, mobile menu link, admin logout, redirect khi back vào /admin); setup thêm `cleanup()`; backend privacy.test thêm 9 giá trị sort. FE lint 0 errors, build OK. Chưa đánh giá visual (chưa chạy browser/screenshot).
+G1 (đã đạt về mặt tự động): auth/reset/privacy có test; bid/Buy Now/reject có test đồng thời trên PostgreSQL; build/lint/tests pass. Chưa công bố auto-settlement (T09 chưa xong).
+Tiếp theo: T09 (worker settlement, bỏ tạo order trong GET).
