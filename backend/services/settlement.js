@@ -6,6 +6,7 @@ import { auctions, bids, bidderMaxima, orders, users, auctionCommandAudit } from
 import { fromDb, toStr } from "../domain/money.js";
 import { recompute } from "../domain/bidding.js";
 import { enqueue } from "./outbox.js";
+import { paymentDueAt } from "../domain/orderTransitions.js";
 
 /**
  * Settle one auction inside `tx` if (and only if) it is still active and its deadline has passed on the DB clock.
@@ -47,7 +48,7 @@ export async function settleOne(tx, auctionId, { lock = "skip" } = {}) {
       await tx.insert(bids).values({ auctionId, bidderId: leaderId, amount: toStr(currentPrice), bidTime: settledAt, auctionSequence: sequence, type: "adjust" });
     }
     const [created] = await tx.insert(orders).values({
-      auctionId, buyerId: leaderId, sellerId: auction.sellerId, finalPrice: toStr(currentPrice), status: "pending_payment", createdAt: settledAt, updatedAt: settledAt,
+      auctionId, buyerId: leaderId, sellerId: auction.sellerId, finalPrice: toStr(currentPrice), status: "pending_payment", paymentDueAt: paymentDueAt(settledAt), createdAt: settledAt, updatedAt: settledAt,
     }).onConflictDoNothing({ target: orders.auctionId }).returning({ id: orders.id });
     if (created) orderId = created.id;
     else {
@@ -117,7 +118,7 @@ export async function reconcileLegacyEnded({ limit = 100 } = {}) {
       const [order] = await tx.select().from(orders).where(eq(orders.auctionId, id));
       let closeReason = a.winnerId === null ? "no_bids" : "ended";
       if (a.winnerId !== null && !order) {
-        await tx.insert(orders).values({ auctionId: id, buyerId: a.winnerId, sellerId: a.sellerId, finalPrice: toStr(fromDb(a.currentPrice)), status: "pending_payment", createdAt: new Date(now), updatedAt: new Date(now) });
+        await tx.insert(orders).values({ auctionId: id, buyerId: a.winnerId, sellerId: a.sellerId, finalPrice: toStr(fromDb(a.currentPrice)), status: "pending_payment", paymentDueAt: paymentDueAt(new Date(now)), createdAt: new Date(now), updatedAt: new Date(now) });
         report.ordersCreated += 1;
       } else if (order && (order.buyerId !== a.winnerId || toStr(fromDb(order.finalPrice)) !== toStr(fromDb(a.currentPrice)))) {
         report.conflicts.push({ auctionId: id, reason: "order_disagrees_with_auction" });

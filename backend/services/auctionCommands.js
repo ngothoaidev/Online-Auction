@@ -9,6 +9,7 @@ import { decideBid, recompute, BidRejection, minimumNextBid, extendedEndTime } f
 import { checkBidderEligibility, buyNowAvailable } from "../domain/eligibility.js";
 import { runIdempotent } from "./idempotency.js";
 import { enqueue } from "./outbox.js";
+import { paymentDueAt } from "../domain/orderTransitions.js";
 import { sanitizeRichText } from "../utils/sanitize.js";
 
 // Decision time comes from the DB clock AFTER the lock was acquired. "ended" is evaluated in SQL on the same instant,
@@ -155,7 +156,7 @@ export const commands = {
 
       // UNIQUE(auction_id) on orders is the last line of defence; a conflict here aborts the whole command.
       const [order] = await tx.insert(orders).values({
-        auctionId, buyerId: actor.id, sellerId: auction.sellerId, finalPrice: price, status: "pending_payment", createdAt: now, updatedAt: now,
+        auctionId, buyerId: actor.id, sellerId: auction.sellerId, finalPrice: price, status: "pending_payment", paymentDueAt: paymentDueAt(now), createdAt: now, updatedAt: now,
       }).returning({ id: orders.id });
 
       await audit(tx, {

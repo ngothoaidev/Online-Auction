@@ -21,6 +21,9 @@ route.post('/:id/payment', orderController.submitPayment);
 // POST: Confirm payment and submit shipping (seller - Step 2)
 route.post('/:id/confirm', orderController.confirmPayment);
 
+// POST: Submit shipping for an order whose payment is already recorded (seller)
+route.post('/:id/shipping', orderController.submitShipping);
+
 // POST: Confirm receipt (buyer - Step 3)
 route.post('/:id/receipt', orderController.confirmReceipt);
 

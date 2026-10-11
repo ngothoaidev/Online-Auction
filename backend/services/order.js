@@ -3,20 +3,6 @@ import { orders, orderMessages, users, auctions, reviews } from "../db/schema.js
 import { eq, and, or, desc } from "drizzle-orm";
 
 const service = {
-    // Create order when auction ends with a winner
-    create: async function(auctionId, buyerId, sellerId, finalPrice) {
-        const result = await db.insert(orders).values({
-            auctionId,
-            buyerId,
-            sellerId,
-            finalPrice,
-            status: 'pending_payment',
-            createdAt: new Date(),
-            updatedAt: new Date(),
-        }).returning();
-        return result[0];
-    },
-
     // Get order by ID
     getById: async function(orderId) {
         const result = await db.select().from(orders).where(eq(orders.id, orderId));
@@ -78,89 +64,7 @@ const service = {
         };
     },
 
-    // Step 1: Buyer submits payment info
-    submitPayment: async function(orderId, paymentData) {
-        const result = await db.update(orders)
-            .set({
-                paymentProofUrl: paymentData.paymentProofUrl,
-                shippingAddress: paymentData.shippingAddress,
-                buyerPhone: paymentData.buyerPhone,
-                paymentSubmittedAt: new Date(),
-                status: 'pending_confirmation',
-                updatedAt: new Date(),
-            })
-            .where(eq(orders.id, orderId))
-            .returning();
-        return result[0];
-    },
-
-    // Step 2: Seller confirms payment and provides shipping info
-    confirmPayment: async function(orderId, shippingData) {
-        const result = await db.update(orders)
-            .set({
-                paymentConfirmedAt: new Date(),
-                shippingProofUrl: shippingData.shippingProofUrl,
-                trackingNumber: shippingData.trackingNumber,
-                shippingSubmittedAt: new Date(),
-                status: 'pending_receipt',
-                updatedAt: new Date(),
-            })
-            .where(eq(orders.id, orderId))
-            .returning();
-        return result[0];
-    },
-
-    // Step 3: Buyer confirms receipt
-    confirmReceipt: async function(orderId) {
-        const result = await db.update(orders)
-            .set({
-                receiptConfirmedAt: new Date(),
-                status: 'pending_review',
-                updatedAt: new Date(),
-            })
-            .where(eq(orders.id, orderId))
-            .returning();
-        return result[0];
-    },
-
-    // Step 4: Complete order (after reviews)
-    completeOrder: async function(orderId) {
-        const result = await db.update(orders)
-            .set({
-                status: 'completed',
-                updatedAt: new Date(),
-            })
-            .where(eq(orders.id, orderId))
-            .returning();
-        return result[0];
-    },
-
-    // Cancel order (by seller)
-    cancelOrder: async function(orderId, cancelledBy, reason) {
-        const result = await db.update(orders)
-            .set({
-                status: 'cancelled',
-                cancelledAt: new Date(),
-                cancelledBy: cancelledBy,
-                cancelReason: reason,
-                updatedAt: new Date(),
-            })
-            .where(eq(orders.id, orderId))
-            .returning();
-        return result[0];
-    },
-
-    // Update order status
-    updateStatus: async function(orderId, status) {
-        const result = await db.update(orders)
-            .set({
-                status,
-                updatedAt: new Date(),
-            })
-            .where(eq(orders.id, orderId))
-            .returning();
-        return result[0];
-    },
+    // All order state changes live in services/orderCommands.js (state machine, locking, audit).
 
     // ============ MESSAGES ============
 

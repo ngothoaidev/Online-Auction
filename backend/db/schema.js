@@ -5,7 +5,7 @@ import { relations, sql } from "drizzle-orm";
 export const userRoleEnum = pgEnum('user_role', ['unauthorized', 'buyer', 'seller', 'admin']);
 export const userStatusEnum = pgEnum('user_status', ['active', 'banned']);
 export const auctionStatusEnum = pgEnum('auction_status', ['active', 'sold', 'ended', 'cancelled']);
-export const orderStatusEnum = pgEnum('order_status', ['pending_payment', 'pending_confirmation', 'pending_delivery', 'pending_receipt', 'pending_review', 'completed', 'cancelled']);
+export const orderStatusEnum = pgEnum('order_status', ['pending_payment', 'pending_confirmation', 'pending_delivery', 'pending_receipt', 'pending_review', 'completed', 'cancelled', 'payment_expired']);
 export const sellerRequestStatusEnum = pgEnum('seller_request_status', ['pending', 'approved', 'rejected']);
 
 // --- 1. USERS TABLE ---
@@ -184,7 +184,30 @@ export const orders = pgTable('orders', {
   // Timestamps
   createdAt: timestamp('created_at').defaultNow(),
   updatedAt: timestamp('updated_at').defaultNow(),
+
+  // State machine (T10)
+  version: integer('version').notNull().default(0),
+  paymentDueAt: timestamp('payment_due_at', { withTimezone: true }), // B08: createdAt + PAYMENT_WINDOW_HOURS
+  paymentMode: varchar('payment_mode', { length: 16 }).notNull().default('manual'), // manual | mock | sandbox (T20)
+  closeReason: varchar('close_reason', { length: 32 }),
 });
+
+// Append-only audit of every order state change; unique per logical command so retries cannot double-write.
+export const orderTransitions = pgTable('order_transitions', {
+  id: serial('id').primaryKey(),
+  orderId: integer('order_id').notNull().references(() => orders.id, { onDelete: 'cascade' }),
+  fromStatus: varchar('from_status', { length: 32 }).notNull(),
+  toStatus: varchar('to_status', { length: 32 }).notNull(),
+  command: varchar('command', { length: 32 }).notNull(),
+  actorType: varchar('actor_type', { length: 16 }).notNull(), // user | system | adapter
+  actorId: integer('actor_id'),
+  reason: text('reason'),
+  commandId: varchar('command_id', { length: 100 }),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => ({
+  byOrder: index('order_transitions_order_idx').on(t.orderId, t.id),
+  uniqCommand: uniqueIndex('order_transitions_command_uniq').on(t.orderId, t.commandId).where(sql`command_id IS NOT NULL`),
+}));
 export const userFavorites = pgTable('user_favorites', {
   userId: integer('user_id'),
   auctionId: integer('auction_id'),

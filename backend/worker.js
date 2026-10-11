@@ -3,10 +3,11 @@
 import dotenv from "dotenv";
 dotenv.config();
 import * as settlement from "./jobs/settleDue.js";
+import * as paymentExpiry from "./jobs/expirePayments.js";
 import { client } from "./db/index.js";
 
 const POLL_MS = Number(process.env.WORKER_POLL_MS || 5000);
-const jobs = [settlement];
+const jobs = [settlement, paymentExpiry];
 let stopping = false;
 let inflight = Promise.resolve();
 let lastBeat = Date.now();

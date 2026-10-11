@@ -2,6 +2,17 @@ import orderService from "../services/order.js";
 import userService from "../services/user.js";
 import auctionService from "../services/auction.js";
 import { sendEmail } from "../utils/email.js";
+import { transitionOrder } from "../services/orderCommands.js";
+import { validKey } from "../services/idempotency.js";
+import { AppError } from "../utils/errors.js";
+
+const asActor = (user) => ({ type: 'user', id: user.id, role: user.role });
+function idempotencyKey(req) {
+    const key = req.header('Idempotency-Key');
+    if (key === undefined) return null;
+    if (!validKey(key)) throw new AppError(400, 'VALIDATION_ERROR', 'Idempotency-Key must be 8-100 characters of [A-Za-z0-9._:-]');
+    return key;
+}
 
 const controller = {
     // Get order by auction ID (for product detail page)
@@ -134,170 +145,68 @@ const controller = {
         }
     },
 
-    // Step 1: Buyer submits payment
-    submitPayment: async function(req, res) {
+    // Step 1: buyer submits payment proof (manual mode)
+    submitPayment: async function(req, res, next) {
         try {
-            const userData = { userId: req.user.id };
-
-            const { id } = req.params;
-            const { paymentProofUrl, shippingAddress, buyerPhone } = req.body;
-
-            const order = await orderService.getById(parseInt(id));
-            if (!order) {
-                return res.status(404).json({ message: 'Order not found' });
-            }
-
-            // Only buyer can submit payment
-            if (order.buyerId !== userData.userId) {
-                return res.status(403).json({ message: 'Only buyer can submit payment' });
-            }
-
-            if (order.status !== 'pending_payment') {
-                return res.status(400).json({ message: 'Payment already submitted' });
-            }
-
-            const updatedOrder = await orderService.submitPayment(parseInt(id), {
-                paymentProofUrl,
-                shippingAddress,
-                buyerPhone,
+            const result = await transitionOrder({
+                orderId: parseInt(req.params.id), command: 'submit_payment', actor: asActor(req.user),
+                payload: req.body ?? {}, expectedVersion: req.body?.expectedVersion, key: idempotencyKey(req),
             });
-
-            // TODO: Send email to seller
-
-            res.status(200).json({
-                message: 'Payment submitted successfully',
-                order: updatedOrder
-            });
+            res.set('Idempotent-Replayed', String(Boolean(result.replayed))).status(200).json({ message: 'Payment submitted successfully', order: result.body.order });
         } catch (error) {
-            console.error('Submit payment error:', error);
-            if (error.name === 'TokenExpiredError') {
-                return res.status(401).json({ message: 'Token expired', code: 'TOKEN_EXPIRED' });
-            }
-            res.status(500).json({ message: 'An error occurred. Please try again.' });
+            next(error);
         }
     },
 
-    // Step 2: Seller confirms payment and provides shipping
-    confirmPayment: async function(req, res) {
+    // Step 2: seller confirms payment and ships
+    confirmPayment: async function(req, res, next) {
         try {
-            const userData = { userId: req.user.id };
-
-            const { id } = req.params;
-            const { shippingProofUrl, trackingNumber } = req.body;
-
-            const order = await orderService.getById(parseInt(id));
-            if (!order) {
-                return res.status(404).json({ message: 'Order not found' });
-            }
-
-            // Only seller can confirm payment
-            if (order.sellerId !== userData.userId) {
-                return res.status(403).json({ message: 'Only seller can confirm payment' });
-            }
-
-            if (order.status !== 'pending_confirmation') {
-                return res.status(400).json({ message: 'Cannot confirm payment at this stage' });
-            }
-
-            const updatedOrder = await orderService.confirmPayment(parseInt(id), {
-                shippingProofUrl,
-                trackingNumber,
+            const result = await transitionOrder({
+                orderId: parseInt(req.params.id), command: 'confirm_with_shipping', actor: asActor(req.user),
+                payload: req.body ?? {}, expectedVersion: req.body?.expectedVersion, key: idempotencyKey(req),
             });
-
-            // TODO: Send email to buyer
-
-            res.status(200).json({
-                message: 'Payment confirmed and shipping info submitted',
-                order: updatedOrder
-            });
+            res.set('Idempotent-Replayed', String(Boolean(result.replayed))).status(200).json({ message: 'Payment confirmed and shipping info submitted', order: result.body.order });
         } catch (error) {
-            console.error('Confirm payment error:', error);
-            if (error.name === 'TokenExpiredError') {
-                return res.status(401).json({ message: 'Token expired', code: 'TOKEN_EXPIRED' });
-            }
-            res.status(500).json({ message: 'An error occurred. Please try again.' });
+            next(error);
         }
     },
 
-    // Step 3: Buyer confirms receipt
-    confirmReceipt: async function(req, res) {
+    // Seller ships an order whose payment is already recorded
+    submitShipping: async function(req, res, next) {
         try {
-            const userData = { userId: req.user.id };
-
-            const { id } = req.params;
-
-            const order = await orderService.getById(parseInt(id));
-            if (!order) {
-                return res.status(404).json({ message: 'Order not found' });
-            }
-
-            // Only buyer can confirm receipt
-            if (order.buyerId !== userData.userId) {
-                return res.status(403).json({ message: 'Only buyer can confirm receipt' });
-            }
-
-            if (order.status !== 'pending_receipt') {
-                return res.status(400).json({ message: 'Cannot confirm receipt at this stage' });
-            }
-
-            const updatedOrder = await orderService.confirmReceipt(parseInt(id));
-
-            res.status(200).json({
-                message: 'Receipt confirmed',
-                order: updatedOrder
+            const result = await transitionOrder({
+                orderId: parseInt(req.params.id), command: 'submit_shipping', actor: asActor(req.user),
+                payload: req.body ?? {}, expectedVersion: req.body?.expectedVersion, key: idempotencyKey(req),
             });
+            res.set('Idempotent-Replayed', String(Boolean(result.replayed))).status(200).json({ message: 'Shipping info submitted', order: result.body.order });
         } catch (error) {
-            console.error('Confirm receipt error:', error);
-            if (error.name === 'TokenExpiredError') {
-                return res.status(401).json({ message: 'Token expired', code: 'TOKEN_EXPIRED' });
-            }
-            res.status(500).json({ message: 'An error occurred. Please try again.' });
+            next(error);
         }
     },
 
-    // Cancel order (seller only)
-    cancelOrder: async function(req, res) {
+    // Step 3: buyer confirms receipt
+    confirmReceipt: async function(req, res, next) {
         try {
-            const userData = { userId: req.user.id };
-
-            const { id } = req.params;
-            const { reason } = req.body;
-
-            const order = await orderService.getById(parseInt(id));
-            if (!order) {
-                return res.status(404).json({ message: 'Order not found' });
-            }
-
-            // Only seller can cancel
-            if (order.sellerId !== userData.userId) {
-                return res.status(403).json({ message: 'Only seller can cancel order' });
-            }
-
-            if (order.status === 'completed' || order.status === 'cancelled') {
-                return res.status(400).json({ message: 'Cannot cancel this order' });
-            }
-
-            const updatedOrder = await orderService.cancelOrder(parseInt(id), userData.userId, reason);
-
-            // Automatically give -1 rating to buyer
-            await orderService.submitReview(
-                userData.userId,
-                order.buyerId,
-                order.auctionId,
-                false,
-                reason || 'Order cancelled by seller'
-            );
-
-            res.status(200).json({
-                message: 'Order cancelled',
-                order: updatedOrder
+            const result = await transitionOrder({
+                orderId: parseInt(req.params.id), command: 'confirm_receipt', actor: asActor(req.user),
+                payload: {}, expectedVersion: req.body?.expectedVersion, key: idempotencyKey(req),
             });
+            res.set('Idempotent-Replayed', String(Boolean(result.replayed))).status(200).json({ message: 'Receipt confirmed', order: result.body.order });
         } catch (error) {
-            console.error('Cancel order error:', error);
-            if (error.name === 'TokenExpiredError') {
-                return res.status(401).json({ message: 'Token expired', code: 'TOKEN_EXPIRED' });
-            }
-            res.status(500).json({ message: 'An error occurred. Please try again.' });
+            next(error);
+        }
+    },
+
+    // Cancel order: seller while unpaid, admin until shipping; a reason is mandatory and no review is created (B09)
+    cancelOrder: async function(req, res, next) {
+        try {
+            const result = await transitionOrder({
+                orderId: parseInt(req.params.id), command: 'cancel', actor: asActor(req.user),
+                payload: { reason: req.body?.reason }, expectedVersion: req.body?.expectedVersion, key: idempotencyKey(req),
+            });
+            res.set('Idempotent-Replayed', String(Boolean(result.replayed))).status(200).json({ message: 'Order cancelled', order: result.body.order });
+        } catch (error) {
+            next(error);
         }
     },
 
@@ -338,7 +247,7 @@ const controller = {
             const sellerReviewed = await orderService.hasUserReviewed(order.auctionId, order.sellerId);
 
             if (buyerReviewed && sellerReviewed && order.status === 'pending_review') {
-                await orderService.completeOrder(order.id);
+                await transitionOrder({ orderId: order.id, command: 'complete', actor: { type: 'system' } });
             }
 
             res.status(200).json({

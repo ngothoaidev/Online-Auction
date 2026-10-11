@@ -22,6 +22,13 @@
       "when": 1791751555742,
       "tag": "0002_money_maxima_commands",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1791753257278,
+      "tag": "0003_order_state_machine",
+      "breakpoints": true
     }
   ]
 }

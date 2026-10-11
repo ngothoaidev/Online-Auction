@@ -59,8 +59,6 @@ export default function OrderCompletion() {
   });
   const [cancelForm, setCancelForm] = useState({
     reason: '',
-    giveNegativeReview: false,
-    reviewComment: '',
   });
 
   const [submitting, setSubmitting] = useState(false);
@@ -1001,32 +999,7 @@ export default function OrderCompletion() {
                   required
                 />
               </div>
-              <div className="flex items-center gap-3">
-                <input
-                  type="checkbox"
-                  id="negativeReview"
-                  checked={cancelForm.giveNegativeReview}
-                  onChange={(e) => setCancelForm({ ...cancelForm, giveNegativeReview: e.target.checked })}
-                  className="w-4 h-4 rounded border-gray-300"
-                />
-                <label htmlFor="negativeReview" className="text-sm text-(--text)">
-                  Give negative review to buyer
-                </label>
-              </div>
-              {cancelForm.giveNegativeReview && (
-                <div>
-                  <label className="block text-sm font-medium text-(--text) mb-2">
-                    Review Comment
-                  </label>
-                  <textarea
-                    value={cancelForm.reviewComment}
-                    onChange={(e) => setCancelForm({ ...cancelForm, reviewComment: e.target.value })}
-                    className="w-full px-4 py-3 rounded-xl border border-(--border) bg-(--input-bg) text-(--text) focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    rows={2}
-                    placeholder="Explain your rating..."
-                  />
-                </div>
-              )}
+              <p className="text-sm text-(--text-muted)">Cancelling does not leave a review for the buyer.</p>
               <div className="flex gap-3 pt-2">
                 <button
                   type="button"

@@ -44,17 +44,7 @@ export const cancelOrderSchema = z.object({
   reason: z.string()
     .min(10, 'Cancellation reason must be at least 10 characters')
     .max(500, 'Cancellation reason must not exceed 500 characters'),
-  giveNegativeReview: z.boolean(),
-  reviewComment: z.string()
-    .max(500, 'Review comment must not exceed 500 characters')
-    .optional(),
-}).refine(
-  (data) => !data.giveNegativeReview || (data.reviewComment && data.reviewComment.length >= 10),
-  {
-    message: 'Review comment is required when giving negative review (min 10 characters)',
-    path: ['reviewComment'],
-  }
-);
+});
 
 // Chat message schema
 export const chatMessageSchema = z.object({
