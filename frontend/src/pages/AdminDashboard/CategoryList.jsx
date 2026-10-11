@@ -1,3 +1,4 @@
+import { useFeedback } from '../../components/ui/Feedback.jsx';
 import { useState, useEffect } from "react";
 import { Plus, Edit2, Trash2, Package, ChevronDown, ChevronRight, X, FolderPlus } from "lucide-react";
 import { categorySchema } from '../../schemas/admin.schemas';
@@ -6,6 +7,7 @@ import { validateForm } from '../../utils/validation';
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 export default function CategoryList() {
+  const { confirm, notify } = useFeedback();
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -169,7 +171,7 @@ export default function CategoryList() {
       ? 'Are you sure you want to delete this subcategory?' 
       : 'Are you sure you want to delete this category and all its subcategories?';
     
-    if (!confirm(confirmMsg)) return;
+    if (!(await confirm({ title: 'Delete category?', message: confirmMsg, confirmLabel: 'Delete', tone: 'danger' }))) return;
 
     setActionLoading(categoryId);
     setError('');
@@ -214,7 +216,7 @@ export default function CategoryList() {
 
   // Handle rename category
   const handleRenameCategory = () => {
-    alert('Rename category feature coming soon!');
+    notify('Renaming categories is not available yet.');
   };
 
   // Count total subcategories
@@ -273,6 +275,7 @@ export default function CategoryList() {
                         <div className="flex items-center gap-3">
                           {category.subcategories && category.subcategories.length > 0 ? (
                             <button 
+                              aria-label={`Show or hide subcategories of ${category.name}`}
                               onClick={() => toggleExpand(category.id)}
                               className="p-1 rounded hover:bg-opacity-80 transition-colors"
                               style={{ color: 'var(--text-muted)' }}
@@ -311,14 +314,14 @@ export default function CategoryList() {
                             }}
                             className="p-2 rounded-lg hover:opacity-80 transition-colors" 
                             style={{ backgroundColor: 'var(--success-soft)' }}
-                            title="Add Subcategory"
+                            title="Add Subcategory" aria-label="Add Subcategory"
                           >
                             <FolderPlus size={18} style={{ color: 'var(--success)' }} />
                           </button>
                           <button 
                             className="p-2 rounded-lg hover:opacity-80 transition-colors" 
                             style={{ backgroundColor: 'var(--accent-soft)' }}
-                            title="Edit Category"
+                            title="Edit Category" aria-label="Edit Category"
                             onClick={() => handleRenameCategory()}
                           >
                             <Edit2 size={18} style={{ color: 'var(--accent)' }} />
@@ -377,7 +380,7 @@ export default function CategoryList() {
                             <button 
                               className="p-2 rounded-lg hover:opacity-80 transition-colors" 
                               style={{ backgroundColor: 'var(--accent-soft)' }}
-                              title="Edit Subcategory"
+                              title="Edit Subcategory" aria-label="Edit Subcategory"
                             >
                               <Edit2 size={16} style={{ color: 'var(--accent)' }} />
                             </button>

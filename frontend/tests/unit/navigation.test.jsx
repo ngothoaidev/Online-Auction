@@ -9,7 +9,7 @@ vi.mock('../../src/components/AuctionCard', () => ({ default: () => null }))
 const logout = vi.fn()
 const authState = { user: { role: 'admin' }, loading: false }
 vi.mock('../../src/contexts/AuthContext.jsx', () => ({ useAuth: () => ({ ...authState, logout }) }))
-vi.mock('../../src/pages/AdminDashboard/CategoryList.jsx', () => ({ default: () => <div>categories</div> }))
+
 vi.mock('../../src/pages/AdminDashboard/ProductList.jsx', () => ({ default: () => null }))
 vi.mock('../../src/pages/AdminDashboard/UserList.jsx', () => ({ default: () => null }))
 vi.mock('../../src/pages/AdminDashboard/UpgradeRequests.jsx', () => ({ default: () => null }))
@@ -62,7 +62,7 @@ describe('Admin logout', () => {
         </Routes>
       </MemoryRouter>,
     )
-    await userEvent.click(screen.getByRole('button', { name: /logout/i }))
+    await userEvent.click(screen.getByRole('button', { name: /log out/i }))
     expect(logout).toHaveBeenCalledTimes(1)
     expect(await screen.findByText('login page')).toBeInTheDocument()
     expect(screen.getByTestId('where').textContent).toBe('/login')

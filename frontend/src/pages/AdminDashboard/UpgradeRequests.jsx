@@ -1,9 +1,11 @@
+import { useFeedback } from '../../components/ui/Feedback.jsx';
 import { useState, useEffect } from "react";
 import { CheckCircle, XCircle, Eye, Star, Trophy, Clock, RefreshCw } from "lucide-react";
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 export default function UpgradeRequests() {
+  const { confirm, notify } = useFeedback();
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -44,7 +46,7 @@ export default function UpgradeRequests() {
   );
 
   const handleApprove = async (id) => {
-    if (!confirm("Approve this upgrade request? The user will become a seller.")) return;
+    if (!(await confirm({ title: 'Approve seller request?', message: 'The user will be able to create listings.', confirmLabel: 'Approve' }))) return;
     
     setActionLoading(id);
     try {
@@ -67,14 +69,14 @@ export default function UpgradeRequests() {
         req.id === id ? { ...req, status: "approved" } : req
       ));
     } catch (err) {
-      alert(err.message);
+      notify(err.message, 'error');
     } finally {
       setActionLoading(null);
     }
   };
 
   const handleReject = async (id) => {
-    if (!confirm("Reject this upgrade request?")) return;
+    if (!(await confirm({ title: 'Reject seller request?', message: 'The user keeps their buyer account and can apply again later.', confirmLabel: 'Reject', tone: 'danger' }))) return;
     
     setActionLoading(id);
     try {
@@ -97,7 +99,7 @@ export default function UpgradeRequests() {
         req.id === id ? { ...req, status: "rejected" } : req
       ));
     } catch (err) {
-      alert(err.message);
+      notify(err.message, 'error');
     } finally {
       setActionLoading(null);
     }

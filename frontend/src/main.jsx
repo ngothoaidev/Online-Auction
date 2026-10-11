@@ -4,6 +4,7 @@ import { BrowserRouter } from 'react-router-dom';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { installSessionGuard } from './services/sessionGuard.js';
 import { AuthProvider } from './contexts/AuthContext.jsx';
+import { FeedbackProvider } from './components/ui/Feedback.jsx';
 import { WatchlistProvider } from './contexts/WatchlistContext.jsx';
 import ScrollToTop from './components/ScrollToTop.jsx'
 import App from './App.jsx'
@@ -18,10 +19,12 @@ createRoot(document.getElementById('root')).render(
       <ThemeProvider>
         <AuthProvider>
 
+          <FeedbackProvider>
           <WatchlistProvider>
             <App />
 
           </WatchlistProvider>
+          </FeedbackProvider>
         </AuthProvider>
       </ThemeProvider>
     </BrowserRouter>

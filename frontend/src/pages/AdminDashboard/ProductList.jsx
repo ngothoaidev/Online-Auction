@@ -1,3 +1,4 @@
+import { useFeedback } from '../../components/ui/Feedback.jsx';
 import { useState, useEffect, useRef } from "react";
 import { Eye, Trash2, Download, Filter, ChevronDown } from "lucide-react";
 import Pagination from "../../components/Pagination";
@@ -5,6 +6,7 @@ import Pagination from "../../components/Pagination";
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 export default function ProductList() {
+  const { confirm, notify } = useFeedback();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -106,7 +108,7 @@ export default function ProductList() {
   };
 
   const handleRemove = async (id, title) => {
-    if (!confirm(`Are you sure you want to remove "${title}"? This action cannot be undone.`)) return;
+    if (!(await confirm({ title: 'Cancel this listing?', message: `"${title}" will stop accepting bids. Its bids and history are kept; this cannot be undone.`, confirmLabel: 'Cancel listing', tone: 'danger' }))) return;
     
     try {
       const token = localStorage.getItem('authToken');
@@ -120,9 +122,9 @@ export default function ProductList() {
       if (!response.ok) throw new Error('Failed to delete product');
       
       // Refresh the list
-      setProducts(products.filter(p => p.id !== id));
+      setProducts(products.map(p => (p.id === id ? { ...p, status: 'cancelled' } : p)));
     } catch (err) {
-      alert(err.message || 'Failed to delete product');
+      notify(err.message || 'Could not cancel the listing', 'error');
     }
   };
 
@@ -426,12 +428,14 @@ export default function ProductList() {
                     <td className="px-6 py-4">
                       <div className="flex items-center justify-end gap-2">
                         <button 
-                          onClick={() => window.open(`/auction/${product.id}`, '_blank')}
+                          aria-label={`View ${product.title}`}
+                          onClick={() => window.open(`/auction/${product.id}`, '_blank', 'noopener')}
                           className="p-2 rounded-lg hover:bg-[var(--info-soft)] transition-colors"
                         >
                           <Eye size={18} className="text-[var(--info)]" />
                         </button>
                         <button
+                          aria-label={`Cancel listing ${product.title}`}
                           onClick={() => handleRemove(product.id, product.title)}
                           className="p-2 rounded-lg hover:bg-[var(--danger-soft)] transition-colors"
                         >

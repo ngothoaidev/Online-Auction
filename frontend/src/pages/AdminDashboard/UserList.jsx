@@ -1,9 +1,11 @@
+import { useFeedback } from '../../components/ui/Feedback.jsx';
 import { useState, useEffect } from "react";
 import { Search, Eye, Ban, CheckCircle, UserPlus, Filter, ChevronLeft, ChevronRight, X, User } from "lucide-react";
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 export default function UserList({ setActiveTab }) {
+  const { confirm, notify } = useFeedback();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -119,7 +121,7 @@ export default function UserList({ setActiveTab }) {
   };
 
   const handleBanUser = async (userId) => {
-    if (!confirm('Are you sure you want to ban this user?')) return;
+    if (!(await confirm({ title: 'Ban this user?', message: 'They are signed out everywhere and cannot bid, list or order until unbanned.', confirmLabel: 'Ban user', tone: 'danger' }))) return;
     
     try {
       setActionLoading(true);
@@ -137,17 +139,17 @@ export default function UserList({ setActiveTab }) {
         setShowUserModal(false);
       } else {
         const data = await response.json();
-        alert(data.message || 'Failed to ban user');
+        notify(data.message || 'Failed to ban user', 'error');
       }
     } catch (err) {
-      alert('Failed to ban user');
+      notify('Failed to ban user', 'error');
     } finally {
       setActionLoading(false);
     }
   };
 
   const handleUnbanUser = async (userId) => {
-    if (!confirm('Are you sure you want to unban this user?')) return;
+    if (!(await confirm({ title: 'Unban this user?', message: 'They can sign in and trade again.', confirmLabel: 'Unban' }))) return;
     
     try {
       setActionLoading(true);
@@ -165,10 +167,10 @@ export default function UserList({ setActiveTab }) {
         setShowUserModal(false);
       } else {
         const data = await response.json();
-        alert(data.message || 'Failed to unban user');
+        notify(data.message || 'Failed to unban user', 'error');
       }
     } catch (err) {
-      alert('Failed to unban user');
+      notify('Failed to unban user', 'error');
     } finally {
       setActionLoading(false);
     }
@@ -356,7 +358,7 @@ export default function UserList({ setActiveTab }) {
                         <button 
                           onClick={() => fetchUserDetails(user.id)}
                           className="p-2 rounded-lg hover:bg-(--info-soft) transition-colors"
-                          title="View Details"
+                          title="View Details" aria-label="View Details"
                         >
                           <Eye size={18} className="text-(--info)" />
                         </button>

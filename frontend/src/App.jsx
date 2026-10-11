@@ -1,4 +1,4 @@
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import ProtectedRoute from './components/ProtectedRoute';
 import AuthLayout from './layouts/AuthLayout';
 import MainLayout from './layouts/MainLayout';
@@ -13,6 +13,10 @@ import AuthCallback from './pages/Auth/AuthCallback';
 import Profile from './pages/Profile';
 import CreateAuction from './pages/CreateAuction';
 import AdminDashboard from './pages/AdminDashboard';
+import CategoryList from './pages/AdminDashboard/CategoryList.jsx';
+import ProductList from './pages/AdminDashboard/ProductList.jsx';
+import UserList from './pages/AdminDashboard/UserList.jsx';
+import UpgradeRequests from './pages/AdminDashboard/UpgradeRequests.jsx';
 import NotFound from './pages/NotFound';
 import ForgetPassword from './pages/Auth/ForgetPassword';
 import BecomeSeller from './pages/BecomeSeller';
@@ -67,7 +71,13 @@ function App() {
         {/* --- ADMIN ONLY --- */}
         <Route element={<AdminLayout />}>
           <Route element={<ProtectedRoute requiredRole="admin" />}>
-            <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/admin" element={<AdminDashboard />}>
+              <Route index element={<Navigate to="categories" replace />} />
+              <Route path="categories" element={<CategoryList />} />
+              <Route path="products" element={<ProductList />} />
+              <Route path="users" element={<UserList />} />
+              <Route path="upgrades" element={<UpgradeRequests />} />
+            </Route>
           </Route>
         </Route>
 
