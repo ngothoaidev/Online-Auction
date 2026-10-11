@@ -62,10 +62,13 @@ export default function CategoryDropper({ categories }) {
       className="relative h-full hidden lg:flex items-center"
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
+      onKeyDown={(e) => { if (e.key === 'Escape' && isOpen) { setIsOpen(false); setActiveSub(null); } }}
     >
       {/* TRIGGER BUTTON */}
       <button 
         onClick={toggleOpen}
+        aria-expanded={isOpen}
+        aria-controls="category-panel"
         className={`flex items-center gap-2 py-2 px-3 rounded-lg font-medium text-sm tracking-wide transition-all duration-200 
         ${isOpen ? 'bg-(--header-hover) text-(--text)' : 'text-(--header-text) hover:bg-(--header-hover) hover:text-(--text)'}`}
       >
@@ -85,12 +88,11 @@ export default function CategoryDropper({ categories }) {
 
       {/* DROPDOWN PANEL */}
       <div 
+        id="category-panel"
         className={`absolute top-[calc(100%+0.75rem)] left-0 w-64 rounded-xl shadow-2xl border flex flex-col py-2 backdrop-blur-xl z-50 overflow-visible
         bg-(--card-bg) border-(--border) shadow-(--card-shadow) transition-all duration-200 origin-top-left
         ${isOpen ? 'opacity-100 visible translate-y-0' : 'opacity-0 invisible translate-y-2 pointer-events-none'}`}
       >
-        {/* Decorative Arrow */}
-        <div className="absolute -top-1.5 left-8 w-3 h-3 rotate-45 border-l border-t bg-(--card-bg) border-(--border)"></div>
 
         {categories.map((cat) => {
            const isSubOpen = activeSub === cat.id;

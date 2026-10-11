@@ -43,8 +43,8 @@ describe('Home "View All"', () => {
 describe('Mobile category menu', () => {
   it('uses the /search route with an encoded category query', async () => {
     const categories = [{ id: 1, name: 'Art', subcategories: [{ id: 2, name: 'Tranh sơn dầu & màu nước' }] }]
-    render(<MemoryRouter><MobileMenu user={null} setIsMobileMenuOpen={() => {}} categories={categories} logout={() => {}} /></MemoryRouter>)
-    await userEvent.click(screen.getByRole('button', { name: 'Art' }))
+    render(<MemoryRouter><MobileMenu open onClose={() => {}} user={null} categories={categories} logout={() => {}} /></MemoryRouter>)
+    await userEvent.click(screen.getByRole('button', { name: 'Art subcategories' }))
     const href = screen.getByRole('link', { name: /Tranh sơn dầu/ }).getAttribute('href')
     expect(href.startsWith('/search?')).toBe(true)
     expect(new URL(href, 'http://x').searchParams.get('category')).toBe('Tranh sơn dầu & màu nước')

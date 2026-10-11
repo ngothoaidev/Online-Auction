@@ -5,11 +5,11 @@ import Footer from '../components/Footer';
 const MainLayout = () => {
   return (
     <div className="app-container">
+      <a href="#main-content" className="skip-link">Skip to main content</a>
       <Header />
-      
-      <main className="content">
-        {/* THE PAGE CHANGES HERE */}
-        <Outlet /> 
+
+      <main id="main-content" tabIndex={-1} className="content outline-none">
+        <Outlet />
       </main>
 
       <Footer />

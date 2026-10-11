@@ -1,117 +1,79 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
-import { Search, X, ChevronDown, LogOut } from "lucide-react"
-import { useNav } from "../../hooks/useNavigate.js";
-import { searchUrl } from "../../utils/searchUrl.js";
+import { useState, useRef } from 'react';
+import { Link } from 'react-router-dom';
+import { Search, ChevronDown, LogOut } from 'lucide-react';
+import { useNav } from '../../hooks/useNavigate.js';
+import { searchUrl } from '../../utils/searchUrl.js';
+import { Dialog } from '../ui';
 
-export default function MobileMenu({ user, setIsMobileMenuOpen, categories, searchInputRef, logout }) {
-    const nav = useNav();
-    const [activeMobileCategory, setActiveMobileCategory] = useState(null);
-    const [searchQuery, setSearchQuery] = useState(""); // Track mobile search
-    const handleMobileSearch = () => {
-        setIsMobileMenuOpen(false); // Close menu
-        nav.search(searchQuery);
-    };
-    
-    return (
-        <div className="fixed inset-0 z-60 lg:hidden">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity" onClick={() => setIsMobileMenuOpen(false)} />
-          
-          <div className="absolute right-0 top-0 h-full w-[85%] max-w-[320px] shadow-2xl flex flex-col transform transition-transform duration-300 ease-out"
-               style={{ backgroundColor: 'var(--bg)', borderLeft: '1px solid var(--border)' }}>
-            
-            {/* Mobile Header */}
-            {user && (
-            <div className="flex items-center justify-between px-6 py-2 bg-[var(--bg-soft)] border-b border-[var(--border)]">
-                <button onClick={() => {nav.me(); setIsMobileMenuOpen(false)}} className="p-2 rounded-full hover:bg-[var(--bg-hover)]" style={{ color: 'var(--text-muted)' }}>
-                    <img 
-                        src={user.imgUrl} 
-                        alt="Profile" 
-                        className="w-10 h-10 rounded-full object-cover border border-[var(--border)]" 
-                    />
-                </button>
-                <button onClick={() => setIsMobileMenuOpen(false)} className="p-2 rounded-full hover:bg-[var(--bg-hover)]" style={{ color: 'var(--text-muted)' }}>
-                    <X size={24} />
-                </button>
-            </div>
-            )}
+/** Mobile navigation drawer: a real modal dialog (focus trap, Escape, focus restore) from the shared primitive. */
+export default function MobileMenu({ open, onClose, focusSearch, categories, user, logout }) {
+  const nav = useNav();
+  const searchRef = useRef(null);
+  const [openCategory, setOpenCategory] = useState(null);
+  const [query, setQuery] = useState('');
 
-            {/* Mobile Content */}
-            <div className="flex-1 overflow-y-auto p-6 space-y-8">
-              
-              {/* Mobile Search */}
-              <div className="relative">
-                <input 
-                  type="text" 
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleMobileSearch()}
-                  placeholder="Search..."
-                  ref={searchInputRef}
-                  className="w-full rounded-xl py-3 pl-11 pr-4 outline-none border focus:ring-2 transition-all"
-                  style={{ 
-                      backgroundColor: 'var(--input-bg)', 
-                      borderColor: 'var(--input-border)',
-                      color: 'var(--text)',
-                      '--tw-ring-color': 'var(--accent)'
-                  }}
-                />
-                <button onClick={handleMobileSearch} className="absolute left-4 top-3.5 text-[var(--text-muted)]">
-                   <Search size={18} />
-                </button>
-              </div>
+  const go = (fn) => () => { onClose(); fn(); };
+  const onSearch = (e) => {
+    e.preventDefault();
+    const q = query.trim();
+    if (!q) return;
+    onClose();
+    nav.search(q);
+  };
 
-              {/* Mobile Categories Accordion */}
-              <div className="space-y-1">
-                <h3 className="text-xs font-bold uppercase tracking-widest mb-4 ml-1" style={{ color: 'var(--theme-secondary)' }}>Browse Categories</h3>
-                {categories.map((cat) => (
-                  <div key={cat.id} className="border-b last:border-0" style={{ borderColor: 'var(--border-subtle)' }}>
-                    <button 
-                      onClick={() => setActiveMobileCategory(activeMobileCategory === cat.id ? null : cat.id)}
-                      className="w-full flex items-center justify-between py-4 hover:opacity-70 transition-opacity"
-                      style={{ color: 'var(--text)' }}
-                    >
-                      <span className="font-semibold">{cat.name}</span>
-                      <ChevronDown size={16} className={`transition-transform duration-200 ${activeMobileCategory === cat.id ? 'rotate-180' : ''}`} style={{ color: activeMobileCategory === cat.id ? 'var(--accent)' : 'var(--text-muted)' }} />
-                    </button>
-                    
-                    <div className={`overflow-hidden transition-all duration-200 ease-in-out ${activeMobileCategory === cat.id ? 'max-h-96 opacity-100 mb-4' : 'max-h-0 opacity-0'}`}>
-                      <ul className="pl-4 space-y-3 border-l-2 ml-2" style={{ borderColor: 'var(--border)' }}>
-                        {cat.subcategories.map((sub) => (
-                          <li key={sub.id}>
-                            <Link to={searchUrl({ category: sub.name })} onClick={() => setIsMobileMenuOpen(false)} className="text-sm block hover:text-[var(--accent)] transition-colors" style={{ color: 'var(--text-muted)' }}>
-                              {sub.name}
-                            </Link>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Mobile Footer */}
-            <div className="p-6 border-t" style={{ backgroundColor: 'var(--bg-soft)', borderColor: 'var(--border)' }}>
-              {user ? (
-                 <button onClick={() => { setIsMobileMenuOpen(false);logout();}} className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl font-bold transition-colors shadow-sm"
-                 style={{ backgroundColor: 'var(--danger-soft)', color: 'var(--danger)' }}>
-                   <LogOut size={18} /> Logout
-                 </button>
-              ) : (
-                <div className="grid grid-cols-2 gap-4">
-                  <button onClick={() => { setIsMobileMenuOpen(false); nav.login(); }} className="py-3.5 rounded-xl font-semibold border transition-all hover:bg-[var(--bg-hover)]"
-                    style={{ color: 'var(--text)', borderColor: 'var(--border)' }}>
-                    Log In
-                  </button>
-                  <button onClick={() => { setIsMobileMenuOpen(false); nav.register(); }} className="py-3.5 rounded-xl font-bold shadow-lg transition-all hover:brightness-110"
-                    style={{ backgroundColor: 'var(--accent)', color: '#1A1205' }}>
-                    Register
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
+  return (
+    <Dialog open={open} onClose={onClose} title="Menu" variant="drawer" initialFocusRef={focusSearch ? searchRef : undefined}>
+      <form role="search" onSubmit={onSearch} className="mb-5">
+        <label htmlFor="mobile-search" className="sr-only">Search lots</label>
+        <div className="flex min-h-12 items-center rounded-(--radius-control) border border-(--input-border) bg-(--input-bg) pl-3">
+          <Search size={18} aria-hidden="true" className="text-(--muted)" />
+          <input ref={searchRef} id="mobile-search" type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search lots" className="w-full bg-transparent px-2 text-(--ink) outline-none placeholder:text-(--muted)" />
+          <button type="submit" className="min-h-11 px-3 text-sm font-semibold text-(--ink)">Go</button>
         </div>
-    );
+      </form>
+
+      <nav aria-label="Categories">
+        <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-(--muted)">Browse categories</h3>
+        <ul>
+          {categories.map((cat) => {
+            const expanded = openCategory === cat.id;
+            return (
+              <li key={cat.id} className="border-b border-(--line) last:border-0">
+                <div className="flex items-center">
+                  <Link to={searchUrl({ category: cat.name })} onClick={onClose} className="flex min-h-12 flex-1 items-center font-medium text-(--ink)">{cat.name}</Link>
+                  {cat.subcategories?.length > 0 && (
+                    <button type="button" aria-expanded={expanded} aria-label={`${cat.name} subcategories`} onClick={() => setOpenCategory(expanded ? null : cat.id)} className="inline-flex h-11 w-11 items-center justify-center text-(--muted)">
+                      <ChevronDown size={18} aria-hidden="true" className={expanded ? 'rotate-180' : ''} />
+                    </button>
+                  )}
+                </div>
+                {expanded && (
+                  <ul className="mb-3 ml-3 border-l border-(--line) pl-3">
+                    {cat.subcategories.map((sub) => (
+                      <li key={sub.id}>
+                        <Link to={searchUrl({ category: sub.name })} onClick={onClose} className="flex min-h-11 items-center text-sm text-(--muted) hover:text-(--ink)">{sub.name}</Link>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      </nav>
+
+      <div className="mt-6 border-t border-(--line) pt-5">
+        {user ? (
+          <button type="button" onClick={go(logout)} className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-(--radius-control) border border-(--line) font-semibold text-(--danger)">
+            <LogOut size={18} aria-hidden="true" /> Log out
+          </button>
+        ) : (
+          <div className="grid grid-cols-2 gap-3">
+            <button type="button" onClick={go(nav.login)} className="min-h-12 rounded-(--radius-control) border border-(--input-border) font-semibold text-(--ink)">Log in</button>
+            <button type="button" onClick={go(nav.register)} className="min-h-12 rounded-(--radius-control) bg-(--ink) font-semibold text-(--on-ink)">Register</button>
+          </div>
+        )}
+      </div>
+    </Dialog>
+  );
 }

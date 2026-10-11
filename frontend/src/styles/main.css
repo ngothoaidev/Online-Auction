@@ -30,99 +30,129 @@ button {
     scrollbar-width: none;
 }
 
-/* --- THEME VARIABLES --- */
+/* --- FONTS (self-hosted, OFL; latin + vietnamese subsets load on demand) --- */
+@import '@fontsource-variable/inter';
+@import '@fontsource-variable/source-serif-4';
+@import '@fontsource/ibm-plex-mono/400.css';
+@import '@fontsource/ibm-plex-mono/500.css';
+
+/* --- SEMANTIC TOKENS (AURUM, design D8.1) ---
+   Roles: canvas / surface / ink / muted / line / brand / success / danger / warning / focus.
+   Legacy names (--bg, --text, --accent ...) are BRIDGED to these roles so unmigrated screens follow the palette;
+   remove a bridge once its last consumer has moved to the semantic name. */
 :root {
-  /* LIGHT THEME: Clean, Airy, Professional 
-    Base: Slate 50/100
-  */
-  --bg: #F8FAFC;          /* Slate-50: Main background */
-  --bg-soft: #FFFFFF;     /* White: Cards, Headers, Dropdowns */
-  --bg-subtle: #F1F5F9;   /* Slate-100: Secondary sections */
-  --bg-hover: #E2E8F0;    /* Slate-200: Hover states */
+  --canvas: #F7F5F0;
+  --surface: #FFFFFF;
+  --ink: #171717;
+  --muted: #66645F;
+  --line: #D9D5CD;
+  --brand: #96590F;
+  --success: #256B4A;
+  --danger: #B42318;
+  --warning: #855400;
+  --focus: #2563EB;
 
-  /* Typography */
-  --text: #0F172A;        /* Slate-900: Primary text */
-  --text-muted: #64748B;  /* Slate-500: Secondary text */
-  --text-subtle: #94A3B8; /* Slate-400: Tertiary text */
+  --surface-sunken: #EFECE5;
+  --surface-hover: #E8E4DA;
+  --brand-soft: #F7EBD8;
+  --brand-strong: #6E4210;
+  --success-soft: #DDEFE5;
+  --danger-soft: #FBE4E1;
+  --warning-soft: #FBF1D6;
+  --info: #1F5FA8;
+  --info-soft: #DCE8F6;
+  --on-ink: #FFFFFF;
 
-  /* Brand: Aurum Gold & Royal Violet */
-  --accent: #B45309;        /* Amber-700: Readable gold for light mode text/borders */
-  --accent-soft: #FFFBEB;   /* Amber-50: Backgrounds for active items */
-  --accent-strong: #78350F; /* Amber-900: Deep gold for emphasis */
-  --theme-secondary: #7C3AED; /* Violet-600: Secondary brand color */
+  --font-ui: 'Inter Variable', Inter, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-display: 'Source Serif 4 Variable', 'Source Serif 4', Georgia, 'Times New Roman', serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', Consolas, monospace;
 
-  /* Borders */
-  --border: #E2E8F0;        /* Slate-200 */
-  --border-subtle: #F1F5F9; /* Slate-100 */
-  --border-strong: #CBD5E1; /* Slate-300 */
+  --radius-control: 8px;
+  --radius-card: 12px;
+  --radius-dialog: 16px;
+  --header-h: 72px;
 
-  /* Functional Colors */
-  --danger: #EF4444;
-  --danger-soft: #FEE2E2;
-  --success: #10B981;
-  --success-soft: #D1FAE5;
-  --warning: #F59E0B;
-  --warning-soft: #FEF3C7;
-  --info: #0EA5E9;
-  --info-soft: #E0F2FE;
-
-  /* Components */
-  --card-bg: #FFFFFF;
-  --card-border: var(--border);
-  --card-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
-  
-  --input-bg: #F8FAFC;
-  --input-border: #E2E8F0;
-  --input-border-focus: #B45309;
+  /* ---- bridges (legacy -> semantic) ---- */
+  --bg: var(--canvas);
+  --bg-soft: var(--surface);
+  --bg-subtle: var(--surface-sunken);
+  --bg-hover: var(--surface-hover);
+  --text: var(--ink);
+  --text-muted: var(--muted);
+  --text-subtle: #6F6C65;
+  --accent: var(--brand);
+  --accent-soft: var(--brand-soft);
+  --accent-strong: var(--brand-strong);
+  --theme-secondary: var(--brand);
+  --border: var(--line);
+  --border-subtle: #E8E4DB;
+  --border-strong: #C2BDB2;
+  --card-bg: var(--surface);
+  --card-border: var(--line);
+  --card-shadow: 0 1px 2px rgb(23 23 23 / 0.06), 0 2px 8px rgb(23 23 23 / 0.04);
+  --input-bg: var(--surface);
+  --input-border: #8F8A7F;
+  --input-border-focus: var(--focus);
 }
 
 :root.dark {
-  /* DARK THEME: Deep, Premium, Cinematic 
-    Base: Slate 950/900
-  */
-  --bg: #020617;          /* Slate-950: Main background */
-  --bg-soft: #0F172A;     /* Slate-900: Cards, Headers */
-  --bg-subtle: #1E293B;   /* Slate-800: Secondary sections */
-  --bg-hover: #334155;    /* Slate-700: Hover states */
+  --canvas: #121110;
+  --surface: #1C1B19;
+  --ink: #F2EFE9;
+  --muted: #A8A49B;
+  --line: #36332E;
+  --brand: #E0A84A;
+  --success: #5BC796;
+  --danger: #F2776B;
+  --warning: #E3B341;
+  --focus: #7AA7FF;
 
-  /* Typography */
-  --text: #F8FAFC;        /* Slate-50: Primary text */
-  --text-muted: #94A3B8;  /* Slate-400: Secondary text */
-  --text-subtle: #64748B; /* Slate-500: Tertiary text */
+  --surface-sunken: #171614;
+  --surface-hover: #292724;
+  --brand-soft: #3A2A12;
+  --brand-strong: #F3D9A4;
+  --success-soft: #11291E;
+  --danger-soft: #3A1714;
+  --warning-soft: #33280B;
+  --info: #7DB2EA;
+  --info-soft: #14263B;
+  --on-ink: #171717;
 
-  /* Brand: Glowing Gold */
-  --accent: #FBBF24;        /* Amber-400: Bright gold for dark mode */
-  --accent-soft: #451a03;   /* Deep Amber/Brown: Subtle backgrounds */
-  --accent-strong: #FEF3C7; /* Amber-100: High contrast text */
-  --theme-secondary: #A78BFA; /* Violet-400: Secondary brand color */
-
-  /* Borders */
-  --border: #1E293B;        /* Slate-800 */
-  --border-subtle: #0F172A; /* Slate-900 */
-  --border-strong: #334155; /* Slate-700 */
-
-  /* Functional Colors */
-  --danger: #F87171;
-  --danger-soft: #450a0a;
-  --success: #4ADE80;
-  --success-soft: #052e16;
-  --warning: #FBBF24;
-  --warning-soft: #422006;
-  --info: #38BDF8;
-  --info-soft: #082f49;
-
-  /* Components */
-  --card-bg: #0F172A;
-  --card-border: var(--border);
-  --card-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.5), 0 4px 6px -4px rgb(0 0 0 / 0.5);
-
-  --input-bg: #020617;
-  --input-border: #1E293B;
-  --input-border-focus: #FBBF24;
+  --text-subtle: #9A968D;
+  --border-subtle: #262421;
+  --border-strong: #4A4640;
+  --card-shadow: 0 1px 2px rgb(0 0 0 / 0.5), 0 4px 12px rgb(0 0 0 / 0.3);
+  --input-border: #7F7A71;
 }
 
+html { scroll-padding-top: calc(var(--header-h) + 16px); }
+
 body {
-  background-color: var(--bg);
-  color: var(--text);
-  transition: background-color 0.3s ease, color 0.3s ease;
+  background-color: var(--canvas);
+  color: var(--ink);
+  font-family: var(--font-ui);
+  font-feature-settings: 'cv11', 'ss01';
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Editorial display only (hero / page titles); everything else is UI sans. */
+.font-display { font-family: var(--font-display); letter-spacing: -0.01em; }
+/* Lot numbers, prices and timers: fixed-width digits so values do not jitter. */
+.font-lot { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+
+/* Visible, high-contrast focus for every interactive element; never removed without a replacement. */
+:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+  border-radius: var(--radius-control);
+}
+
+.skip-link {
+  position: absolute; left: 16px; top: -64px; z-index: 100;
+  background: var(--ink); color: var(--on-ink); padding: 10px 16px; border-radius: var(--radius-control); font-weight: 600;
+}
+.skip-link:focus { top: 12px; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
 }
