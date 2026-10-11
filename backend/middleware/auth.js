@@ -2,59 +2,61 @@ import authService from "../services/auth.js";
 import userService from "../services/user.js";
 import sellerRequestService from "../services/sellerRequest.js";
 
-// Verify token and attach user to request
+// Optional authentication: no Authorization header (or a literal "Bearer null/undefined" left by
+// logged-out clients) means guest. Any real token that is invalid, expired, revoked or belongs to a
+// banned/missing user is rejected here, before any controller side effect.
+const GUEST_TOKENS = new Set(['', 'null', 'undefined']);
+
 export const authenticate = async (req, res, next) => {
+    const authorization = req.header('Authorization');
+    const token = authorization?.replace(/^Bearer\s+/i, '').trim() ?? '';
+    if (GUEST_TOKENS.has(token)) return next();
+
+    let tokenData;
     try {
-        const authorization = req.header('Authorization');
+        tokenData = await authService.validateToken(token);
+    } catch (error) {
+        const expired = error?.name === 'TokenExpiredError';
+        return res.status(401).json({ code: expired ? 'TOKEN_EXPIRED' : 'TOKEN_INVALID', message: expired ? 'Token expired' : 'Invalid token' });
+    }
 
-        // if (!authorization) {
-        //     return res.status(401).json({ message: 'Authorization required' });
-        // }
-
-        // Authorization: Bearer ey...
-        const token = authorization?.replace('Bearer ', '').trim();
-
-        if (token) {
-            // Validate Token
-            const tokenData = await authService.validateToken(token);
-            
-            // Fetch fresh user data from database
-            const user = await userService.getById(tokenData.userId);
-
-            // if (!user) {
-            //     return res.status(404).json({
-            //         message: 'User not found',
-            //     });
-            // }
-
-            if (user) {
-                // Check seller status - if seller role has expired, revert to buyer
-                if (user.role === 'seller') {
-                    const statusCheck = await sellerRequestService.checkAndUpdateSellerStatus(user.id);
-                    if (statusCheck.status === 'expired' && statusCheck.reverted) {
-                        user.role = 'buyer';
-                        console.log(`User ${user.id} seller status expired, reverted to buyer`);
-                    }
-                }
-
-                // Attach user to request object
-                req.user = user;
-            }
+    try {
+        const user = await userService.getById(tokenData.userId);
+        if (!user || (tokenData.av ?? -1) !== (user.authVersion ?? 0)) {
+            return res.status(401).json({ code: 'TOKEN_REVOKED', message: 'Session is no longer valid' });
         }
-        
+        if (user.status === 'banned') {
+            return res.status(403).json({ code: 'ACCOUNT_BANNED', message: 'Your account has been banned' });
+        }
+
+        // Check seller status - if seller role has expired, revert to buyer
+        // ponytail: still a write on the auth path; move to a worker job with audit in T09/T10.
+        if (user.role === 'seller') {
+            const statusCheck = await sellerRequestService.checkAndUpdateSellerStatus(user.id);
+            if (statusCheck.status === 'expired' && statusCheck.reverted) user.role = 'buyer';
+        }
+        req.user = user;
         next();
     } catch (error) {
-        next();
+        next(error);
     }
 };
 
 export const requireAuth = (req, res, next) => {
     if (!req.user) {
-        return res.status(401).json({
-            message: 'User not authenticated',
-        });
+        return res.status(401).json({ code: 'AUTH_REQUIRED', message: 'User not authenticated' });
     }
+    next();
+};
 
+// Email-verified account (unverified accounts keep role "unauthorized" and cannot transact)
+export const requireVerified = (req, res, next) => {
+    if (!req.user) {
+        return res.status(401).json({ code: 'AUTH_REQUIRED', message: 'User not authenticated' });
+    }
+    if (!req.user.isVerified) {
+        return res.status(403).json({ code: 'EMAIL_NOT_VERIFIED', message: 'Please verify your email first' });
+    }
     next();
 };
 

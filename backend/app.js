@@ -19,10 +19,16 @@ import systemRoute from "./routes/system.js";
 
 // import productRoute from "./routes/product.routes.js";
 
+function requireEnv(name) {
+    if (!process.env[name]) throw new Error(`Missing required environment variable ${name}`);
+    return process.env[name];
+}
+
 const app = express();
 
 // --- Dependencies ---
-app.use(cors());
+const allowedOrigins = (process.env.CORS_ORIGINS || process.env.FRONTEND_URL || 'http://localhost:5173').split(',').map((o) => o.trim());
+app.use(cors({ origin: allowedOrigins, credentials: true }));
 
 app.use(morgan('dev'));
 
@@ -30,11 +36,13 @@ app.use(bodyParser.json());
 
 // Session for Passport
 app.use(session({
-    secret: process.env.SESSION_SECRET || 'your-session-secret',
+    secret: requireEnv('SESSION_SECRET'),
     resave: false,
     saveUninitialized: false,
     cookie: {
         secure: process.env.NODE_ENV === 'production',
+        httpOnly: true,
+        sameSite: 'lax',
         maxAge: 24 * 60 * 60 * 1000 // 24 hours
     }
 }));

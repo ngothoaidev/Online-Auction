@@ -1,7 +1,10 @@
 import { Router } from "express";
+import { requireAuth } from "../middleware/auth.js";
 import orderController from "../controllers/order.js";
 
 const route = new Router();
+
+route.use(requireAuth);
 
 // GET: Get user's orders
 route.get('/my', orderController.getMyOrders);

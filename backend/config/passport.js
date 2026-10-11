@@ -10,7 +10,8 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
         clientID: process.env.GOOGLE_CLIENT_ID,
         clientSecret: process.env.GOOGLE_CLIENT_SECRET,
         callbackURL: process.env.GOOGLE_CALLBACK_URL || 'http://localhost:3000/auth/google/callback',
-        scope: ['profile', 'email']
+        scope: ['profile', 'email'],
+    state: true // CSRF protection for the OAuth round trip (uses express-session)
     }, async (accessToken, refreshToken, profile, done) => {
         try {
             const email = profile.emails[0].value;
@@ -44,12 +45,13 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
 }
 
 // Facebook Strategy
-if (process.env.FACEBOOK_CLIENT_ID && process.env.FACEBOOK_CLIENT_SECRET) {
+if (process.env.FACEBOOK_APP_ID && process.env.FACEBOOK_APP_SECRET) {
     passport.use(new FacebookStrategy({
         clientID: process.env.FACEBOOK_APP_ID,
         clientSecret: process.env.FACEBOOK_APP_SECRET,
         callbackURL: process.env.FACEBOOK_CALLBACK_URL || 'http://localhost:3000/auth/facebook/callback',
-        profileFields: ['id', 'emails', 'name', 'displayName', 'photos']
+        profileFields: ['id', 'emails', 'name', 'displayName', 'photos'],
+        state: true
     }, async (accessToken, refreshToken, profile, done) => {
         try {
             const email = profile.emails?.[0]?.value || `${profile.id}@facebook.placeholder`;

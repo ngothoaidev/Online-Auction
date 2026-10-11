@@ -405,7 +405,6 @@ const service = {
 
             // Insert bảng auction_images (nếu có ảnh)
             if (images && images.length > 0) {
-                console.log(images);
                 const imageValues = images.map((image, index) => ({
                     auctionId: newAuction.id,
                     imageUrl: image.path,
@@ -672,7 +671,6 @@ const service = {
                 where: eq(auctions.id, auctionId)
             });
 
-            console.log("Found auction:", auction);
 
             if (!auction) {
                 throw new Error('Auction not found');
@@ -713,7 +711,6 @@ const service = {
                 updatedAt: new Date()
             }).returning();
 
-            console.log("Order created:", newOrder);
 
             return {
                 status: 'success',

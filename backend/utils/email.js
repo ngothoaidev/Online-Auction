@@ -71,10 +71,18 @@ const ctaButton = (text, url, color = '#E0B84C') => `
 `;
 
 // Send email via Brevo API
+// Local adapter: EMAIL_TRANSPORT=local keeps messages in memory (tests/dev) instead of calling the provider.
+export const mailSink = [];
+
 const sendEmailViaAPI = async (to, subject, htmlContent) => {
   try {
     if (!to || to.trim() === '') {
       throw new Error('Recipient email address is required');
+    }
+
+    if (process.env.EMAIL_TRANSPORT === 'local') {
+      mailSink.push({ to: to.trim(), subject, html: htmlContent });
+      return { success: true, messageId: 'local' };
     }
 
     console.log(`Sending email to: ${to}, Subject: ${subject}`);

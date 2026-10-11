@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { uploadAvatar } from "../config/cloudinary.js";
 import userController from "../controllers/user.js";
-import requireAuth, { requireAdmin } from "../middleware/auth.js";
+import { requireAuth, requireAdmin } from "../middleware/auth.js";
 
 const route = new Router();
 

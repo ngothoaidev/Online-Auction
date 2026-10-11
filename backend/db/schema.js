@@ -1,4 +1,4 @@
-import { pgTable, serial, varchar, text, decimal, timestamp, boolean, integer, pgEnum, date, primaryKey, foreignKey, unique } from "drizzle-orm/pg-core";
+import { pgTable, serial, varchar, text, decimal, timestamp, boolean, integer, pgEnum, date, primaryKey, foreignKey, index } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
 // --- ENUMS ---
@@ -27,7 +27,22 @@ export const users = pgTable('users', {
   googleId: varchar('google_id'),
   facebookId: varchar('facebook_id'),
   isVerified: boolean('is_verified').default(false),
+  authVersion: integer('auth_version').notNull().default(0), // bump to revoke every previously issued JWT
 });
+
+// Purpose-scoped, hashed, expiring one-time codes / grants (email verification, password reset, change password).
+export const authChallenges = pgTable('auth_challenges', {
+  id: serial('challenge_id').primaryKey(),
+  userId: integer('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  purpose: varchar('purpose', { length: 32 }).notNull(), // verify_email | reset_password | reset_grant | change_password
+  hashedCode: varchar('hashed_code', { length: 128 }).notNull(),
+  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+  attempts: integer('attempts').notNull().default(0),
+  consumedAt: timestamp('consumed_at', { withTimezone: true }),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+}, (t) => ({
+  byUserPurpose: index('auth_challenges_user_purpose_idx').on(t.userId, t.purpose),
+}));
 
 // --- 2. CATEGORIES TABLE ---
 export const categories = pgTable('categories', {

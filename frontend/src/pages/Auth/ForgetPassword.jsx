@@ -15,6 +15,7 @@ export default function ForgetPassword() {
     
     // Form State
     const [email, setEmail] = useState('');
+    const [resetToken, setResetToken] = useState('');
     const [otp, setOtp] = useState(['', '', '', '', '', '']);
     const [newPassword, setNewPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
@@ -141,6 +142,7 @@ export default function ForgetPassword() {
                 throw new Error(data.message || 'Invalid OTP');
             }
 
+            setResetToken(data.resetToken);
             setSuccessMessage('OTP verified! Please enter your new password.');
             setStep('reset');
         } catch (err) {
@@ -171,7 +173,7 @@ export default function ForgetPassword() {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ email, newPassword }),
+                body: JSON.stringify({ email, newPassword, resetToken }),
             });
 
             const data = await response.json();

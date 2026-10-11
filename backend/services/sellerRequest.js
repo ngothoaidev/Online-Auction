@@ -259,7 +259,6 @@ const service = {
         }
 
         const approvedRequest = result[0];
-        console.log('Checking seller status for user:', userId, 'Request:', approvedRequest);
         if (approvedRequest.sellerExpiryDate) {
             const expiryDate = new Date(approvedRequest.sellerExpiryDate);
             const now = new Date();

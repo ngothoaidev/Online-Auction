@@ -1,5 +1,4 @@
 import orderService from "../services/order.js";
-import authService from "../services/auth.js";
 import userService from "../services/user.js";
 import auctionService from "../services/auction.js";
 import { sendEmail } from "../utils/email.js";
@@ -10,17 +9,7 @@ const controller = {
         try {
             const { auctionId } = req.params;
             
-            // Check authorization
-            const authorization = req.header('Authorization');
-            if (!authorization) {
-                return res.status(401).json({ message: 'Authorization required' });
-            }
-
-            const token = authorization.replace('Bearer ', '').trim();
-            const userData = await authService.validateToken(token);
-            if (!userData) {
-                return res.status(401).json({ message: 'Invalid token' });
-            }
+            const userData = { userId: req.user.id };
 
             // Get the auction details
             const auction = await auctionService.findById(parseInt(auctionId));
@@ -93,16 +82,7 @@ const controller = {
     // Get order details (with auth check)
     getOrderDetails: async function(req, res) {
         try {
-            const authorization = req.header('Authorization');
-            if (!authorization) {
-                return res.status(401).json({ message: 'Authorization required' });
-            }
-
-            const token = authorization.replace('Bearer ', '').trim();
-            const userData = await authService.validateToken(token);
-            if (!userData) {
-                return res.status(401).json({ message: 'Invalid token' });
-            }
+            const userData = { userId: req.user.id };
 
             const { id } = req.params;
             const order = await orderService.getById(parseInt(id));
@@ -149,16 +129,7 @@ const controller = {
     // Get user's orders
     getMyOrders: async function(req, res) {
         try {
-            const authorization = req.header('Authorization');
-            if (!authorization) {
-                return res.status(401).json({ message: 'Authorization required' });
-            }
-
-            const token = authorization.replace('Bearer ', '').trim();
-            const userData = await authService.validateToken(token);
-            if (!userData) {
-                return res.status(401).json({ message: 'Invalid token' });
-            }
+            const userData = { userId: req.user.id };
 
             const orders = await orderService.getByUserId(userData.userId);
 
@@ -175,16 +146,7 @@ const controller = {
     // Step 1: Buyer submits payment
     submitPayment: async function(req, res) {
         try {
-            const authorization = req.header('Authorization');
-            if (!authorization) {
-                return res.status(401).json({ message: 'Authorization required' });
-            }
-
-            const token = authorization.replace('Bearer ', '').trim();
-            const userData = await authService.validateToken(token);
-            if (!userData) {
-                return res.status(401).json({ message: 'Invalid token' });
-            }
+            const userData = { userId: req.user.id };
 
             const { id } = req.params;
             const { paymentProofUrl, shippingAddress, buyerPhone } = req.body;
@@ -227,16 +189,7 @@ const controller = {
     // Step 2: Seller confirms payment and provides shipping
     confirmPayment: async function(req, res) {
         try {
-            const authorization = req.header('Authorization');
-            if (!authorization) {
-                return res.status(401).json({ message: 'Authorization required' });
-            }
-
-            const token = authorization.replace('Bearer ', '').trim();
-            const userData = await authService.validateToken(token);
-            if (!userData) {
-                return res.status(401).json({ message: 'Invalid token' });
-            }
+            const userData = { userId: req.user.id };
 
             const { id } = req.params;
             const { shippingProofUrl, trackingNumber } = req.body;
@@ -278,16 +231,7 @@ const controller = {
     // Step 3: Buyer confirms receipt
     confirmReceipt: async function(req, res) {
         try {
-            const authorization = req.header('Authorization');
-            if (!authorization) {
-                return res.status(401).json({ message: 'Authorization required' });
-            }
-
-            const token = authorization.replace('Bearer ', '').trim();
-            const userData = await authService.validateToken(token);
-            if (!userData) {
-                return res.status(401).json({ message: 'Invalid token' });
-            }
+            const userData = { userId: req.user.id };
 
             const { id } = req.params;
 
@@ -323,16 +267,7 @@ const controller = {
     // Cancel order (seller only)
     cancelOrder: async function(req, res) {
         try {
-            const authorization = req.header('Authorization');
-            if (!authorization) {
-                return res.status(401).json({ message: 'Authorization required' });
-            }
-
-            const token = authorization.replace('Bearer ', '').trim();
-            const userData = await authService.validateToken(token);
-            if (!userData) {
-                return res.status(401).json({ message: 'Invalid token' });
-            }
+            const userData = { userId: req.user.id };
 
             const { id } = req.params;
             const { reason } = req.body;
@@ -378,16 +313,7 @@ const controller = {
     // Submit review
     submitReview: async function(req, res) {
         try {
-            const authorization = req.header('Authorization');
-            if (!authorization) {
-                return res.status(401).json({ message: 'Authorization required' });
-            }
-
-            const token = authorization.replace('Bearer ', '').trim();
-            const userData = await authService.validateToken(token);
-            if (!userData) {
-                return res.status(401).json({ message: 'Invalid token' });
-            }
+            const userData = { userId: req.user.id };
 
             const { id } = req.params;
             const { isGoodRating, comment } = req.body;
@@ -440,16 +366,7 @@ const controller = {
     // Send chat message
     sendMessage: async function(req, res) {
         try {
-            const authorization = req.header('Authorization');
-            if (!authorization) {
-                return res.status(401).json({ message: 'Authorization required' });
-            }
-
-            const token = authorization.replace('Bearer ', '').trim();
-            const userData = await authService.validateToken(token);
-            if (!userData) {
-                return res.status(401).json({ message: 'Invalid token' });
-            }
+            const userData = { userId: req.user.id };
 
             const { id } = req.params;
             const { message, imageUrl } = req.body;
@@ -501,16 +418,7 @@ const controller = {
     // Get messages
     getMessages: async function(req, res) {
         try {
-            const authorization = req.header('Authorization');
-            if (!authorization) {
-                return res.status(401).json({ message: 'Authorization required' });
-            }
-
-            const token = authorization.replace('Bearer ', '').trim();
-            const userData = await authService.validateToken(token);
-            if (!userData) {
-                return res.status(401).json({ message: 'Invalid token' });
-            }
+            const userData = { userId: req.user.id };
 
             const { id } = req.params;
 

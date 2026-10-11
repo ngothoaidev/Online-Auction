@@ -114,6 +114,8 @@ export default function ChangePasswordModal({ isOpen, onClose }) {
         throw new Error(data.message || 'Failed to change password');
       }
 
+      // Changing the password revokes older tokens; the server returns a fresh one.
+      if (data.token) localStorage.setItem('authToken', data.token);
       setSuccess('Password changed successfully!');
       setTimeout(() => {
         handleClose();

@@ -1,5 +1,5 @@
 import { Router } from "express";
-import requireAuth, { requireSeller } from "../middleware/auth.js";
+import { requireAuth, requireSeller, requireVerified } from "../middleware/auth.js";
 import auctionController from "../controllers/auction.js"
 import { uploadProductImage } from "../config/cloudinary.js";
 
@@ -43,12 +43,12 @@ route.put('/:id/description', requireSeller, auctionController.updateDescription
 route.delete('/:id', auctionController.delete);
 
 // POST: Place a bid (Auto Bidding supported)
-route.post('/:id/bid', requireAuth, auctionController.placeBid);
+route.post('/:id/bid', requireVerified, auctionController.placeBid);
 
 //Route đăng comment
-route.post('/:id/comments', auctionController.postComment);
+route.post('/:id/comments', requireVerified, auctionController.postComment);
 
 // POST: Buy Now - End auction immediately at buyNowPrice
-route.post('/:id/buy-now', requireAuth, auctionController.buyNow);
+route.post('/:id/buy-now', requireVerified, auctionController.buyNow);
 
 export default route;

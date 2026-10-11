@@ -139,7 +139,6 @@ const controller = {
 
             // Send acceptance email
             const user = await userService.getById(request.userId);
-            console.log('User for acceptance email:', user);
             if (user && user.email) {
                 await sendSellerRequestAccepted({ email: user.email, username: user.username });
             } else {
@@ -184,7 +183,6 @@ const controller = {
             }
             // Send rejection email
             const user = await userService.getById(request.userId);
-            console.log('User for rejection email:', user);
             if (user && user.email) {
                 await sendSellerRequestRejected({ email: user.email, username: user.username });
             } else {

@@ -128,7 +128,6 @@ const controller = {
             const bidId = Number(req.query.bidId);
             const sellerId = req.user?.id;
 
-            console.log(req.user);
 
             console.log(auctionId, bidId, sellerId);
 
