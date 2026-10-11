@@ -1,73 +1,89 @@
-import { Trophy, Users, Gavel } from "lucide-react";
-import { useNav } from '../../hooks/useNavigate';
-import Hero from "./Hero";
-import ProductTabs from "./ProductTabs";
-import CTA from "./CTA";
-import './HomePage.css'
-import './LiveStatCard'
-import LiveStatCard from "./LiveStatCard";
+import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
+import ProductTabs from './ProductTabs';
+import { useAuth } from '../../contexts/AuthContext';
+import auctionService from '../../services/auctionService';
+import { formatVnd } from '../../utils/money.js';
+import { formatTimeLeft } from '../../utils/format.js';
+import { searchUrl } from '../../utils/searchUrl.js';
+
+const STEPS = [
+  ['Create an account', 'Register and confirm your email. Selling needs a short approval.'],
+  ['Set your maximum', 'Enter the most you would pay. The system raises your bid one step at a time, only as far as needed.'],
+  ['Pay and receive', 'The winner is recorded automatically when the auction closes. Payment and delivery are tracked on the order page.'],
+];
+
+/** Editorial hero built from a real lot (the one ending soonest); without inventory it is just text. */
+function Hero({ lot, user }) {
+  return (
+    <section className="mx-auto grid max-w-7xl items-center gap-8 px-4 py-10 sm:px-6 md:py-16 lg:grid-cols-12 lg:px-10">
+      <div className="lg:col-span-5">
+        <p className="text-sm font-semibold uppercase tracking-wider text-(--brand)">Online auction</p>
+        <h1 className="font-display mt-3 text-4xl font-semibold leading-tight text-(--ink) md:text-5xl">Collectibles, bid by bid.</h1>
+        <p className="mt-4 max-w-md text-lg text-(--muted)">Place a private maximum and let the auction work for you. Every lot closes automatically and the winner is recorded at once.</p>
+        <div className="mt-6 flex flex-wrap gap-3">
+          <Link to="/search" className="inline-flex min-h-12 items-center rounded-(--radius-control) bg-(--ink) px-6 font-semibold text-(--on-ink) hover:opacity-90">Browse all lots</Link>
+          {!user && <Link to="/register" className="inline-flex min-h-12 items-center rounded-(--radius-control) border border-(--input-border) px-6 font-semibold text-(--ink) hover:bg-(--surface-hover)">Create an account</Link>}
+        </div>
+      </div>
+      {lot && (
+        <Link to={`/auction/${lot.id}`} className="group block overflow-hidden rounded-(--radius-card) border border-(--line) bg-(--surface) shadow-(--card-shadow) lg:col-span-7">
+          <div className="aspect-16/10 bg-(--surface-sunken)">
+            {lot.image && <img src={lot.image} alt="" className="h-full w-full object-cover" />}
+          </div>
+          <div className="flex flex-wrap items-end justify-between gap-3 p-5">
+            <div>
+              <p className="text-sm text-(--muted)">Ending soon</p>
+              <h2 className="text-xl font-semibold text-(--ink) group-hover:underline">{lot.title}</h2>
+            </div>
+            <div className="text-right">
+              <p className="text-sm text-(--muted)">{lot.bidCount > 0 ? 'Current bid' : 'Starting price'}</p>
+              <p className="font-lot text-lg font-semibold text-(--ink)">{formatVnd(lot.bidCount > 0 && lot.bids ? lot.bids.amount : lot.currentPrice)}</p>
+              <p className="text-sm text-(--muted)">{formatTimeLeft(lot.endTime).timeLeft}</p>
+            </div>
+          </div>
+        </Link>
+      )}
+    </section>
+  );
+}
 
 export default function HomePage() {
-    return (
-        <div className="min-h-screen pb-12 relative text-stone-100 transition-colors duration-500">
-            {/* --- GLOBAL BACKGROUND ORBS --- */}
-            <div className="fixed top-0 right-0 w-[600px] h-[600px] rounded-full blur-[120px] pointer-events-none animate-pulse -z-30 transition-all duration-500
-                bg-[#7C00FE]/5 dark:bg-[#7C00FE]/20"
-            ></div>
+  const { user } = useAuth();
+  const [lot, setLot] = useState(null);
 
-            <div className="fixed bottom-0 left-0 w-[400px] h-[400px] rounded-full blur-[100px] pointer-events-none -z-30 transition-all duration-500
-                bg-[#F5004F]/5 dark:bg-[#F5004F]/20"
-            ></div>
+  useEffect(() => {
+    let cancelled = false;
+    auctionService.getTopAuctions({ sortBy: 'endingSoon', limit: 1 })
+      .then((rows) => { if (!cancelled) setLot(Array.isArray(rows) ? rows[0] ?? null : null); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
 
-            {/* 1. HERO */}
-            <div className="mb-8">
-                <Hero />
-            </div>
+  return (
+    <div className="pb-12">
+      <Hero lot={lot} user={user} />
 
-            {/* 2. LIVE STATS CARD */}
-            <div className="max-w-7xl mx-auto rounded-3xl overflow-hidden mb-12 relative z-10 transition-all duration-300 home-glass-card">
-                <LiveStatCard />
-            </div>
+      <ProductTabs />
 
-            {/* 3. PRODUCT TABS */}
-            <div className="max-w-8xl mx-auto rounded-3xl overflow-hidden mb-12 relative z-10 transition-all duration-300 py-8">
-                <ProductTabs />
-            </div>
-
-            {/* 4. HOW IT WORKS */}
-            <div className="max-w-7xl mx-auto rounded-3xl overflow-hidden mb-12 relative z-10 transition-all duration-300 home-process-card py-16">
-                <div className="container mx-auto px-4">
-                    <div className="text-center max-w-2xl mx-auto mb-16">
-                        <h2 className="text-3xl md:text-4xl font-bold mb-4" style={{ color: "var(--text)" }}>Start Bidding in Minutes</h2>
-                        <p className="text-lg" style={{ color: "var(--text-muted)" }}>We've streamlined the experience so you can focus on winning.</p>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative px-4">
-                        {/* Dashed Line Connector (Desktop) */}
-                        <div className="hidden md:block absolute top-12 left-[16%] right-[16%] h-0.5 border-t-2 border-dashed" 
-                             style={{ borderColor: "var(--home-process-line)" }}></div>
-
-                        {[
-                            { icon: Users, title: "Create Account", desc: "Sign up for free and verify your identity.", color: "var(--accent)" },
-                            { icon: Gavel, title: "Place Your Bid", desc: "Find unique items and place your best bid.", color: "var(--info)" },
-                            { icon: Trophy, title: "Win & Collect", desc: "Secure payment and track your delivery.", color: "var(--success)" }
-                        ].map((step, idx) => (
-                            <div key={idx} className="relative flex flex-col items-center text-center group">
-                                {/* Circle Icon */}
-                                <div className="home-step-circle w-24 h-24 rounded-full flex items-center justify-center mb-6 relative z-10 transition-transform duration-300 group-hover:scale-110">
-                                    <step.icon className="w-10 h-10" style={{ color: step.color }} />
-                                </div>
-                                <h3 className="text-xl font-bold mb-2" style={{ color: "var(--text)" }}>{idx + 1}. {step.title}</h3>
-                                <p className="text-sm px-4" style={{ color: "var(--text-muted)" }}>{step.desc}</p>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            </div>
-
-            {/* 6. CTA SECTION */}
-            <CTA />
-
-        </div>
-    );
+      <section aria-labelledby="how-it-works" className="mx-auto mt-16 max-w-7xl px-4 sm:px-6 lg:px-10">
+        <h2 id="how-it-works" className="font-display text-3xl font-semibold text-(--ink)">How bidding works</h2>
+        <ol className="mt-6 grid gap-4 md:grid-cols-3">
+          {STEPS.map(([title, text], i) => (
+            <li key={title} className="rounded-(--radius-card) border border-(--line) bg-(--surface) p-5">
+              <p className="font-lot text-sm font-medium text-(--brand)">Step {i + 1}</p>
+              <h3 className="mt-1 text-lg font-semibold text-(--ink)">{title}</h3>
+              <p className="mt-1 text-sm text-(--muted)">{text}</p>
+            </li>
+          ))}
+        </ol>
+        {user?.role === 'buyer' && (
+          <p className="mt-6 text-sm text-(--muted)">Have something to sell? <Link className="font-semibold text-(--brand) underline" to="/become-seller">Apply to become a seller</Link>.</p>
+        )}
+        {user?.role === 'seller' && (
+          <p className="mt-6 text-sm text-(--muted)"><Link className="font-semibold text-(--brand) underline" to="/create-auction">Create a listing</Link> or <Link className="font-semibold text-(--brand) underline" to={searchUrl({ sortBy: 'timeNewlyListed' })}>see what is newly listed</Link>.</p>
+        )}
+      </section>
+    </div>
+  );
 }

@@ -1,5 +1,6 @@
 import userService from "../services/user.js";
 import { selfUser } from "../serializers/index.js";
+import { AppError } from "../utils/errors.js";
 
 const controller = {
     // Get all users with pagination, filtering, and search (admin only)
@@ -243,6 +244,27 @@ const controller = {
         } catch (error) {
             console.error("Toggle Favorite Error:", error);
             return res.status(500).json({ error: "Internal Server Error" });
+        }
+    },
+
+    // PUT /users/favorites/:auctionId  body {favorited:boolean}
+    setFavorite: async function(req, res, next) {
+        try {
+            const favorited = await userService.setFavorite(req.user.id, req.params.auctionId, req.body.favorited);
+            res.status(200).json({ auctionId: req.params.auctionId, favorited });
+        } catch (error) {
+            // FK violation = the lot does not exist
+            if (error?.cause?.code === '23503' || error?.code === '23503') return next(new AppError(404, 'NOT_FOUND', 'Auction not found'));
+            next(error);
+        }
+    },
+
+    // GET /users/favorites  -> ids of the caller's saved lots (hydrates hearts everywhere)
+    listFavoriteIds: async function(req, res, next) {
+        try {
+            res.status(200).json({ auctionIds: await userService.listFavoriteIds(req.user.id) });
+        } catch (error) {
+            next(error);
         }
     },
 

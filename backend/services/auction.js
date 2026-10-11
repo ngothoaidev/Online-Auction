@@ -228,7 +228,7 @@ const service = {
         // Calculate seller rating
         const sellerRating = auction.seller.ratingCount > 0 
             ? (auction.seller.positiveRatingCount / auction.seller.ratingCount) * 100 
-            : 100;
+            : null; // no reviews yet
 
         // Get primary image
         const primaryImage = auction.images?.find(img => img.isPrimary)?.imageUrl 
@@ -277,7 +277,7 @@ const service = {
                 username: auction.seller?.username,
                 fullName: auction.seller?.fullName,
                 avatarUrl: auction.seller?.avatarUrl,
-                rating: parseFloat(sellerRating.toFixed(1)),
+                rating: sellerRating === null ? null : parseFloat(sellerRating.toFixed(1)),
                 ratingCount: auction.seller?.ratingCount || 0,
             },
             

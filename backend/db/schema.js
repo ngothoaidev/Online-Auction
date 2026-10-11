@@ -231,8 +231,8 @@ export const orderTransitions = pgTable('order_transitions', {
   uniqCommand: uniqueIndex('order_transitions_command_uniq').on(t.orderId, t.commandId).where(sql`command_id IS NOT NULL`),
 }));
 export const userFavorites = pgTable('user_favorites', {
-  userId: integer('user_id'),
-  auctionId: integer('auction_id'),
+  userId: integer('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  auctionId: integer('auction_id').notNull().references(() => auctions.id, { onDelete: 'cascade' }),
   createdAt: timestamp('created_at').defaultNow(),
 }, (table) => ({
   pk: primaryKey({ columns: [table.userId, table.auctionId] }),

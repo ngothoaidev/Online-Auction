@@ -235,6 +235,21 @@ const service = {
         return result[0];
     },
 
+    // Idempotent desired-state write: PUT {favorited:true|false}. Replays and double clicks converge to the same state.
+    setFavorite: async function(userId, auctionId, favorited) {
+        if (favorited) {
+            await db.insert(userFavorites).values({ userId, auctionId }).onConflictDoNothing();
+        } else {
+            await db.delete(userFavorites).where(and(eq(userFavorites.userId, userId), eq(userFavorites.auctionId, auctionId)));
+        }
+        return favorited;
+    },
+
+    listFavoriteIds: async function(userId) {
+        const rows = await db.select({ auctionId: userFavorites.auctionId }).from(userFavorites).where(eq(userFavorites.userId, userId));
+        return rows.map((r) => r.auctionId);
+    },
+
     toggleFavorite: async function(userId, auctionId) {
         const existingFavorite = await db
             .select()

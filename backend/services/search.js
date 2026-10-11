@@ -65,8 +65,10 @@ const service = {
                 .limit(1);
 
             if (cat.length) {
+                // A parent category also matches lots filed under its children.
                 resolvedCategoryId = cat[0].id;
-                conditions.push(eq(auctions.categoryId, resolvedCategoryId));
+                const children = await db.select({ id: categories.id }).from(categories).where(eq(categories.parentId, resolvedCategoryId));
+                conditions.push(inArray(auctions.categoryId, [resolvedCategoryId, ...children.map((c) => c.id)]));
             }
         }
 

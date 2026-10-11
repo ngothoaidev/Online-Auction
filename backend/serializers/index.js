@@ -26,7 +26,8 @@ export const descriptionLog = (l) => ({ logId: l.logId, auctionId: l.auctionId, 
 /** Card/list item shared by home, profile tabs and search. `auction` must be loaded with images/seller/category/bids[0].bidder. */
 export function catalogAuction(auction, { isFavorited = false } = {}) {
   const s = auction.seller;
-  const rating = s && s.ratingCount > 0 ? (s.positiveRatingCount / s.ratingCount) * 100 : 100;
+  // No reviews yet is NOT 100%: rating is null and the UI says so.
+  const rating = s && s.ratingCount > 0 ? (s.positiveRatingCount / s.ratingCount) * 100 : null;
   return {
     id: auction.id, sellerId: auction.sellerId, categoryId: auction.categoryId, winnerId: auction.winnerId ?? null,
     title: auction.title,
@@ -35,7 +36,7 @@ export function catalogAuction(auction, { isFavorited = false } = {}) {
     allowNewbies: auction.allowNewbies, autoExtend: auction.autoExtend, bidCount: auction.bidCount,
     images: (auction.images ?? []).map(publicImage),
     image: auction.images?.find((i) => i.isPrimary)?.imageUrl || auction.images?.[0]?.imageUrl || null,
-    seller: { username: s?.username, rating: parseFloat(rating.toFixed(1)) },
+    seller: { username: s?.username, rating: rating === null ? null : parseFloat(rating.toFixed(1)), ratingCount: s?.ratingCount || 0 },
     category: auction.category?.name || "Uncategorized",
     bids: publicBid(auction.bids?.[0]) ?? undefined,
     isFavorited,

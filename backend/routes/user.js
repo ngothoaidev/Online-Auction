@@ -1,5 +1,7 @@
 import { Router } from "express";
 import { uploadAvatar } from "../config/cloudinary.js";
+import { z } from "zod";
+import { validate } from "../validation/index.js";
 import userController from "../controllers/user.js";
 import { requireAuth, requireAdmin } from "../middleware/auth.js";
 
@@ -13,7 +15,13 @@ route.get('/profile', userController.getUserProfile);
 
 route.use(requireAuth);
 
-// POST: Toggle favorite auction
+// GET: ids of my saved lots
+route.get('/favorites', userController.listFavoriteIds);
+
+// PUT: set favorite state (idempotent)
+route.put('/favorites/:auctionId', validate({ params: z.object({ auctionId: z.coerce.number().int().positive() }), body: z.object({ favorited: z.boolean() }) }), userController.setFavorite);
+
+// POST: Toggle favorite auction (legacy)
 route.post('/favorites/:auctionId', userController.toggleFavorite);
 
 // PUT: update current user information
