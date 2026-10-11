@@ -7,6 +7,7 @@ React/Vite/Tailwind frontend + Express/PostgreSQL/Drizzle backend.
 docker compose up -d db                 # PostgreSQL on localhost:55432 (db auction + auction_test)
 cp backend/.env.example backend/.env    # then set DATABASE_URL=postgres://auction:auction@localhost:55432/auction
 cd backend && npm ci && npm run db:migrate && npm run db:seed && npm run dev
+cd backend && npm run worker           # settlement worker: closes due auctions and creates orders (required for auctions to end)
 cd frontend && npm ci && npm run dev
 ```
 ## Checks

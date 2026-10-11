@@ -33,6 +33,9 @@ export default function OrderCompletion() {
   const [auction, setAuction] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  // Settlement runs in the background worker: while it has not produced an order the API answers 202 and we poll.
+  const [settlement, setSettlement] = useState(null); // { attempts, retryAfter }
+  const MAX_SETTLEMENT_POLLS = 24;
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
   const [sendingMessage, setSendingMessage] = useState(false);
@@ -76,6 +79,12 @@ export default function OrderCompletion() {
   }, [auctionId]);
 
   useEffect(() => {
+    if (!settlement || settlement.attempts >= MAX_SETTLEMENT_POLLS) return undefined;
+    const timer = setTimeout(() => loadData({ attempts: settlement.attempts + 1 }), Math.max(1, settlement.retryAfter || 5) * 1000);
+    return () => clearTimeout(timer);
+  }, [settlement]);
+
+  useEffect(() => {
     if (order?.id) {
       loadMessages();
     }
@@ -89,12 +98,15 @@ export default function OrderCompletion() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const loadData = async () => {
+  const loadData = async ({ attempts = 0 } = {}) => {
     try {
-      setLoading(true);
+      if (attempts === 0) setLoading(true);
       const orderData = await orderService.getByAuctionId(auctionId);
-      console.log('Order Data:', orderData);
-      console.log('Order object:', orderData.order);
+      if (orderData.status === 'settlement_pending') {
+        setSettlement({ attempts, retryAfter: orderData.retryAfter });
+        return;
+      }
+      setSettlement(null);
       // The backend returns order with nested structure from getOrderWithDetails
       // It spreads { order: {...}, auction: {...}, buyer: {...}, seller: {...} }
       if (orderData.order) {
@@ -300,6 +312,22 @@ export default function OrderCompletion() {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: 'var(--bg)' }}>
         <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent"></div>
+      </div>
+    );
+  }
+
+  if (settlement) {
+    const slow = settlement.attempts >= MAX_SETTLEMENT_POLLS;
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: 'var(--bg)' }} role="status" aria-live="polite">
+        <div className="text-center max-w-md px-4">
+          {!slow && <div className="animate-spin rounded-full h-10 w-10 border-4 border-blue-500 border-t-transparent mx-auto mb-4"></div>}
+          <h1 className="text-xl font-semibold text-(--text) mb-2">{slow ? 'Settlement is taking longer than usual' : 'Finalising the auction'}</h1>
+          <p className="text-(--text-muted) mb-4">
+            {slow ? 'The result has not been recorded yet. Your bid is safe; you can check again in a moment.' : 'The auction has closed and the result is being recorded. This page updates automatically.'}
+          </p>
+          {slow && <button onClick={() => { setSettlement(null); loadData(); }} className="px-5 py-2 rounded-xl bg-blue-600 text-white hover:bg-blue-700">Check again</button>}
+        </div>
       </div>
     );
   }

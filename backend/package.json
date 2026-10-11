@@ -12,7 +12,8 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "node scripts/migrate.js",
     "db:seed": "node scripts/seed.js",
-    "db:backfill-maxima": "node scripts/backfill-maxima.js"
+    "db:backfill-maxima": "node scripts/backfill-maxima.js",
+    "worker": "node worker.js"
   },
   "dependencies": {
     "bcrypt": "^5.1.1",

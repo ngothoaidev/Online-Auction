@@ -257,6 +257,8 @@ const service = {
             createdAt: auction.createdAt,
             autoExtend: auction.autoExtend,
             bidCount: auction.bidCount,
+            settledAt: auction.settledAt,
+            closeReason: auction.closeReason,
             // Canonical-state metadata: clients order snapshots by version and run countdowns on serverTime.
             version: auction.version,
             serverTime: now,

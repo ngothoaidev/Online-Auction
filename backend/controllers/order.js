@@ -17,33 +17,24 @@ const controller = {
                 return res.status(404).json({ message: 'Auction not found' });
             }
 
-            // Check if auction has ended
-            const now = new Date();
-            if (new Date(auction.endTime) > now) {
-                return res.status(400).json({ message: 'Auction has not ended yet' });
-            }
-
-            // Check if user is the seller or winner
+            // Read-only: orders are created by settlement (worker / Buy Now), never by this GET.
+            // Only the seller and the current/final winner may ask.
             const isParticipant = auction.sellerId === userData.userId || auction.winnerId === userData.userId;
             if (!isParticipant) {
                 return res.status(403).json({ message: 'You are not a participant in this auction' });
             }
 
-            // Check if order already exists
-            let order = await orderService.getByAuctionId(parseInt(auctionId));
-            
-            // If no order and auction has a winner, create one
-            if (!order && auction.winnerId) {
-                order = await orderService.create(
-                    parseInt(auctionId),
-                    auction.winnerId,
-                    auction.sellerId,
-                    auction.currentPrice
-                );
-            }
-
+            const order = await orderService.getByAuctionId(parseInt(auctionId));
             if (!order) {
-                return res.status(404).json({ message: 'No order found - auction may have ended without bids' });
+                if (auction.status === 'active') {
+                    const due = new Date(auction.endTime) <= new Date();
+                    if (!due) return res.status(400).json({ message: 'Auction has not ended yet' });
+                    return res.status(202).json({ status: 'settlement_pending', retryAfter: 5 });
+                }
+                if (auction.status === 'ended' && !auction.settledAt && auction.winnerId) {
+                    return res.status(202).json({ status: 'settlement_pending', retryAfter: 5 }); // legacy lot awaiting reconciliation
+                }
+                return res.status(404).json({ message: 'No order found - auction ended without a valid winner' });
             }
 
             // Get full order details

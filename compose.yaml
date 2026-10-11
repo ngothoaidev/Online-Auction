@@ -32,6 +32,19 @@ services:
     depends_on:
       db: { condition: service_healthy }
 
+  worker:
+    image: node:22-alpine
+    working_dir: /app
+    command: sh -c "npm ci --no-audit && npm run worker"
+    environment:
+      DATABASE_URL: postgres://auction:auction@db:5432/auction
+      JWT_SECRET: dev-only-jwt-secret
+      EMAIL_TRANSPORT: local
+    volumes: ["./backend:/app"]
+    depends_on:
+      db: { condition: service_healthy }
+      api: { condition: service_started }
+
   frontend:
     image: node:22-alpine
     working_dir: /app

@@ -23,7 +23,8 @@ const orderService = {
    * @returns {Promise<Object>} Order object
    */
   getByAuctionId: async (auctionId) => {
-    const response = await fetch(`${API_BASE_URL}/order/${auctionId}`, {
+    // GET /order/auction/:auctionId is read-only: 200 order | 202 {status:'settlement_pending',retryAfter} | 403 | 404
+    const response = await fetch(`${API_BASE_URL}/order/auction/${auctionId}`, {
       headers: getAuthHeaders(),
     });
     return handleResponse(response);
