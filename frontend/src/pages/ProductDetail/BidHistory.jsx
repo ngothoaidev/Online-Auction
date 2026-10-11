@@ -23,8 +23,6 @@ export default function BidHistory({ productId, sellerId }) {
                 bidder: bid.bidder, 
                 amount: bid.amount,
                 bidTime: bid.timestamp || bid.bidTime,
-                amount: bid.amount,
-                bidTime: bid.timestamp || bid.bidTime,
                 isCurrentUser: user ? (bid.bidderId === user.id) : false
             }));
             setBids(formattedBids);

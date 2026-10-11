@@ -79,7 +79,6 @@ export default function ProductTabs() {
       <div className="mt-12 text-center">
         <Link 
           to={`/search?category=${activeTabData.label}`}
-          onClick={() => setIsOpen(false)}
           className={`inline-flex items-center gap-2 font-bold uppercase tracking-widest text-md border-b-2 border-transparent hover:border-current pb-1 transition-all`}
           style={{ color: activeTabData.color }}
         >

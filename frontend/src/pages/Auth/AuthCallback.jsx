@@ -48,34 +48,6 @@ export default function AuthCallback() {
         }
     }, [searchParams, nav]);
 
-    useEffect(() => {
-    const initAuth = async () => {
-        try {
-        const token = localStorage.getItem('authToken');
-        if (token) {
-            const response = await fetch(`${API_URL}/auth/me`, {
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
-            });
-            
-            if (response.ok) {
-                const userData = await response.json();
-                setUser(userData);
-            } else {
-                localStorage.removeItem('authToken');
-            }
-        }
-        } catch (error) {
-            console.log("User not logged in", error);
-            localStorage.removeItem('authToken');
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    initAuth();
-    }, []);
 
 
     return (

@@ -1,0 +1,45 @@
+# Local development stack. No real credentials/providers; test DB is a separate database.
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: auction
+      POSTGRES_PASSWORD: auction
+      POSTGRES_DB: auction
+    ports: ["55432:5432"]
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./scripts/init-test-db.sql:/docker-entrypoint-initdb.d/10-test-db.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U auction -d auction"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  api:
+    image: node:22-alpine
+    working_dir: /app
+    command: sh -c "npm ci --no-audit && npm run db:migrate && npm start"
+    environment:
+      DATABASE_URL: postgres://auction:auction@db:5432/auction
+      PORT: "3000"
+      NODE_ENV: development
+      JWT_SECRET: dev-only-jwt-secret
+      SESSION_SECRET: dev-only-session-secret
+      FRONTEND_URL: http://localhost:5173
+    volumes: ["./backend:/app"]
+    ports: ["3000:3000"]
+    depends_on:
+      db: { condition: service_healthy }
+
+  frontend:
+    image: node:22-alpine
+    working_dir: /app
+    command: sh -c "npm ci --no-audit || npm install --no-audit; npm run dev -- --host"
+    environment:
+      VITE_API_URL: http://localhost:3000
+    volumes: ["./frontend:/app"]
+    ports: ["5173:5173"]
+
+volumes:
+  pgdata:

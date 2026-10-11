@@ -131,7 +131,7 @@ const service = {
                 conditions.push(and(eq(auctions.winnerId, userId), or(eq(auctions.status, 'sold'), eq(auctions.status, 'ended'))));
                 break;
 
-            case 'favorites':
+            case 'favorites': {
                 const myFavs = await db.query.userFavorites.findMany({
                     where: eq(userFavorites.userId, userId),
                     columns: { auctionId: true }
@@ -143,8 +143,9 @@ const service = {
                 
                 conditions.push(inArray(auctions.id, favIds));
                 break;
+            }
 
-            case 'active-bids':
+            case 'active-bids': {
                 const myBids = await db.query.bids.findMany({
                     where: eq(bids.bidderId, userId),
                     columns: { auctionId: true }
@@ -156,6 +157,7 @@ const service = {
 
                 conditions.push(and(inArray(auctions.id, bidAuctionIds), eq(auctions.status, 'active')));
                 break;
+            }
 
             default:
                 throw new Error("Invalid tab specified");

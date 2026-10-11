@@ -236,7 +236,7 @@ const controller = {
 
     deleteUser: function(req, res){
         const id = Number(req.params.id);
-        UserService.getById(id).then((user) =>{
+        userService.getById(id).then((user) =>{
             if(!user){
                 res.status(404).json({
                     message: 'Account Not Found'

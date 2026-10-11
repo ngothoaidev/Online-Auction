@@ -426,7 +426,7 @@ export default function ProductList() {
                     <td className="px-6 py-4">
                       <div className="flex items-center justify-end gap-2">
                         <button 
-                          onClick={() => window.open(`/auction/${pridoduct.id}`, '_blank')}
+                          onClick={() => window.open(`/auction/${product.id}`, '_blank')}
                           className="p-2 rounded-lg hover:bg-[var(--info-soft)] transition-colors"
                         >
                           <Eye size={18} className="text-[var(--info)]" />
