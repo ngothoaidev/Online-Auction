@@ -14,7 +14,8 @@
     "db:seed": "node scripts/seed.js",
     "db:backfill-maxima": "node scripts/backfill-maxima.js",
     "worker": "node worker.js",
-    "db:audit-proofs": "node scripts/audit-legacy-proofs.js"
+    "db:audit-proofs": "node scripts/audit-legacy-proofs.js",
+    "db:resolve-reviews": "node scripts/resolve-reviews.js"
   },
   "dependencies": {
     "bcrypt": "^5.1.1",

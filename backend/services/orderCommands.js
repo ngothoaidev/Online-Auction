@@ -27,7 +27,13 @@ const clock = async (tx) => new Date((await tx.execute(sql`SELECT clock_timestam
  * `expectedVersion` (optional) rejects a stale client; `key` (optional) makes the call replay-safe.
  */
 export async function transitionOrder({ orderId, command, actor, payload = {}, expectedVersion, key }) {
-  return db.transaction((tx) => runIdempotent(tx, { actorId: actor.id ?? 0, operation: `order:${orderId}:${command}`, key, payload }, async () => {
+  return db.transaction((tx) => runIdempotent(tx, { actorId: actor.id ?? 0, operation: `order:${orderId}:${command}`, key, payload },
+    () => applyTransition(tx, { orderId, command, actor, payload, expectedVersion, key })));
+}
+
+/** The locked read-plan-write body, reusable inside a larger transaction (e.g. the review command). Re-locking is a no-op. */
+export async function applyTransition(tx, { orderId, command, actor, payload = {}, expectedVersion, key }) {
+  {
     const [head] = await tx.select({ auctionId: orders.auctionId }).from(orders).where(eq(orders.id, orderId));
     if (!head) throw new AppError(404, "NOT_FOUND", "Order not found");
 
@@ -67,7 +73,7 @@ export async function transitionOrder({ orderId, command, actor, payload = {}, e
       publicPayload: { orderId, auctionId: head.auctionId, status: plan.to, version: updated.version, at: now },
     });
     return { status: 200, resourceId: String(orderId), body: { order: updated } };
-  }));
+  }
 }
 
 /** Worker job: expire unpaid orders whose deadline passed (B08). Each order is its own transaction; safe to run in parallel. */

@@ -130,13 +130,17 @@ export const bids = pgTable('bids', {
 
 export const reviews = pgTable('reviews', {
   id: serial('review_id').primaryKey(),
-  reviewerId: integer('reviewer_id'),
-  targetId: integer('target_user_id'),
-  auctionId: integer('auction_id'),
+  reviewerId: integer('reviewer_id').notNull().references(() => users.id),
+  targetId: integer('target_user_id').notNull().references(() => users.id),
+  auctionId: integer('auction_id').notNull().references(() => auctions.id),
   isGoodRating: boolean('is_good_rating'),
   comment: text('comment'),
   createdAt: timestamp('created_at').defaultNow(),
-});
+  source: varchar('source', { length: 24 }).notNull().default('participant'), // participant | legacy_cancellation (auto-created by the old cancel flow)
+}, (t) => ({
+  onePerReviewer: uniqueIndex('reviews_auction_reviewer_uniq').on(t.auctionId, t.reviewerId),
+  byTarget: index('reviews_target_idx').on(t.targetId),
+}));
 
 export const sellerRequests = pgTable('seller_requests', {
   id: serial('request_id').primaryKey(),

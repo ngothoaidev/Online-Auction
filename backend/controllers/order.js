@@ -3,6 +3,7 @@ import userService from "../services/user.js";
 import auctionService from "../services/auction.js";
 import { sendEmail } from "../utils/email.js";
 import { transitionOrder } from "../services/orderCommands.js";
+import { submitReview } from "../services/reviewCommands.js";
 import { validKey } from "../services/idempotency.js";
 import { AppError } from "../utils/errors.js";
 import { storeOrderUpload, readOrderAsset } from "../services/media.js";
@@ -216,56 +217,13 @@ const controller = {
         }
     },
 
-    // Submit review
-    submitReview: async function(req, res) {
+    // Submit or edit my review of the counterpart (B10)
+    submitReview: async function(req, res, next) {
         try {
-            const userData = { userId: req.user.id };
-
-            const { id } = req.params;
-            const { isGoodRating, comment } = req.body;
-
-            const order = await orderService.getById(parseInt(id));
-            if (!order) {
-                return res.status(404).json({ message: 'Order not found' });
-            }
-
-            // Check if user is participant
-            const isBuyer = order.buyerId === userData.userId;
-            const isSeller = order.sellerId === userData.userId;
-
-            if (!isBuyer && !isSeller) {
-                return res.status(403).json({ message: 'Access denied' });
-            }
-
-            // Determine target (buyer reviews seller, seller reviews buyer)
-            const targetId = isBuyer ? order.sellerId : order.buyerId;
-
-            const result = await orderService.submitReview(
-                userData.userId,
-                targetId,
-                order.auctionId,
-                isGoodRating,
-                comment
-            );
-
-            // Check if both parties have reviewed
-            const buyerReviewed = await orderService.hasUserReviewed(order.auctionId, order.buyerId);
-            const sellerReviewed = await orderService.hasUserReviewed(order.auctionId, order.sellerId);
-
-            if (buyerReviewed && sellerReviewed && order.status === 'pending_review') {
-                await transitionOrder({ orderId: order.id, command: 'complete', actor: { type: 'system' } });
-            }
-
-            res.status(200).json({
-                message: result.isNew ? 'Review submitted' : 'Review updated',
-                review: result.review
-            });
+            const result = await submitReview({ orderId: parseInt(req.params.id), actor: req.user, isGoodRating: req.body?.isGoodRating, comment: req.body?.comment, key: idempotencyKey(req) });
+            res.set('Idempotent-Replayed', String(Boolean(result.replayed))).status(200).json({ message: result.body.message, review: result.body.review, orderCompleted: result.body.orderCompleted });
         } catch (error) {
-            console.error('Submit review error:', error);
-            if (error.name === 'TokenExpiredError') {
-                return res.status(401).json({ message: 'Token expired', code: 'TOKEN_EXPIRED' });
-            }
-            res.status(500).json({ message: 'An error occurred. Please try again.' });
+            next(error);
         }
     },
 
