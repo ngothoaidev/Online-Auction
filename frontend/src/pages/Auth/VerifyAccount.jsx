@@ -192,7 +192,7 @@ export default function VerifyAccount() {
                 <button 
                     type="submit" 
                     disabled={loading || otp.join('').length !== 6}
-                    className="w-full py-3 rounded-full bg-[var(--accent)] text-white font-semibold hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    className="w-full py-3 rounded-full bg-(--ink) text-(--on-ink) font-semibold hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
                     {loading ? (
                         'Verifying...'

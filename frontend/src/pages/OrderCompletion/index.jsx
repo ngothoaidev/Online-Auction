@@ -18,6 +18,7 @@ const STATUS_STEPS = {
   pending_review: 4,
   completed: 5,
   cancelled: -1,
+  payment_expired: -1,
 };
 
 const STEP_LABELS = [
@@ -72,9 +73,7 @@ export default function OrderCompletion() {
   // Determine user role
   const isSeller = user?.userId === order?.sellerId;
   const isBuyer = user?.userId === order?.buyerId;
-  console.log("Seller id:", order?.sellerId, "Buyer id:", order?.buyerId, "User id:", user?.userId);
   const isParticipant = isSeller || isBuyer;
-  console.log("Is participant:", isParticipant);
   useEffect(() => {
     loadData();
   }, [auctionId]);
@@ -392,7 +391,7 @@ export default function OrderCompletion() {
                 {isSeller ? 'You are the seller' : 'You are the buyer'}
               </p>
             </div>
-            {order?.status !== 'cancelled' && order?.status !== 'completed' && isSeller && (
+            {order?.status === 'pending_payment' && isSeller && (
               <button
                 onClick={() => setShowCancelModal(true)}
                 className="px-4 py-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition"
@@ -402,6 +401,21 @@ export default function OrderCompletion() {
             )}
           </div>
         </div>
+
+        {/* Payment mode + deadline: this site never holds money */}
+        {order?.status === 'pending_payment' && (
+          <div role="note" className="mb-6 rounded-2xl border border-(--line) bg-(--surface-sunken) p-4 text-sm text-(--ink)">
+            <p><strong>Manual payment.</strong> Pay the seller directly, then upload your receipt below. This site does not process or hold payments.</p>
+            {order?.paymentDueAt && <p className="mt-1 text-(--muted)">Pay before {new Date(order.paymentDueAt).toLocaleString()}; unpaid orders expire automatically.</p>}
+          </div>
+        )}
+
+        {order?.status === 'payment_expired' && (
+          <div role="alert" className="mb-6 rounded-2xl border border-(--danger) bg-(--danger-soft) p-6">
+            <h3 className="text-lg font-semibold text-(--danger)">Payment window closed</h3>
+            <p className="mt-1 text-(--ink)">No payment was recorded before the deadline, so this order expired. The lot is not reopened.</p>
+          </div>
+        )}
 
         {/* Cancelled Status */}
         {order?.status === 'cancelled' && (
@@ -421,7 +435,7 @@ export default function OrderCompletion() {
         )}
 
         {/* Progress Steps */}
-        {order?.status !== 'cancelled' && (
+        {order?.status !== 'cancelled' && order?.status !== 'payment_expired' && (
           <div className="bg-(--card) rounded-2xl shadow-lg p-6 mb-6">
             <div className="flex items-center justify-between">
               {STEP_LABELS.map((label, index) => {

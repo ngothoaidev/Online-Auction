@@ -17,6 +17,7 @@ import error_handler from "./middleware/error_handler.js";
 import reviewRoute from "./routes/review.js"
 import orderService from "./routes/order.js";
 import authenticate from "./middleware/auth.js";
+import { servePublicMedia } from "./middleware/localUpload.js";
 import systemRoute from "./routes/system.js";
 
 // import productRoute from "./routes/product.routes.js";
@@ -57,6 +58,7 @@ app.use(passport.initialize());
 app.use(authenticate);
 
 // --- Routes ---   
+app.use('/media/public', servePublicMedia());
 app.use('/system', systemRoute);
 app.use('/auction', auctionRoute);
 app.use('/auth', authRoute);

@@ -271,7 +271,7 @@ export default function ForgetPassword() {
                     <button 
                         type="submit" 
                         disabled={loading}
-                        className="w-full py-3 rounded-full bg-[var(--accent)] text-white font-semibold hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="w-full py-3 rounded-full bg-(--ink) text-(--on-ink) font-semibold hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         {loading ? 'Sending...' : 'Next'}
                     </button>
@@ -307,7 +307,7 @@ export default function ForgetPassword() {
                     <button 
                         type="submit" 
                         disabled={loading}
-                        className="w-full py-3 rounded-full bg-[var(--accent)] text-white font-semibold hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="w-full py-3 rounded-full bg-(--ink) text-(--on-ink) font-semibold hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         {loading ? 'Verifying...' : 'Verify Code'}
                     </button>
@@ -413,7 +413,7 @@ export default function ForgetPassword() {
                     <button 
                         type="submit" 
                         disabled={loading}
-                        className="w-full py-3 rounded-full bg-[var(--accent)] text-white font-semibold hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="w-full py-3 rounded-full bg-(--ink) text-(--on-ink) font-semibold hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         {loading ? 'Resetting...' : 'Reset Password'}
                     </button>

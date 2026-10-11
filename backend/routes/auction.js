@@ -7,6 +7,11 @@ import { topQuery, profileQuery, rejectQuery } from "../validation/search.js";
 import { actionLimiter } from "../middleware/rateLimit.js";
 import { uploadProductImage } from "../config/cloudinary.js";
 
+import { localImages, cloudinaryConfigured } from "../middleware/localUpload.js";
+
+// Cloudinary when configured; otherwise validated local storage (dev/test). Same limits either way.
+const productImages = (req, res, next) => (cloudinaryConfigured() ? uploadProductImage.array('images', 10) : localImages('images', 10))(req, res, next);
+
 const route = new Router();
 
 // GET: Top Auctions
@@ -33,7 +38,7 @@ route.get('/:id', validate({ params: idParam }), auctionController.getById);
 route.use(requireAuth);
 
 // POST: Create New Auction
-route.post('/', requireSeller, actionLimiter('upload'), uploadProductImage.array('images', 10), validate({ body: createAuctionBody }), auctionController.create);
+route.post('/', requireSeller, actionLimiter('upload'), productImages, validate({ body: createAuctionBody }), auctionController.create);
 
 route.delete('/reject', validate({ query: rejectQuery }), auctionController.rejectBid);
 

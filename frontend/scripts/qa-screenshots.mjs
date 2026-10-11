@@ -12,6 +12,8 @@ const base = process.env.E2E_BASE_URL || "http://localhost:5173";
 const outDir = path.join(path.dirname(fileURLToPath(import.meta.url)), "../../docs/validation/screenshots", label);
 
 const PAGES = {
+  forgot: "/forgot-password",
+  profile: "/profile/demo_seller",
   home: "/",
   search: "/search?q=",
   detail: "/auction/1",
