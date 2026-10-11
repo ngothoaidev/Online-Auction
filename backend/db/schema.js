@@ -1,5 +1,5 @@
-import { pgTable, serial, varchar, text, decimal, timestamp, boolean, integer, pgEnum, date, primaryKey, foreignKey, index } from "drizzle-orm/pg-core";
-import { relations } from "drizzle-orm";
+import { pgTable, serial, varchar, text, decimal, timestamp, boolean, integer, pgEnum, date, primaryKey, foreignKey, index, bigint, jsonb, uuid, uniqueIndex } from "drizzle-orm/pg-core";
+import { relations, sql } from "drizzle-orm";
 
 // --- ENUMS ---
 export const userRoleEnum = pgEnum('user_role', ['unauthorized', 'buyer', 'seller', 'admin']);
@@ -72,8 +72,15 @@ export const auctions = pgTable('auctions', {
   winnerId: integer('winner_id').references(() => users.id),
   autoExtend: boolean('auto_extend').default(false),
   bidCount: integer('bid_count').default(0),
+  version: integer('version').notNull().default(0), // bumped on every state change; clients/SSE use it to order snapshots
+  commandSequence: bigint('command_sequence', { mode: 'number' }).notNull().default(0), // monotonic per-auction ordering for bids
+  settledAt: timestamp('settled_at', { withTimezone: true }),
+  closeReason: varchar('close_reason', { length: 32 }), // ended | buy_now | no_bids | cancelled | ...
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
-}); 
+}, (t) => ({
+  dueIdx: index('auctions_status_end_time_idx').on(t.status, t.endTime, t.id),
+}));
+
 
 // --- 4. AUCTION IMAGES TABLE ---
 export const auctionImages = pgTable('auction_images', {
@@ -114,7 +121,12 @@ export const bids = pgTable('bids', {
   amount: decimal('amount', { precision: 15, scale: 0 }).notNull(),
   maxAmount: decimal('max_amount', { precision: 15, scale: 0 }),
   bidTime: timestamp('bid_time', { withTimezone: true }).defaultNow(),
-});
+  auctionSequence: bigint('auction_sequence', { mode: 'number' }), // per-auction order assigned under the auction lock
+  type: varchar('type', { length: 16 }).notNull().default('bid'), // bid | auto | buy_now (legacy rows stay 'bid')
+  invalidatedAt: timestamp('invalidated_at', { withTimezone: true }), // set when the bidder is disqualified; row is kept for audit
+}, (t) => ({
+  seqIdx: index('bids_auction_sequence_idx').on(t.auctionId, t.auctionSequence),
+}));
 
 export const reviews = pgTable('reviews', {
   id: serial('review_id').primaryKey(),
@@ -144,7 +156,7 @@ export const orders = pgTable('orders', {
   sellerId: integer('seller_id').notNull().references(() => users.id),
   
   // Final price
-  finalPrice: decimal('final_price', { precision: 10, scale: 2 }).notNull(),
+  finalPrice: decimal('final_price', { precision: 15, scale: 0 }).notNull(),
   
   // Status tracking
   status: orderStatusEnum('status').default('pending_payment'),
@@ -190,6 +202,70 @@ export const orderMessages = pgTable('order_messages', {
   isRead: boolean('is_read').default(false),
   createdAt: timestamp('created_at').defaultNow(),
 });
+
+// --- Private proxy-bidding ceilings: NEVER selected by public queries or serializers ---
+export const bidderMaxima = pgTable('bidder_maxima', {
+  auctionId: integer('auction_id').notNull().references(() => auctions.id, { onDelete: 'cascade' }),
+  bidderId: integer('bidder_id').notNull().references(() => users.id),
+  maxAmount: decimal('max_amount', { precision: 15, scale: 0 }).notNull(),
+  prioritySequence: bigint('priority_sequence', { mode: 'number' }).notNull(), // sequence at which this exact max was reached; lower wins ties
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
+  disqualifiedAt: timestamp('disqualified_at', { withTimezone: true }),
+  disqualifiedReason: text('disqualified_reason'),
+}, (t) => ({
+  pk: primaryKey({ columns: [t.auctionId, t.bidderId] }),
+  rankIdx: index('bidder_maxima_rank_idx').on(t.auctionId, t.maxAmount, t.prioritySequence),
+}));
+
+// --- Idempotency: claimed and completed in the SAME transaction as the business write ---
+export const commandRequests = pgTable('command_requests', {
+  id: serial('id').primaryKey(),
+  actorId: integer('actor_id').notNull(),
+  operation: varchar('operation', { length: 100 }).notNull(), // e.g. "bid:42"
+  idempotencyKey: varchar('idempotency_key', { length: 100 }).notNull(),
+  requestHash: varchar('request_hash', { length: 64 }).notNull(),
+  httpStatus: integer('http_status'),
+  result: jsonb('result'), // nulled by compaction; key/hash/resource stay as a tombstone
+  resourceId: varchar('resource_id', { length: 100 }),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => ({
+  uniq: uniqueIndex('command_requests_actor_op_key_uniq').on(t.actorId, t.operation, t.idempotencyKey),
+}));
+
+// --- Private audit of every auction command (contains private maxima: restricted, never logged) ---
+export const auctionCommandAudit = pgTable('auction_command_audit', {
+  id: serial('id').primaryKey(),
+  commandId: varchar('command_id', { length: 100 }).notNull(),
+  auctionId: integer('auction_id').notNull().references(() => auctions.id, { onDelete: 'cascade' }),
+  actorId: integer('actor_id'),
+  sequence: bigint('sequence', { mode: 'number' }).notNull(),
+  kind: varchar('kind', { length: 32 }).notNull(), // bid | raise_max | buy_now | disqualify | settle | ...
+  decision: varchar('decision', { length: 32 }).notNull(), // success | outbid | updated | rejected ...
+  privatePayload: jsonb('private_payload'),
+  versionBefore: integer('version_before'),
+  versionAfter: integer('version_after'),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => ({
+  byAuction: index('auction_command_audit_auction_idx').on(t.auctionId, t.sequence),
+}));
+
+// --- Transactional outbox (dispatcher arrives in T18; rows are written atomically with the domain change) ---
+export const outboxEvents = pgTable('outbox_events', {
+  eventId: uuid('event_id').primaryKey().defaultRandom(),
+  aggregateType: varchar('aggregate_type', { length: 32 }).notNull(),
+  aggregateId: integer('aggregate_id').notNull(),
+  aggregateVersion: integer('aggregate_version').notNull(),
+  eventType: varchar('event_type', { length: 64 }).notNull(),
+  publicPayload: jsonb('public_payload').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  attempts: integer('attempts').notNull().default(0),
+  nextAttemptAt: timestamp('next_attempt_at', { withTimezone: true }).notNull().defaultNow(),
+  leaseUntil: timestamp('lease_until', { withTimezone: true }),
+  dispatchedAt: timestamp('dispatched_at', { withTimezone: true }),
+}, (t) => ({
+  logical: uniqueIndex('outbox_events_logical_uniq').on(t.aggregateType, t.aggregateId, t.aggregateVersion, t.eventType),
+  pending: index('outbox_events_pending_idx').on(t.nextAttemptAt).where(sql`dispatched_at IS NULL`),
+}));
 
 // --- RELATIONS ---
 

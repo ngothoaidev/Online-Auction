@@ -26,3 +26,21 @@ export async function resetDatabase(sql) {
   await sql.unsafe("DROP SCHEMA IF EXISTS public CASCADE; DROP SCHEMA IF EXISTS drizzle CASCADE; CREATE SCHEMA public;");
   await migrate(drizzle(sql), { migrationsFolder });
 }
+
+/** Apply migration files [from, upTo] (journal indexes) by hand, to build a "legacy" schema for upgrade rehearsals. */
+export async function applyMigrations(sql, { from = 0, upTo = Infinity } = {}) {
+  assertTestDatabase();
+  const fs = await import("node:fs/promises");
+  const journal = JSON.parse(await fs.readFile(path.join(migrationsFolder, "meta/_journal.json"), "utf8"));
+  for (const entry of journal.entries.filter((e) => e.idx >= from && e.idx <= upTo)) {
+    const text = await fs.readFile(path.join(migrationsFolder, `${entry.tag}.sql`), "utf8");
+    await sql.begin(async (tx) => {
+      for (const stmt of text.split("--> statement-breakpoint")) if (stmt.trim()) await tx.unsafe(stmt);
+    });
+  }
+}
+
+export async function wipeDatabase(sql) {
+  assertTestDatabase();
+  await sql.unsafe("DROP SCHEMA IF EXISTS public CASCADE; DROP SCHEMA IF EXISTS drizzle CASCADE; CREATE SCHEMA public;");
+}
