@@ -1,4 +1,15 @@
 import auctionService from "../services/auction.js";
+import { commands } from "../services/auctionCommands.js";
+import { validKey } from "../services/idempotency.js";
+import { AppError } from "../utils/errors.js";
+
+// Optional for now: the SPA starts sending one key per reviewed intent in T15, after which the header becomes mandatory.
+function idempotencyKey(req) {
+    const key = req.header('Idempotency-Key');
+    if (key === undefined) return null;
+    if (!validKey(key)) throw new AppError(400, 'VALIDATION_ERROR', 'Idempotency-Key must be 8-100 characters of [A-Za-z0-9._:-]');
+    return key;
+}
 
 const controller = {
     
@@ -38,7 +49,7 @@ const controller = {
     getById: async function(req, res, next) {
         try {
             const id = Number(req.params.id);
-            const auction = await auctionService.findById(id);
+            const auction = await auctionService.findById(id, req.user ?? null);
             
             if (!auction) {
                 return res.status(404).json({ message: 'Auction Not Found' });
@@ -246,38 +257,22 @@ const controller = {
         }
     },
 
-    // POST /auctions/:id/bid
+    // POST /auction/:id/bid  (body.amount = the bidder's private maximum; optional Idempotency-Key header)
     placeBid: async function(req, res, next) {
         try {
-            const auctionId = Number(req.params.id);
-            const userId = req.user.id; // Lấy từ token
-            const { amount } = req.body; // Đây là "Max Bid" mà user nhập
-
-            if (!amount || Number(amount) <= 0) {
-                return res.status(400).json({ message: 'Invalid bid amount' });
-            }
-
-            const result = await auctionService.placeBid(auctionId, userId, amount);
-            res.status(200).json(result);
+            const result = await commands.placeBid({ auctionId: req.params.id, actor: req.user, amount: req.body.amount, key: idempotencyKey(req) });
+            res.set('Idempotent-Replayed', String(Boolean(result.replayed))).status(result.status).json(result.body);
         } catch (error) {
             next(error);
         }
     },
 
-    // POST /auctions/:id/buy-now
+    // POST /auction/:id/buy-now
     buyNow: async function(req, res, next) {
         try {
-            const auctionId = Number(req.params.id);
-            const buyerId = req.user.id;
-
-            const result = await auctionService.buyNow(auctionId, buyerId);
-            res.status(200).json(result);
+            const result = await commands.buyNow({ auctionId: req.params.id, actor: req.user, key: idempotencyKey(req) });
+            res.set('Idempotent-Replayed', String(Boolean(result.replayed))).status(result.status).json(result.body);
         } catch (error) {
-            console.error("Buy Now Error:", error.message, error.stack);
-            // Pass specific error messages to client
-            if (error.message) {
-                return res.status(400).json({ message: error.message });
-            }
             next(error);
         }
     }

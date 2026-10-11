@@ -27,7 +27,6 @@ export const actionLimiter = (kind) =>
     standardHeaders: "draft-7",
     legacyHeaders: false,
     keyGenerator: (req) => (req.user ? `u${req.user.id}` : (req.ip ?? "unknown")),
-    validate: { keyGeneratorIpFallback: false },
     handler: (req, res, _next, options) => {
       res.status(options.statusCode).json({ code: "RATE_LIMITED", message: "Too many requests, please slow down", retryAfter: Math.ceil((req.rateLimit.resetTime.getTime() - Date.now()) / 1000) });
     },

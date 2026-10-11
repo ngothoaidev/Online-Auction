@@ -149,5 +149,5 @@ test("business-rule failures keep their message and get a meaningful status (not
   assert.equal(missing.body.message, "Auction not found");
   const own = await t.call("POST", `/auction/${auctionId}/bid`, { token: await t.login(seller), body: { amount: 2000000 } });
   assert.equal(own.status, 400);
-  assert.equal(own.body.code, "BUSINESS_RULE");
+  assert.equal(own.body.code, "OWN_LISTING");
 });

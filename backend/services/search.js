@@ -139,7 +139,7 @@ const service = {
                 images: true,
                 // Fetch only the highest bid
                 bids: {
-                    orderBy: [desc(bids.amount)],
+                    orderBy: [sql`${bids.auctionSequence} DESC NULLS LAST`, desc(bids.amount), desc(bids.id)],
                     limit: 1,
                     with: {
                         bidder: { columns: { id: true, username: true, fullName: true, avatarUrl: true } }

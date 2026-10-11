@@ -1,9 +1,15 @@
 import db from "../db/index.js"
-import { categories, auctions, auctionImages, users, userFavorites, bids, descriptionLogs, comments, orders } from "../db/schema.js"
+import { categories, auctions, auctionImages, users, userFavorites, bids, bidderMaxima, descriptionLogs, comments } from "../db/schema.js"
 import { catalogAuction, publicBid, publicComment, descriptionLog } from "../serializers/index.js";
+import { fromDb, toStr } from "../domain/money.js";
+import { minimumNextBid } from "../domain/bidding.js";
+import { checkBidderEligibility, buyNowAvailable } from "../domain/eligibility.js";
 import { AppError } from "../utils/errors.js";
 import { sanitizeRichText } from "../utils/sanitize.js";
 import { sql, and, or, eq, gte, asc, desc, inArray } from "drizzle-orm";
+
+// Latest public price/leader event first (committed per-auction sequence); legacy rows without a sequence fall back to amount, id.
+const bidOrder = () => [sql`${bids.auctionSequence} DESC NULLS LAST`, desc(bids.amount), desc(bids.id)];
 
 const service = {
     // Lấy danh sách top các sản phẩm ứng của mục tương ứng (Homepage)
@@ -53,7 +59,7 @@ const service = {
                 seller: { columns: { username: true, ratingCount: true, positiveRatingCount: true } },
                 category: true,
                 bids: {
-                    orderBy: [desc(bids.amount)],
+                    orderBy: bidOrder(),
                     limit: 1,
                     with: { bidder: { columns: { id: true, username: true, fullName: true, avatarUrl: true } } }
                 },
@@ -160,7 +166,7 @@ const service = {
                 seller: { columns: { username: true, ratingCount: true, positiveRatingCount: true } },
                 category: true,
                 bids: {
-                    orderBy: [desc(bids.amount)],
+                    orderBy: bidOrder(),
                     limit: 1,
                     with: { bidder: { columns: { id: true, username: true, fullName: true, avatarUrl: true } } }
                 }
@@ -186,7 +192,7 @@ const service = {
     },
 
     // Tìm thông tin chi tiết 1 sản phẩm (ProductDetail page)
-    findById: async function(id) {
+    findById: async function(id, viewer = null) {
         const auction = await db.query.auctions.findFirst({
             where: eq(auctions.id, id),
             with: {
@@ -227,6 +233,9 @@ const service = {
             || auction.images?.[0]?.imageUrl 
             || null;
 
+        const [{ now }] = await db.execute(sql`SELECT clock_timestamp() AS now`);
+        const capabilities = await this.capabilitiesFor(auction, viewer, now);
+
         // Return formatted data for ProductDetail
         return {
             id: auction.id,
@@ -246,6 +255,11 @@ const service = {
             createdAt: auction.createdAt,
             autoExtend: auction.autoExtend,
             bidCount: auction.bidCount,
+            // Canonical-state metadata: clients order snapshots by version and run countdowns on serverTime.
+            version: auction.version,
+            serverTime: now,
+            minimumNextBid: toStr(minimumNextBid({ startingPrice: fromDb(auction.startingPrice), currentPrice: fromDb(auction.currentPrice), step: fromDb(auction.stepPrice) }, auction.bidCount > 0)),
+            capabilities,
             
             // IDs for role checking
             sellerId: auction.sellerId,
@@ -282,6 +296,28 @@ const service = {
         };
     },
 
+    /** What the viewer may do right now, decided by the same rules the commands enforce (B05/B06). */
+    capabilitiesFor: async function(auction, viewer, now) {
+        const open = auction.status === 'active' && new Date(now) < new Date(auction.endTime);
+        const reasons = {};
+        let canBid = false, canBuyNow = false;
+        if (!open) {
+            reasons.bid = reasons.buyNow = auction.status === 'active' ? 'AUCTION_ENDED' : 'AUCTION_NOT_ACTIVE';
+        } else if (!viewer) {
+            reasons.bid = reasons.buyNow = 'AUTH_REQUIRED';
+        } else {
+            const [mine] = await db.select().from(bidderMaxima).where(and(eq(bidderMaxima.auctionId, auction.id), eq(bidderMaxima.bidderId, viewer.id)));
+            const denied = checkBidderEligibility(viewer, auction, { disqualified: Boolean(mine?.disqualifiedAt) });
+            if (denied) { reasons.bid = reasons.buyNow = denied.code; }
+            else {
+                canBid = true;
+                canBuyNow = buyNowAvailable(auction, now);
+                if (!canBuyNow) reasons.buyNow = auction.buyNowPrice === null ? 'NO_BUY_NOW' : 'PRICE_REACHED';
+            }
+        }
+        return { canBid, canBuyNow, reasons };
+    },
+
     findImages: async function(id) {
         return await db.select().from(auctionImages).where(eq(auctionImages.auctionId, id));
     },
@@ -305,7 +341,7 @@ const service = {
 
     const rows = await db.query.bids.findMany({
             where: and(...conditions),
-            orderBy: [desc(bids.amount)],
+            orderBy: bidOrder(),
             
             with: {
                 bidder: { 
@@ -432,7 +468,7 @@ const service = {
         // Recalculate State (Find the NEW highest bid)
         const newHighestBid = await tx.query.bids.findFirst({
             where: eq(bids.auctionId, auctionId),
-            orderBy: [desc(bids.amount)],
+            orderBy: bidOrder(),
         });
 
         // Update Auction (Price reverts to next bid OR starting price if there is no bids)
@@ -485,224 +521,6 @@ const service = {
     delete: async function(id){
         await db.delete(auctionImages).where(eq(auctionImages.auctionId, id));
         await db.delete(auctions).where(eq(auctions.id, id));
-    },
-
-    placeBid: async function(auctionId, userId, userMaxAmountInput) {
-        return await db.transaction(async (tx) => {
-            // 1. Lấy thông tin đấu giá và Bid cao nhất hiện tại (để biết ai đang thắng)
-            const auction = await tx.query.auctions.findFirst({
-                where: eq(auctions.id, auctionId),
-                with: { 
-                    bids: { 
-                        orderBy: [desc(bids.amount)], 
-                        limit: 1, // Lấy bid có amount cao nhất (người thắng hiện tại)
-                        with: { bidder: true }
-                    } 
-                } 
-            });
-
-            if (!auction) throw new AppError(404, 'NOT_FOUND', "Auction not found");
-            if (auction.status !== 'active') throw new AppError(400, 'BUSINESS_RULE', "Auction is not active");
-            if (new Date(auction.endTime) < new Date()) throw new AppError(400, 'BUSINESS_RULE', "Auction has ended");
-            if (auction.sellerId === userId) throw new AppError(400, 'BUSINESS_RULE', "Seller cannot bid on their own product");
-
-            //CHECK ĐIỂM TÍN NHIỆM (80% RULE)
-            // Lấy thông tin Bidder hiện tại (người đang ra giá)
-            const bidder = await tx.query.users.findFirst({
-                where: eq(users.id, userId)
-            });
-
-            if (!bidder) throw new AppError(404, 'NOT_FOUND', "Bidder not found");
-
-            const totalRatings = bidder.ratingCount || 0; // Tổng số lần được đánh giá
-            const positiveRatings = bidder.positiveRatingCount || 0; // Số like (+)
-
-            if (totalRatings > 0) {
-                // TRƯỜNG HỢP 1: Đã từng được đánh giá
-                const scorePercentage = (positiveRatings / totalRatings) * 100;
-                if (scorePercentage < 80) {
-                    throw new AppError(400, 'BUSINESS_RULE', `Your rating score (${scorePercentage.toFixed(1)}%) is too low. Required: 80%`);
-                }
-            } else {
-                // TRƯỜNG HỢP 2: Chưa từng được đánh giá (Newbie)
-                // Kiểm tra xem người bán có cho phép không
-                if (auction.allowNewbies === false) {
-                    throw new AppError(400, 'BUSINESS_RULE', "This seller does not accept bids from users with no rating history.");
-                }
-            }
-            // Kết thúc check điểm tín nhiệm
-
-            const currentPrice = Number(auction.currentPrice);
-            const stepPrice = Number(auction.stepPrice);
-            const inputMax = Number(userMaxAmountInput); // Giá trần user vừa nhập
-
-            // Giá sàn hợp lệ cho lần bid này
-            const minValidBid = currentPrice + (auction.bidCount === 0 ? 0 : stepPrice);
-
-            if (inputMax < minValidBid) {
-                throw new AppError(400, 'BUSINESS_RULE', `Bid amount must be at least ${new Intl.NumberFormat('vi-VN').format(minValidBid)}`);
-            }
-
-            // 2. Xác định đối thủ hiện tại (Current Winner)
-            // Lấy bid cao nhất hiện tại từ DB
-            const currentWinnerBid = auction.bids[0]; 
-            
-            // Lấy 'max_amount' (số tiền đặt cược) bí mật của người đang thắng (nếu có)
-            const currentWinnerMaxSecret = currentWinnerBid ? Number(currentWinnerBid.maxAmount || currentWinnerBid.amount) : 0;
-            const currentWinnerId = currentWinnerBid ? currentWinnerBid.bidderId : null;
-
-            // --- AUTO BIDDING LOGIC---
-
-            // Trường hợp A: Người dùng tự bid đè lên chính mình (để tăng giá trần)
-            if (currentWinnerId === userId) {
-                // Chỉ cần tạo một bid mới với amount giữ nguyên (hoặc tăng nhẹ nếu muốn) nhưng maxAmount mới
-                // Ở đây ta giữ nguyên giá hiện tại, chỉ cập nhật Max Amount
-                await tx.insert(bids).values({
-                    auctionId,
-                    bidderId: userId,
-                    amount: currentPrice, // Giá không đổi
-                    maxAmount: inputMax,  // Cập nhật giá trần mới
-                    bidTime: new Date()
-                });
-                return { status: "updated", message: "Your max bid has been updated!", currentPrice };
-            }
-
-            // TRƯỜNG HỢP B: Đấu với người khác
-            // So sánh Max của User mới (inputMax) vs Max của User cũ (currentWinnerMaxSecret)
-
-            // B1. Nếu User mới bids ít hơn User cũ
-            if (currentWinnerBid && inputMax <= currentWinnerMaxSecret) {
-                // 1. User mới đặt 1 bid (nhưng sẽ thua)
-                await tx.insert(bids).values({
-                    auctionId,
-                    bidderId: userId,
-                    amount: inputMax, // Bid đúng bằng số tiền họ nhập
-                    maxAmount: inputMax,
-                    bidTime: new Date()
-                });
-
-                // 2. Hệ thống tự động đặt bid cho User cũ để thắng lại
-                // Giá mới = Giá User mới + Bước giá (nhưng không vượt quá Max của User cũ)
-                let autoBidAmount = Math.min(currentWinnerMaxSecret, inputMax + stepPrice);
-                
-                // Nếu User mới trả bằng đúng Max của User cũ -> User cũ vẫn thắng do đến trước (giữ nguyên giá đó)
-                if (inputMax === currentWinnerMaxSecret) {
-                    autoBidAmount = currentWinnerMaxSecret;
-                }
-
-                await tx.insert(bids).values({
-                    auctionId,
-                    bidderId: currentWinnerId, // Người cũ
-                    amount: autoBidAmount,
-                    maxAmount: currentWinnerMaxSecret, // Giữ nguyên max bí mật
-                    bidTime: new Date(new Date().getTime() + 100) // +100ms
-                });
-
-                // Cập nhật giá sản phẩm
-                await tx.update(auctions).set({
-                    currentPrice: autoBidAmount,
-                    bidCount: (auction.bidCount || 0) + 2,
-                    winnerId: currentWinnerId,
-                    endTime: (auction.autoExtend && (new Date(auction.endTime) - new Date() < 5 * 60 * 1000)) 
-                        ? new Date(new Date(auction.endTime).getTime() + 5 * 60 * 1000) : auction.endTime
-                }).where(eq(auctions.id, auctionId));
-
-                return { 
-                    status: "outbid", 
-                    message: "You have been outbid immediately by an automatic bid!", 
-                    currentPrice: autoBidAmount 
-                };
-            }
-
-            // B2. Nếu User mới bids nhiều hơn User cũ (Thắng)
-            else {
-                // Giá để thắng người cũ = Max của người cũ + Bước giá
-                // Nhưng không được thấp hơn giá sàn (minValidBid)
-                let priceToWin = minValidBid;
-                
-                if (currentWinnerBid) {
-                    priceToWin = Math.min(inputMax, currentWinnerMaxSecret + stepPrice);
-                }
-
-                // Tạo bid thắng cho User mới
-                await tx.insert(bids).values({
-                    auctionId,
-                    bidderId: userId,
-                    amount: priceToWin,
-                    maxAmount: inputMax, // Lưu giá trần mới
-                    bidTime: new Date()
-                });
-
-                // Cập nhật sản phẩm
-                await tx.update(auctions).set({
-                    currentPrice: priceToWin,
-                    bidCount: (auction.bidCount || 0) + 1,
-                    winnerId: userId,
-                    endTime: (auction.autoExtend && (new Date(auction.endTime) - new Date() < 5 * 60 * 1000)) 
-                        ? new Date(new Date(auction.endTime).getTime() + 5 * 60 * 1000) : auction.endTime
-                }).where(eq(auctions.id, auctionId));
-
-                return { status: "success", message: "You are the highest bidder!", currentPrice: priceToWin };
-            }
-        });
-    },
-
-    // Buy Now - End auction immediately and create order
-    buyNow: async function(auctionId, buyerId) {
-        return await db.transaction(async (tx) => {
-            // 1. Get auction details
-            const auction = await tx.query.auctions.findFirst({
-                where: eq(auctions.id, auctionId)
-            });
-
-
-            if (!auction) {
-                throw new AppError(404, 'NOT_FOUND', 'Auction not found');
-            }
-
-            // 2. Validate auction state
-            if (auction.status !== 'active') {
-                throw new AppError(400, 'BUSINESS_RULE', 'Auction is not active');
-            }
-
-            if (!auction.buyNowPrice) {
-                throw new AppError(400, 'BUSINESS_RULE', 'This auction does not have a Buy Now option');
-            }
-
-            // 3. Prevent seller from buying their own item
-            if (auction.sellerId === buyerId) {
-                throw new AppError(400, 'BUSINESS_RULE', 'You cannot buy your own auction');
-            }
-
-            // 4. End the auction immediately
-            await tx.update(auctions).set({
-                status: 'ended',
-                currentPrice: auction.buyNowPrice,
-                winnerId: buyerId,
-                endTime: new Date() // End now
-            }).where(eq(auctions.id, auctionId));
-
-            console.log("Auction updated, creating order...");
-
-            // 5. Create order for payment
-            const [newOrder] = await tx.insert(orders).values({
-                auctionId: auctionId,
-                buyerId: buyerId,
-                sellerId: auction.sellerId,
-                finalPrice: String(auction.buyNowPrice), // Convert to string for decimal
-                status: 'pending_payment',
-                createdAt: new Date(),
-                updatedAt: new Date()
-            }).returning();
-
-
-            return {
-                status: 'success',
-                message: 'Purchase successful! Redirecting to payment...',
-                orderId: newOrder.id,
-                finalPrice: auction.buyNowPrice
-            };
-        });
     },
 
     createComment: async function(userId, auctionId, content, parentId = null) {
