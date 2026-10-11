@@ -93,3 +93,7 @@ Tests (PostgreSQL thật): reviews.test.js 8 pass — mọi trạng thái chưa 
 Chưa làm: hiển thị "chưa có đánh giá" thay vì 100% (T14); `services/review.js` (list/stats) vẫn đọc trực tiếp từ rows (đúng nguồn sự thật); email người tham gia vẫn xuất hiện trong order details (T16).
 G2 (tự động): đấu giá → order không cần ai xem; crash/retry an toàn; manual proof/shipping/receipt/review chạy hết luồng; GET không ghi; proof riêng tư.
 Tiếp theo: M3 — T13 (AURUM semantic tokens, primitives, shell). Cần browser để QA visual: sẽ thử Playwright; nếu thiếu browser → ghi blocker.
+
+## M3 bắt đầu — baseline visual (trước khi sửa)
+Chromium (Playwright) cài được; seed mới có 8 lot + ảnh SVG tĩnh (`frontend/public/seed`), danh mục cha/con, bid qua command thật. `frontend/scripts/qa-screenshots.mjs <label>` chụp 5 trang × 390/768/1280/1440 × light/dark → `docs/validation/screenshots/before/` (40 ảnh thật, không lỗi pageerror).
+Quan sát từ baseline (cần sửa ở T13–T16): card hiển thị "NaN ₫" khi lot chưa có bid; hero gradient + số liệu/claim không có căn cứ ("world's most secure", "5 free bid credits", "Verified Item"); seller 0 đánh giá hiển thị 100%; icon-only controls không tên; format tiền K/M/B làm tròn; nhiều token riêng theo trang.

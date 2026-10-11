@@ -1,4 +1,5 @@
-// Deterministic local seed. Fake data only; refuses to run against non-local databases.
+// Deterministic local seed. Fake data only; refuses to run against non-local databases. Idempotent.
+// Images are static SVGs served by the frontend dev server from /seed/*.svg (no external hosts).
 import dotenv from "dotenv";
 import bcrypt from "bcrypt";
 import postgres from "postgres";
@@ -9,6 +10,7 @@ dotenv.config();
 
 const url = process.env.DATABASE_URL;
 if (!/@(localhost|127\.0\.0\.1|db)(:|\/)/.test(url || "")) throw new Error("seed refuses non-local DATABASE_URL");
+process.env.JWT_SECRET ||= "seed-only-secret";
 
 const client = postgres(url, { max: 1 });
 const db = drizzle(client, { schema: s });
@@ -21,21 +23,58 @@ const people = [
   { username: "demo_buyer2", email: "buyer2@example.test", role: "buyer" },
 ];
 for (const p of people) {
-  await db.insert(s.users).values({ ...p, encryptedPassword: pw, fullName: p.username, isVerified: true }).onConflictDoNothing();
+  await db.insert(s.users).values({ ...p, encryptedPassword: pw, fullName: p.username.replace("demo_", "Demo "), isVerified: true }).onConflictDoNothing();
 }
-let [cat] = await db.select().from(s.categories).where(eq(s.categories.name, "Demo Watches"));
-if (!cat) [cat] = await db.insert(s.categories).values({ name: "Demo Watches" }).returning();
-const [seller] = await db.select().from(s.users).where(eq(s.users.username, "demo_seller"));
+const user = async (username) => (await db.select().from(s.users).where(eq(s.users.username, username)))[0];
+const category = async (name, parentId = null) => {
+  let [c] = await db.select().from(s.categories).where(eq(s.categories.name, name));
+  if (!c) [c] = await db.insert(s.categories).values({ name, parentId }).returning();
+  return c;
+};
+const watches = await category("Watches");
+const art = await category("Art");
+const jewelry = await category("Jewelry");
+const sub = {
+  vintage: await category("Vintage Watches", watches.id),
+  paintings: await category("Paintings", art.id),
+  rings: await category("Rings", jewelry.id),
+};
 
+const seller = await user("demo_seller");
 const existing = await db.select().from(s.auctions).where(eq(s.auctions.sellerId, seller.id));
 if (existing.length === 0) {
-  const end = new Date(Date.now() + 3 * 24 * 3600 * 1000);
-  await db.insert(s.auctions).values([
-    { sellerId: seller.id, categoryId: cat.id, title: "Demo vintage watch", description: "<p>Seeded lot</p>",
-      startingPrice: "1000000", currentPrice: "1000000", stepPrice: "100000", buyNowPrice: "5000000", endTime: end, status: "active" },
-    { sellerId: seller.id, categoryId: cat.id, title: "Demo pocket watch", description: "<p>Seeded lot</p>",
-      startingPrice: "2000000", currentPrice: "2000000", stepPrice: "50000", endTime: end, status: "active", autoExtend: true },
-  ]);
+  const { commands } = await import("../services/auctionCommands.js");
+  const hours = (h) => new Date(Date.now() + h * 3600 * 1000);
+  const lots = [
+    ["Omega Seamaster 1968, steel, serviced", sub.vintage, 18_000_000, 500_000, 40_000_000, hours(6), true],
+    ["Longines Conquest automatic, black dial", sub.vintage, 9_500_000, 250_000, null, hours(30), false],
+    ["Oil on canvas, river at dusk (signed)", sub.paintings, 6_000_000, 200_000, 15_000_000, hours(52), false],
+    ["Lacquer panel, hand painted lotus", sub.paintings, 2_800_000, 100_000, null, hours(75), false],
+    ["Art deco ring, 18k gold and sapphire", sub.rings, 12_000_000, 400_000, 30_000_000, hours(0.4), true],
+    ["Pearl solitaire ring, size 7", sub.rings, 4_200_000, 150_000, null, hours(120), false],
+    ["Seiko 5 military dial, unworn", sub.vintage, 3_900_000, 100_000, 8_000_000, hours(9), false],
+    ["Watercolour, harbour at first light", sub.paintings, 1_500_000, 50_000, null, hours(160), false],
+  ];
+  let i = 0;
+  for (const [title, cat, start, step, buyNow, end, autoExtend] of lots) {
+    i += 1;
+    const [a] = await db.insert(s.auctions).values({
+      sellerId: seller.id, categoryId: cat.id, title, description: `<p>${title}. Seeded lot for local development.</p>`,
+      startingPrice: String(start), currentPrice: String(start), stepPrice: String(step), buyNowPrice: buyNow ? String(buyNow) : null,
+      endTime: end, status: "active", autoExtend,
+    }).returning();
+    await db.insert(s.auctionImages).values([0, 1, 2].map((k) => ({ auctionId: a.id, imageUrl: `/seed/lot-${((i + k * 4 - 1) % 12) + 1}.svg`, isPrimary: k === 0 })));
+  }
+  // a little bidding history through the real command path
+  const b1 = await user("demo_buyer1");
+  const b2 = await user("demo_buyer2");
+  const all = await db.select().from(s.auctions).where(eq(s.auctions.sellerId, seller.id));
+  for (const a of all.slice(0, 5)) {
+    const start = BigInt(a.startingPrice);
+    await commands.placeBid({ auctionId: a.id, actor: b1, amount: (start * 13n / 10n).toString() });
+    await commands.placeBid({ auctionId: a.id, actor: b2, amount: (start * 12n / 10n).toString() });
+  }
 }
 await client.end();
 console.log("seed done (users: demo_admin/demo_seller/demo_buyer1/demo_buyer2, password: Passw0rd!demo)");
+process.exit(0);
