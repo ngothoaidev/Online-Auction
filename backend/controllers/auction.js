@@ -5,16 +5,14 @@ const controller = {
     // GET /auctions/top
     listTop: async function(req, res, next) {
         try {
-            const { userId, status, sortBy, page, limit } = req.query;
+            const { userId, status, sortBy } = req.query;
             const viewId = req.user ? req.user.id : null;
             
             const auctions = await auctionService.findByOrder({ 
-                userId: userId ? parseInt(userId) : null,
-                viewId: viewId ? parseInt(viewId) : null,
-                status: status || 'active',
-                sortBy: sortBy || 'newest',
-                page: page ? parseInt(page) : 1,
-                limit: limit ? parseInt(limit) : 5,
+                userId: userId ?? null,
+                viewId,
+                status,
+                sortBy,
             });
 
             res.json(auctions);
@@ -27,17 +25,12 @@ const controller = {
         try {
             const { username, status, category } = req.query;
 
-            if (!username || !status) {
-                return res.status(400).json({ error: "Missing Required Fields" });
-            }
-
             const results = await auctionService.findByStatus(username, status, category);
 
             return res.status(200).json(results);
 
         } catch (error) {
-            console.error("Tab Query Error:", error);
-            return res.status(500).json({ error: "Internal Server Error" });
+            next(error);
         }
     },
 
@@ -95,7 +88,6 @@ const controller = {
         try {
             const id = Number(req.params.id);
             const logs = await auctionService.findDescription(id);
-            console.log("Description: ", logs);
             if (!logs) {
                 return res.status(404).json({ message: 'Auction Not Found' });
             }
@@ -128,9 +120,6 @@ const controller = {
             const bidId = Number(req.query.bidId);
             const sellerId = req.user?.id;
 
-
-            console.log(auctionId, bidId, sellerId);
-
             await auctionService.rejectBid(auctionId, bidId, sellerId);
 
             res.status(200).json({ 
@@ -145,39 +134,13 @@ const controller = {
     // POST /auctions
     create: async function(req, res, next) {
         try {
-            const { title, startingPrice, stepPrice, buyNowPrice, endTime, categoryId, description, autoExtend } = req.body;
+            // req.body was validated/coerced by createAuctionBody (money as digit strings, real booleans, sanitized HTML)
             const images = req.files;
-
-            // 1. Validate dữ liệu đầu vào
-            if (!title || !startingPrice || !stepPrice || !endTime || !categoryId) {
-                return res.status(400).json({ message: 'Missing required fields' });
-            }
-
-            if (Number(stepPrice) <= 0) {
-                return res.status(400).json({ message: 'Step price must be positive' });
-            }
-
-            if (buyNowPrice && Number(buyNowPrice) <= Number(startingPrice)) {
-                return res.status(400).json({ message: 'Buy Now price must be greater than Starting price' });
-            }
-
             if (!images || images.length < 3) {
-                return res.status(400).json({ message: 'At least 3 images are required' });
+                return res.status(400).json({ code: 'VALIDATION_ERROR', message: 'At least 3 images are required' });
             }
 
-            // 2. Chuẩn bị dữ liệu để lưu
-            const info = {
-                sellerId: req.user.id, // Lấy ID người đang đăng nhập
-                categoryId: Number(categoryId),
-                title,
-                description,
-                startingPrice: Number(startingPrice),
-                currentPrice: Number(startingPrice), // Giá hiện tại = Giá khởi điểm lúc tạo
-                stepPrice: Number(stepPrice),
-                buyNowPrice: buyNowPrice ? Number(buyNowPrice) : null,
-                endTime,
-                autoExtend: autoExtend || false,
-            };
+            const info = { ...req.body, sellerId: req.user.id, currentPrice: req.body.startingPrice };
 
             // 3. Gọi Service
             const auction = await auctionService.create(info, images);
@@ -192,8 +155,7 @@ const controller = {
             });
 
         } catch (error) {
-            console.error('Create Auction Error:', error);
-            return res.status(500).json({ error: error.message });
+            next(error);
         }
     },
 
@@ -212,7 +174,7 @@ const controller = {
                 return res.status(403).json({ message: 'Unauthorized to update this auction' });
             }
 
-            const updatedAuction = await auctionService.update(id, req.body);
+            const updatedAuction = await auctionService.update(id, req.body); // body already restricted to the seller allowlist
             res.json(updatedAuction);
         } catch (error) {
             next(error);
@@ -307,8 +269,6 @@ const controller = {
         try {
             const auctionId = Number(req.params.id);
             const buyerId = req.user.id;
-
-            console.log(`Buy Now request - Auction: ${auctionId}, Buyer: ${buyerId}`);
 
             const result = await auctionService.buyNow(auctionId, buyerId);
             res.status(200).json(result);

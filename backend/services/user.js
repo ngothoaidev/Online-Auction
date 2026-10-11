@@ -187,7 +187,6 @@ const service = {
     },
 
     getByUsername: async function(username){
-        console.log('Searching for user by username:', username);
         const result = await db.select().from(users).where(eq(users.username, username));
         return result.length > 0 ? result[0] : null;
     },

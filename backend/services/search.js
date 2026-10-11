@@ -1,4 +1,5 @@
 import db from "../db/index.js"
+import { catalogAuction } from "../serializers/index.js";
 import { auctions, categories, userFavorites, bids } from "../db/schema.js"
 import { sql, eq, or, and, desc, asc, count, inArray, gte, lte } from "drizzle-orm";
 
@@ -133,7 +134,7 @@ const service = {
             offset: offset,
             orderBy: orderBy,
             with: {
-                seller: true,
+                seller: { columns: { username: true, ratingCount: true, positiveRatingCount: true } },
                 category: true,
                 images: true,
                 // Fetch only the highest bid
@@ -141,7 +142,7 @@ const service = {
                     orderBy: [desc(bids.amount)],
                     limit: 1,
                     with: {
-                        bidder: true // Fetch the bidder details
+                        bidder: { columns: { id: true, username: true, fullName: true, avatarUrl: true } }
                     }
                 }
             }
@@ -156,7 +157,7 @@ const service = {
 
         let favoriteAuctions = new Set();
         
-        if (results.length > 0) {
+        if (userId && results.length > 0) {
             const auctionIds = results.map(a => a.id);
             
             const favorites = await db.select({ auctionId: userFavorites.auctionId })
@@ -170,19 +171,7 @@ const service = {
         }
 
         return {
-            data: results.map(auction => {
-                const sellerRating = auction.seller.ratingCount > 0 ? (auction.seller.positiveRatingCount / auction.seller.ratingCount) * 100 : 100;
-                return {
-                    ...auction,
-                    image: auction.images.find(img => img.isPrimary)?.imageUrl || auction.images[0]?.imageUrl || null,
-                    seller: {
-                        username: auction.seller.username,
-                        rating: parseFloat(sellerRating.toFixed(1)),
-                    },
-                    category: auction.category?.name || 'Uncategorized',
-                    bids: auction.bids[0],
-                    isFavorited: favoriteAuctions?.has(auction.id)
-            }}),
+            data: results.map(auction => catalogAuction(auction, { isFavorited: favoriteAuctions.has(auction.id) })),
             total: totalItems
         };
     },

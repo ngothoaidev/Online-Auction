@@ -1,5 +1,8 @@
 import db from "../db/index.js"
 import { categories, auctions, auctionImages, users, userFavorites, bids, descriptionLogs, comments, orders } from "../db/schema.js"
+import { catalogAuction, publicBid, publicComment, descriptionLog } from "../serializers/index.js";
+import { AppError } from "../utils/errors.js";
+import { sanitizeRichText } from "../utils/sanitize.js";
 import { sql, and, or, eq, gte, asc, desc, inArray } from "drizzle-orm";
 
 const service = {
@@ -47,12 +50,12 @@ const service = {
             where: whereClause,
             with: {
                 images: true,
-                seller: true,
+                seller: { columns: { username: true, ratingCount: true, positiveRatingCount: true } },
                 category: true,
                 bids: {
                     orderBy: [desc(bids.amount)],
                     limit: 1,
-                    with: { bidder: true }
+                    with: { bidder: { columns: { id: true, username: true, fullName: true, avatarUrl: true } } }
                 },
             },
             orderBy: orderByClause,
@@ -74,20 +77,7 @@ const service = {
             favoriteAuctions = new Set(favorites.map(f => f.auctionId));
         }
         
-        // Map Result
-        return foundAuctions.map(auction => {
-            const sellerRating = auction.seller.ratingCount > 0 ? (auction.seller.positiveRatingCount / auction.seller.ratingCount) * 100 : 100;
-            return {
-                ...auction,
-                image: auction.images.find(img => img.isPrimary)?.imageUrl || auction.images[0]?.imageUrl || null,
-                seller: {
-                    username: auction.seller.username,
-                    rating: parseFloat(sellerRating.toFixed(1)),
-                },
-                category: auction.category?.name || 'Uncategorized',
-                bids: auction.bids[0],
-                isFavorited: favoriteAuctions.has(auction.id)
-        }});
+        return foundAuctions.map(auction => catalogAuction(auction, { isFavorited: favoriteAuctions.has(auction.id) }));
     },
 
     // Lấy danh sách sản phẩm liên quan của mục tương ứng (Profile)
@@ -98,7 +88,7 @@ const service = {
         });
 
         if (!user) {
-            throw new Error("User not found");
+            throw new AppError(404, 'NOT_FOUND', "User not found");
         }
 
         const userId = user.id;
@@ -114,7 +104,7 @@ const service = {
             if (categoryFilter) {
                 conditions.push(eq(auctions.categoryId, categoryFilter.id));
             } else {
-                throw new Error("Category not found");
+                throw new AppError(404, 'NOT_FOUND', "Category not found");
             }
         }
 
@@ -160,19 +150,19 @@ const service = {
             }
 
             default:
-                throw new Error("Invalid tab specified");
+                throw new AppError(400, 'BUSINESS_RULE', "Invalid tab specified");
         }
 
         const result = await db.query.auctions.findMany({
             where: and(...conditions),
             with: {
                 images: true, 
-                seller: true,
+                seller: { columns: { username: true, ratingCount: true, positiveRatingCount: true } },
                 category: true,
                 bids: {
                     orderBy: [desc(bids.amount)],
                     limit: 1,
-                    with: { bidder: true }
+                    with: { bidder: { columns: { id: true, username: true, fullName: true, avatarUrl: true } } }
                 }
             },
         });
@@ -192,19 +182,7 @@ const service = {
             favoriteAuctions = new Set(favorites.map(f => f.auctionId));
         }
 
-        return result.map(auction => {
-            const sellerRating = auction.seller.ratingCount > 0 ? (auction.seller.positiveRatingCount / auction.seller.ratingCount) * 100 : 100;
-            return {
-                ...auction,
-                image: auction.images.find(img => img.isPrimary)?.imageUrl || auction.images[0]?.imageUrl || null,
-                seller: {
-                    username: auction.seller.username,
-                    rating: parseFloat(sellerRating.toFixed(1)),
-                },
-                category: auction.category?.name || 'Uncategorized',
-                bids: auction.bids[0],
-                isFavorited: status === 'favorites' ? true : favoriteAuctions?.has(auction.id)
-        }});
+        return result.map(auction => catalogAuction(auction, { isFavorited: status === 'favorites' ? true : favoriteAuctions.has(auction.id) }));
     },
 
     // Tìm thông tin chi tiết 1 sản phẩm (ProductDetail page)
@@ -253,7 +231,7 @@ const service = {
         return {
             id: auction.id,
             title: auction.title,
-            description: auction.description,
+            description: sanitizeRichText(auction.description),
             
             // Pricing
             startingPrice: auction.startingPrice,
@@ -313,7 +291,7 @@ const service = {
 
     if (filter === "mine") {
         if (!userId) {
-            throw new Error("Not Authorization");
+            throw new AppError(403, 'FORBIDDEN', "Not Authorization");
         }
         conditions.push(eq(bids.bidderId, userId));
     }
@@ -325,7 +303,7 @@ const service = {
         );
     }
 
-    return await db.query.bids.findMany({
+    const rows = await db.query.bids.findMany({
             where: and(...conditions),
             orderBy: [desc(bids.amount)],
             
@@ -340,6 +318,7 @@ const service = {
                 }
             }
         });
+    return rows.map(publicBid);
     },
 
     findDescription: async function(id) {
@@ -356,13 +335,13 @@ const service = {
         });
 
         return {
-            description: auction?.description || "",
-            history: logs
+            description: sanitizeRichText(auction?.description || ""),
+            history: logs.map(descriptionLog)
         };
     },
 
     findComments: async function(id) {
-        return await db.query.comments.findMany({
+        const rows = await db.query.comments.findMany({
             where: eq(comments.auctionId, id),
             with: {
                 user: {
@@ -377,6 +356,7 @@ const service = {
             // Order by oldest first (standard for forums) or newest first
             orderBy: [desc(comments.createdAt)] 
         });
+        return rows.map(publicComment);
 
         // Optional: Organize into a tree structure if your UI needs nested replies
         // This simple version returns a flat list with parent_id included
@@ -394,6 +374,7 @@ const service = {
     create: async function(info, images) {
         // Chuẩn hóa dữ liệu ngày tháng
         info.createdAt = new Date();
+        info.description = sanitizeRichText(info.description);
         info.endTime = new Date(info.endTime);
         info.status = 'active';
         info.bidCount = 0;
@@ -432,9 +413,9 @@ const service = {
             }
         });
 
-        if (!auction) throw new Error("Auction not found");
-        if (auction.sellerId !== sellerId) throw new Error("Unauthorized: Only the seller can reject bids");
-        if (auction.status !== 'active') throw new Error("Cannot reject bids on finished auctions");
+        if (!auction) throw new AppError(404, 'NOT_FOUND', "Auction not found");
+        if (auction.sellerId !== sellerId) throw new AppError(403, 'FORBIDDEN', "Unauthorized: Only the seller can reject bids");
+        if (auction.status !== 'active') throw new AppError(400, 'BUSINESS_RULE', "Cannot reject bids on finished auctions");
 
         const deletedBid = await tx
             .delete(bids)
@@ -445,7 +426,7 @@ const service = {
             .returning();
 
         if (deletedBid.length === 0) {
-            throw new Error("Bid not found");
+            throw new AppError(404, 'NOT_FOUND', "Bid not found");
         }
 
         // Recalculate State (Find the NEW highest bid)
@@ -468,9 +449,12 @@ const service = {
         });
     },
     
-    update: async function(id, auc) {
-        if(auc.endTime) auc.endTime = new Date(auc.endTime);
-        await db.update(auctions).set(auc).where(eq(auctions.id, id));
+    // `fields` are pre-validated against the seller allowlist (title, description, categoryId).
+    update: async function(id, fields) {
+        const set = { ...fields };
+        if (set.description !== undefined) set.description = sanitizeRichText(set.description);
+        await db.update(auctions).set(set).where(eq(auctions.id, id));
+        return this.findById(id);
     },
 
     updateDescription: async function(id, description) {
@@ -491,7 +475,7 @@ const service = {
 
         // Update to new description
         const [updated] = await db.update(auctions)
-            .set({ description })
+            .set({ description: sanitizeRichText(description) })
             .where(eq(auctions.id, id))
             .returning({ description: auctions.description });
 
@@ -517,10 +501,10 @@ const service = {
                 } 
             });
 
-            if (!auction) throw new Error("Auction not found");
-            if (auction.status !== 'active') throw new Error("Auction is not active");
-            if (new Date(auction.endTime) < new Date()) throw new Error("Auction has ended");
-            if (auction.sellerId === userId) throw new Error("Seller cannot bid on their own product");
+            if (!auction) throw new AppError(404, 'NOT_FOUND', "Auction not found");
+            if (auction.status !== 'active') throw new AppError(400, 'BUSINESS_RULE', "Auction is not active");
+            if (new Date(auction.endTime) < new Date()) throw new AppError(400, 'BUSINESS_RULE', "Auction has ended");
+            if (auction.sellerId === userId) throw new AppError(400, 'BUSINESS_RULE', "Seller cannot bid on their own product");
 
             //CHECK ĐIỂM TÍN NHIỆM (80% RULE)
             // Lấy thông tin Bidder hiện tại (người đang ra giá)
@@ -528,7 +512,7 @@ const service = {
                 where: eq(users.id, userId)
             });
 
-            if (!bidder) throw new Error("Bidder not found");
+            if (!bidder) throw new AppError(404, 'NOT_FOUND', "Bidder not found");
 
             const totalRatings = bidder.ratingCount || 0; // Tổng số lần được đánh giá
             const positiveRatings = bidder.positiveRatingCount || 0; // Số like (+)
@@ -537,13 +521,13 @@ const service = {
                 // TRƯỜNG HỢP 1: Đã từng được đánh giá
                 const scorePercentage = (positiveRatings / totalRatings) * 100;
                 if (scorePercentage < 80) {
-                    throw new Error(`Your rating score (${scorePercentage.toFixed(1)}%) is too low. Required: 80%`);
+                    throw new AppError(400, 'BUSINESS_RULE', `Your rating score (${scorePercentage.toFixed(1)}%) is too low. Required: 80%`);
                 }
             } else {
                 // TRƯỜNG HỢP 2: Chưa từng được đánh giá (Newbie)
                 // Kiểm tra xem người bán có cho phép không
                 if (auction.allowNewbies === false) {
-                    throw new Error("This seller does not accept bids from users with no rating history.");
+                    throw new AppError(400, 'BUSINESS_RULE', "This seller does not accept bids from users with no rating history.");
                 }
             }
             // Kết thúc check điểm tín nhiệm
@@ -556,7 +540,7 @@ const service = {
             const minValidBid = currentPrice + (auction.bidCount === 0 ? 0 : stepPrice);
 
             if (inputMax < minValidBid) {
-                throw new Error(`Bid amount must be at least ${new Intl.NumberFormat('vi-VN').format(minValidBid)}`);
+                throw new AppError(400, 'BUSINESS_RULE', `Bid amount must be at least ${new Intl.NumberFormat('vi-VN').format(minValidBid)}`);
             }
 
             // 2. Xác định đối thủ hiện tại (Current Winner)
@@ -673,21 +657,21 @@ const service = {
 
 
             if (!auction) {
-                throw new Error('Auction not found');
+                throw new AppError(404, 'NOT_FOUND', 'Auction not found');
             }
 
             // 2. Validate auction state
             if (auction.status !== 'active') {
-                throw new Error('Auction is not active');
+                throw new AppError(400, 'BUSINESS_RULE', 'Auction is not active');
             }
 
             if (!auction.buyNowPrice) {
-                throw new Error('This auction does not have a Buy Now option');
+                throw new AppError(400, 'BUSINESS_RULE', 'This auction does not have a Buy Now option');
             }
 
             // 3. Prevent seller from buying their own item
             if (auction.sellerId === buyerId) {
-                throw new Error('You cannot buy your own auction');
+                throw new AppError(400, 'BUSINESS_RULE', 'You cannot buy your own auction');
             }
 
             // 4. End the auction immediately
@@ -732,7 +716,7 @@ const service = {
         
         // Trả về kèm thông tin người comment để Frontend hiển thị ngay
         const newComment = await db.query.comments.findFirst({
-            where: eq(comments.id, result[0].id),
+            where: eq(comments.commentId, result[0].commentId),
             with: {
                 user: {
                     columns: { username: true, fullName: true, avatarUrl: true, role: true }
@@ -740,7 +724,7 @@ const service = {
             }
         });
         
-        return newComment;
+        return publicComment(newComment);
     }
 
 };

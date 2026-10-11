@@ -18,6 +18,7 @@ export async function startApp(env = {}) {
   const dbModule = await import("../../db/index.js");
   const { default: app } = await import("../../app.js");
   const email = await import("../../utils/email.js");
+  const authService = (await import("../../services/auth.js")).default;
   const server = await new Promise((r) => { const s = app.listen(0, () => r(s)); });
   const base = `http://127.0.0.1:${server.address().port}`;
 
@@ -41,8 +42,11 @@ export async function startApp(env = {}) {
   };
   const login = async (user) => (await call("POST", "/auth/login", { body: { identifier: user.username, password: user.password } })).body.token;
 
+  // Mint a token without going through /auth/login (which is rate limited).
+  const tokenFor = (user) => authService.generateUserToken({ id: user.id, username: user.username, email: user.email, authVersion: 0 });
+
   return {
-    base, sql, call, createUser, login, mailSink: email.mailSink,
+    base, tokenFor, sql, call, createUser, login, mailSink: email.mailSink,
     lastOtp: (to) => [...email.mailSink].reverse().find((m) => m.to === to)?.html.match(/\b(\d{6})\b/)?.[1],
     async stop() { await new Promise((r) => server.close(r)); await dbModule.client.end(); await sql.end(); },
   };

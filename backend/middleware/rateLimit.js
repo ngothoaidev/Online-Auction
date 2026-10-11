@@ -12,3 +12,23 @@ export const authLimiter = (max = Number(process.env.AUTH_RATE_LIMIT_MAX || 20),
       res.status(options.statusCode).json({ code: "RATE_LIMITED", message: "Too many requests, please try again later", retryAfter });
     },
   });
+
+// Per-actor limits for write actions (keyed by user id, falling back to IP). ponytail: in-memory, single process.
+const ACTION_LIMITS = {
+  bid: { max: Number(process.env.BID_RATE_LIMIT_MAX || 30), windowMs: 60 * 1000 },
+  comment: { max: Number(process.env.COMMENT_RATE_LIMIT_MAX || 10), windowMs: 60 * 1000 },
+  upload: { max: Number(process.env.UPLOAD_RATE_LIMIT_MAX || 10), windowMs: 10 * 60 * 1000 },
+};
+
+export const actionLimiter = (kind) =>
+  rateLimit({
+    windowMs: ACTION_LIMITS[kind].windowMs,
+    limit: ACTION_LIMITS[kind].max,
+    standardHeaders: "draft-7",
+    legacyHeaders: false,
+    keyGenerator: (req) => (req.user ? `u${req.user.id}` : (req.ip ?? "unknown")),
+    validate: { keyGeneratorIpFallback: false },
+    handler: (req, res, _next, options) => {
+      res.status(options.statusCode).json({ code: "RATE_LIMITED", message: "Too many requests, please slow down", retryAfter: Math.ceil((req.rateLimit.resetTime.getTime() - Date.now()) / 1000) });
+    },
+  });

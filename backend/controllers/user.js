@@ -1,5 +1,5 @@
 import userService from "../services/user.js";
-import authService from "../services/auth.js";
+import { selfUser } from "../serializers/index.js";
 
 const controller = {
     // Get all users with pagination, filtering, and search (admin only)
@@ -202,11 +202,13 @@ const controller = {
 
             const auctions = await userService.getUserStats(user.id, user.role);
 
+            // Public endpoint: email is only shown to the owner or an admin.
+            const maySeeEmail = req.user && (req.user.id === user.id || req.user.role === 'admin');
             res.status(200).json({
                 id: user.id,
                 username: user.username,
                 name: user.fullName,
-                email: user.email,
+                ...(maySeeEmail ? { email: user.email } : {}),
                 role: user.role,
                 avatar: user.avatarUrl,
                 bio: user.bio,
@@ -257,7 +259,7 @@ const controller = {
 
             res.status(200).json({
                 message: 'User updated successfully',
-                user: updatedUser
+                user: selfUser(updatedUser[0])
             });
         } catch (error) {
             console.error('Update current user error:', error);
@@ -285,7 +287,7 @@ const controller = {
             // 5. Success Response
             return res.status(200).json({
                 message: 'Avatar updated successfully',
-                user: updatedUser,
+                user: selfUser(updatedUser),
                 new_url: newAvatarUrl
             });
 

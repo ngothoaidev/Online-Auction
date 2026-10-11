@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import SafeHtml from '../../components/SafeHtml.jsx';
 import { FileText, Pencil, Save, X } from 'lucide-react';
 import auctionService from '../../services/auctionService';
 import RichTextEditor from '../../components/RichTextEditor';
@@ -132,7 +133,7 @@ export default function Description({ productId, isOwner = false }) {
           <div className="mt-6 pt-4 border-t border-[var(--border)]">
             <p className="text-sm font-medium text-[var(--text-muted)] mb-3">📜 Previous content (read-only):</p>
             <div className="prose-custom opacity-60 max-h-48 overflow-y-auto p-4 bg-[var(--bg)] rounded-lg border border-[var(--border)]">
-              <div dangerouslySetInnerHTML={{ __html: content }} />
+              <SafeHtml html={content} />
             </div>
           </div>
         </div>
@@ -141,10 +142,7 @@ export default function Description({ productId, isOwner = false }) {
       {/* View Mode */}
       {!isEditing && (
         <div className="prose-custom">
-            <div 
-                className="text-[var(--text-muted)]"
-                dangerouslySetInnerHTML={{ __html: content }}
-            />
+            <SafeHtml className="text-[var(--text-muted)]" html={content} />
         </div>
       )}
 

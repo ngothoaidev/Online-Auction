@@ -2,6 +2,8 @@ import express from "express";
 import bodyParser from "body-parser";
 import morgan from "morgan";
 import cors from "cors";
+import helmet from "helmet";
+import requestId from "./middleware/request_id.js";
 import session from "express-session";
 import passport from "./config/passport.js";
 import auctionRoute from "./routes/auction.js";
@@ -27,12 +29,14 @@ function requireEnv(name) {
 const app = express();
 
 // --- Dependencies ---
+app.use(requestId);
+app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } })); // API is consumed cross-origin by the SPA
 const allowedOrigins = (process.env.CORS_ORIGINS || process.env.FRONTEND_URL || 'http://localhost:5173').split(',').map((o) => o.trim());
 app.use(cors({ origin: allowedOrigins, credentials: true }));
 
 app.use(morgan('dev'));
 
-app.use(bodyParser.json());
+app.use(bodyParser.json({ limit: '100kb' }));
 
 // Session for Passport
 app.use(session({
@@ -64,8 +68,8 @@ app.use('/reviews', reviewRoute);
 app.use('/order', orderService);
 
 // --- Middleware ---
-app.use(error_handler);
 app.use(not_found);
+app.use(error_handler);
 
 
 export default app;
