@@ -1,16 +1,10 @@
 import auctionService from "../services/auction.js";
 import { commands } from "../services/auctionCommands.js";
-import { validKey } from "../services/idempotency.js";
-import { AppError } from "../utils/errors.js";
+import { keyFrom } from "../services/idempotency.js";
 import { streamAuction } from "../services/realtime.js";
 
 // Optional for now: the SPA starts sending one key per reviewed intent in T15, after which the header becomes mandatory.
-function idempotencyKey(req) {
-    const key = req.header('Idempotency-Key');
-    if (key === undefined) return null;
-    if (!validKey(key)) throw new AppError(400, 'VALIDATION_ERROR', 'Idempotency-Key must be 8-100 characters of [A-Za-z0-9._:-]');
-    return key;
-}
+const idempotencyKey = keyFrom;
 
 const controller = {
     
@@ -217,7 +211,7 @@ const controller = {
     // DELETE /auction/:id  — cancels the lot (soft); bids, history and orders are never hard-deleted
     delete: async function(req, res, next) {
         try {
-            const result = await commands.cancelListing({ auctionId: req.params.id, actor: req.user, reason: req.query.reason ?? req.body?.reason });
+            const result = await commands.cancelListing({ auctionId: Number(req.params.id), actor: req.user, reason: req.query.reason ?? req.body?.reason });
             res.json({ ...result, message: 'Cancelled successfully' });
         } catch (error) {
             next(error);

@@ -9,7 +9,8 @@ import { decideBid, recompute, BidRejection, minimumNextBid, extendedEndTime } f
 import { checkBidderEligibility, buyNowAvailable } from "../domain/eligibility.js";
 import { runIdempotent } from "./idempotency.js";
 import { enqueue } from "./outbox.js";
-import { paymentDueAt } from "../domain/orderTransitions.js";
+import { recordAdminAction } from "./adminAudit.js";
+import { paymentDueAt, need } from "../domain/orderTransitions.js";
 import { sanitizeRichText } from "../utils/sanitize.js";
 
 // Decision time comes from the DB clock AFTER the lock was acquired. "ended" is evaluated in SQL on the same instant,
@@ -253,11 +254,13 @@ export const commands = {
   },
 
   /** Cancel instead of delete: history, bids and any order are preserved; the lot stops being biddable. Seller (owner) or admin. */
-  async cancelListing({ auctionId, actor, reason }) {
-    return db.transaction(async (tx) => {
+  /** Cancel an active listing (owner or admin). Pass `outerTx` to join a larger transaction (report resolution). */
+  async cancelListing({ auctionId, actor, reason }, outerTx = null) {
+    const run = async (tx) => {
       const auction = await lockAuction(tx, auctionId);
       if (actor.role !== "admin" && auction.sellerId !== actor.id) throw new AppError(403, "FORBIDDEN", "Unauthorized");
       if (auction.status !== "active") throw new AppError(409, "AUCTION_NOT_ACTIVE", "Only active auctions can be cancelled");
+      if (actor.role === "admin" && auction.sellerId !== actor.id) reason = need(reason, "reason"); // moderation is always explained
       const clock = await dbClock(tx, auctionId);
       const sequence = auction.commandSequence + 1;
       const version = auction.version + 1;
@@ -270,7 +273,11 @@ export const commands = {
       await enqueue(tx, { aggregateType: "auction", aggregateId: auctionId, aggregateVersion: version, eventType: "auction.cancelled",
         publicPayload: { auctionId, version, status: "cancelled", currentPrice: toStr(fromDb(auction.currentPrice)), bidCount: auction.bidCount, endTime: auction.endTime, serverTime: clock.now },
         privatePayload: { sellerId: auction.sellerId, leaderId: auction.winnerId ?? null } });
+      if (actor.role === "admin") {
+        await recordAdminAction(tx, { actor, action: "listing.cancel", targetType: "listing", targetId: auctionId, reason, before: auction, after: { ...auction, status: "cancelled" } });
+      }
       return { message: "Auction cancelled", auctionId, version };
-    });
+    };
+    return outerTx ? run(outerTx) : db.transaction(run);
   },
 };

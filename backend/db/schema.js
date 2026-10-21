@@ -257,6 +257,40 @@ export const notifications = pgTable('notifications', {
   delivery: index('notifications_delivery_idx').on(t.status, t.createdAt).where(sql`channel = 'email'`),
 }));
 
+// Admin audit trail (T22). Append-only: a trigger (migration 0010) rejects UPDATE/DELETE. No FK on actor/target ids so
+// the trail outlives accounts. before/after hold an allowlisted subset of fields (services/adminAudit.js), never secrets.
+export const adminAudit = pgTable('admin_audit', {
+  id: serial('id').primaryKey(),
+  actorId: integer('actor_id').notNull(),
+  action: varchar('action', { length: 40 }).notNull(),
+  targetType: varchar('target_type', { length: 24 }).notNull(),
+  targetId: integer('target_id').notNull(),
+  reason: text('reason'),
+  before: jsonb('before'),
+  after: jsonb('after'),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => ({
+  byTarget: index('admin_audit_target_idx').on(t.targetType, t.targetId, t.createdAt),
+  byTime: index('admin_audit_time_idx').on(t.createdAt),
+}));
+
+// Listing reports (T22): one OPEN report per reporter per lot; an admin resolves all open reports of a lot together.
+export const listingReports = pgTable('listing_reports', {
+  id: serial('id').primaryKey(),
+  auctionId: integer('auction_id').notNull().references(() => auctions.id, { onDelete: 'cascade' }),
+  reporterId: integer('reporter_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  reason: varchar('reason', { length: 24 }).notNull(), // counterfeit | prohibited | misleading | offensive | other
+  details: text('details'),
+  status: varchar('status', { length: 12 }).notNull().default('open'), // open | actioned | dismissed
+  resolution: text('resolution'),
+  resolvedBy: integer('resolved_by'),
+  resolvedAt: timestamp('resolved_at', { withTimezone: true }),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => ({
+  oneOpen: uniqueIndex('listing_reports_open_uniq').on(t.auctionId, t.reporterId).where(sql`status = 'open'`),
+  byStatus: index('listing_reports_status_idx').on(t.status, t.createdAt),
+}));
+
 // Uploaded proofs / message images. Never public: read only through the order's participant-checked endpoint.
 export const mediaAssets = pgTable('media_assets', {
   id: uuid('id').primaryKey(),

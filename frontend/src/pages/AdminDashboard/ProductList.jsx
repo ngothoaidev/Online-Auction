@@ -108,7 +108,8 @@ export default function ProductList() {
   };
 
   const handleRemove = async (id, title) => {
-    if (!(await confirm({ title: 'Cancel this listing?', message: `"${title}" will stop accepting bids. Its bids and history are kept; this cannot be undone.`, confirmLabel: 'Cancel listing', tone: 'danger' }))) return;
+    const decision = await confirm({ title: 'Cancel this listing?', message: `"${title}" will stop accepting bids. Its bids and history are kept; this cannot be undone.`, confirmLabel: 'Cancel listing', tone: 'danger', reason: { label: 'Reason (shown in the audit log)', required: true } });
+    if (!decision) return;
     
     try {
       const token = localStorage.getItem('authToken');
@@ -116,7 +117,9 @@ export default function ProductList() {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
         },
+        body: JSON.stringify({ reason: decision.reason }),
       });
       
       if (!response.ok) throw new Error('Failed to delete product');

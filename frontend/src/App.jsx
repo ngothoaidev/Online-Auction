@@ -17,6 +17,8 @@ import CategoryList from './pages/AdminDashboard/CategoryList.jsx';
 import ProductList from './pages/AdminDashboard/ProductList.jsx';
 import UserList from './pages/AdminDashboard/UserList.jsx';
 import UpgradeRequests from './pages/AdminDashboard/UpgradeRequests.jsx';
+import Reports from './pages/AdminDashboard/Reports';
+import AuditLog from './pages/AdminDashboard/AuditLog';
 import NotFound from './pages/NotFound';
 import ForgetPassword from './pages/Auth/ForgetPassword';
 import BecomeSeller from './pages/BecomeSeller';
@@ -79,6 +81,8 @@ function App() {
               <Route path="products" element={<ProductList />} />
               <Route path="users" element={<UserList />} />
               <Route path="upgrades" element={<UpgradeRequests />} />
+              <Route path="reports" element={<Reports />} />
+              <Route path="audit" element={<AuditLog />} />
             </Route>
           </Route>
         </Route>

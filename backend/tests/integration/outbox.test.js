@@ -18,6 +18,8 @@ let nextId = 1;
 const event = (n = nextId++) => ({ aggregateType: "test", aggregateId: n, aggregateVersion: 1, eventType: "test.happened", publicPayload: { n } });
 const add = (count = 1) => db.transaction(async (tx) => { for (let i = 0; i < count; i++) await outbox.enqueue(tx, event()); });
 const rows = () => t.sql`SELECT * FROM outbox_events ORDER BY aggregate_id`;
+// measured on the DB clock: the container's clock may differ from the host's by tens of ms
+const dbDelayMs = async (id) => Number((await t.sql`SELECT EXTRACT(EPOCH FROM next_attempt_at - clock_timestamp()) * 1000 AS ms FROM outbox_events WHERE event_id = ${id}`)[0].ms);
 
 /** A consumer whose side effect is idempotent by eventId, plus a raw call log to observe redelivery. */
 function recorder() {
@@ -67,7 +69,7 @@ test("a failing consumer is retried with exponential backoff, then dead-lettered
   assert.equal(row.attempts, 1);
   assert.match(row.last_error, /^flaky: smtp down/);
   assert.equal(row.lease_until, null);
-  const delay = new Date(row.next_attempt_at) - Date.now();
+  const delay = await dbDelayMs(row.event_id);
   assert.ok(delay > 50_000 && delay <= 60_000, `backoff ${delay}ms`);
   assert.equal((await outbox.dispatch({ consumers: [flaky] })).claimed, 0, "not retried before its backoff");
   const gauges = await outbox.stats();
@@ -77,7 +79,7 @@ test("a failing consumer is retried with exponential backoff, then dead-lettered
   await t.sql`UPDATE outbox_events SET next_attempt_at = now()`;
   await outbox.dispatch({ consumers: [flaky], baseDelayMs: 60_000, maxAttempts: 3 });
   [row] = await rows();
-  const delay2 = new Date(row.next_attempt_at) - Date.now();
+  const delay2 = await dbDelayMs(row.event_id);
   assert.ok(delay2 > 110_000 && delay2 <= 120_000, `backoff ${delay2}ms`);
 
   // third failure reaches maxAttempts -> dead letter, never claimed again

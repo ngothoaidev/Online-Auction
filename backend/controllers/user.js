@@ -1,3 +1,5 @@
+import * as moderation from "../services/moderation.js";
+import { keyFrom } from "../services/idempotency.js";
 import userService from "../services/user.js";
 import { selfUser } from "../serializers/index.js";
 import { AppError } from "../utils/errors.js";
@@ -67,98 +69,32 @@ const controller = {
     },
 
     // Ban a user (admin only)
-    banUser: async function(req, res) {
+    banUser: async function(req, res, next) {
         try {
-            const { id } = req.params;
-            const user = await userService.getById(parseInt(id));
-
-            if (!user) {
-                return res.status(404).json({ message: 'User not found' });
-            }
-
-            if (user.role === 'admin') {
-                return res.status(400).json({ message: 'Cannot ban an admin user' });
-            }
-
-            if (user.status === 'banned') {
-                return res.status(400).json({ message: 'User is already banned' });
-            }
-
-            const bannedUser = await userService.banUser(parseInt(id));
-
-            res.status(200).json({
-                message: 'User has been banned successfully',
-                user: {
-                    id: bannedUser.id,
-                    username: bannedUser.username,
-                    status: bannedUser.status
-                }
-            });
+            const result = await moderation.banUser({ actor: req.user, key: keyFrom(req), userId: Number(req.params.id), reason: req.body?.reason });
+            res.status(200).json(result);
         } catch (error) {
-            console.error('Ban user error:', error);
-            res.status(500).json({ message: 'An error occurred. Please try again.' });
+            next(error);
         }
     },
 
     // Unban a user (admin only)
-    unbanUser: async function(req, res) {
+    unbanUser: async function(req, res, next) {
         try {
-            const { id } = req.params;
-            const user = await userService.getById(parseInt(id));
-
-            if (!user) {
-                return res.status(404).json({ message: 'User not found' });
-            }
-
-            if (user.status === 'active') {
-                return res.status(400).json({ message: 'User is not banned' });
-            }
-
-            const unbannedUser = await userService.unbanUser(parseInt(id));
-
-            res.status(200).json({
-                message: 'User has been unbanned successfully',
-                user: {
-                    id: unbannedUser.id,
-                    username: unbannedUser.username,
-                    status: unbannedUser.status
-                }
-            });
+            const result = await moderation.unbanUser({ actor: req.user, key: keyFrom(req), userId: Number(req.params.id), reason: req.body?.reason });
+            res.status(200).json(result);
         } catch (error) {
-            console.error('Unban user error:', error);
-            res.status(500).json({ message: 'An error occurred. Please try again.' });
+            next(error);
         }
     },
 
     // Update user role (admin only)
-    updateUserRole: async function(req, res) {
+    updateUserRole: async function(req, res, next) {
         try {
-            const { id } = req.params;
-            const { role } = req.body;
-
-            if (!['unauthorized', 'buyer', 'seller', 'admin'].includes(role)) {
-                return res.status(400).json({ message: 'Invalid role' });
-            }
-
-            const user = await userService.getById(parseInt(id));
-
-            if (!user) {
-                return res.status(404).json({ message: 'User not found' });
-            }
-
-            await userService.update(parseInt(id), { role });
-
-            res.status(200).json({
-                message: 'User role updated successfully',
-                user: {
-                    id: user.id,
-                    username: user.username,
-                    role: role
-                }
-            });
+            const result = await moderation.changeRole({ actor: req.user, key: keyFrom(req), userId: Number(req.params.id), role: req.body?.role, reason: req.body?.reason });
+            res.status(200).json(result);
         } catch (error) {
-            console.error('Update user role error:', error);
-            res.status(500).json({ message: 'An error occurred. Please try again.' });
+            next(error);
         }
     },
 

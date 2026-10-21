@@ -4,7 +4,7 @@ import auctionService from "../services/auction.js";
 import { sendEmail } from "../utils/email.js";
 import { transitionOrder } from "../services/orderCommands.js";
 import { submitReview } from "../services/reviewCommands.js";
-import { validKey } from "../services/idempotency.js";
+import { keyFrom } from "../services/idempotency.js";
 import { AppError } from "../utils/errors.js";
 import { storeOrderUpload, readOrderAsset } from "../services/media.js";
 import * as payments from "../services/payments.js";
@@ -18,12 +18,7 @@ async function participantOrder(req) {
 }
 
 const asActor = (user) => ({ type: 'user', id: user.id, role: user.role });
-function idempotencyKey(req) {
-    const key = req.header('Idempotency-Key');
-    if (key === undefined) return null;
-    if (!validKey(key)) throw new AppError(400, 'VALIDATION_ERROR', 'Idempotency-Key must be 8-100 characters of [A-Za-z0-9._:-]');
-    return key;
-}
+const idempotencyKey = keyFrom;
 
 const controller = {
     // Get order by auction ID (for product detail page)

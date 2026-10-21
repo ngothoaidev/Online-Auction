@@ -21,6 +21,7 @@ import { servePublicMedia } from "./middleware/localUpload.js";
 import systemRoute from "./routes/system.js";
 import paymentRoute from "./routes/payments.js";
 import notificationRoute from "./routes/notifications.js";
+import moderationRoute from "./routes/moderation.js";
 import paymentsController from "./controllers/payments.js";
 
 // import productRoute from "./routes/product.routes.js";
@@ -76,6 +77,7 @@ app.use('/reviews', reviewRoute);
 app.use('/order', orderService);
 app.use('/payments', paymentRoute);
 app.use('/notifications', notificationRoute);
+app.use('/admin', moderationRoute);
 
 // --- Middleware ---
 app.use(not_found);

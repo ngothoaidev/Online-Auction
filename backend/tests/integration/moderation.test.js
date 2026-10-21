@@ -160,7 +160,7 @@ test("cancelling a lot never deletes it: bids stay, bidding stops, owner or admi
   assert.equal((await bid(a, 2, 9000)).body.code, "AUCTION_NOT_ACTIVE");
   assert.equal((await t.call("DELETE", `/auction/${a}`, { token: sellerToken })).status, 409, "already cancelled");
   const b = await newAuction();
-  assert.equal((await t.call("DELETE", `/auction/${b}`, { token: adminToken })).status, 200, "admin moderation path");
+  assert.equal((await t.call("DELETE", `/auction/${b}?reason=policy%20violation`, { token: adminToken })).status, 200, "admin moderation path");
 });
 
 test("a lot with a transaction cannot be cancelled or deleted", async () => {

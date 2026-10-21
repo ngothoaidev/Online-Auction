@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { requireAuth, requireSeller, requireVerified } from "../middleware/auth.js";
 import auctionController from "../controllers/auction.js"
+import moderationController from "../controllers/moderation.js";
 import { validate, idParam } from "../validation/index.js";
 import { createAuctionBody, updateAuctionBody, descriptionBody, commentBody, bidBody, bidHistoryQuery } from "../validation/auction.js";
 import { topQuery, profileQuery, rejectQuery } from "../validation/search.js";
@@ -56,6 +57,9 @@ route.delete('/:id', validate({ params: idParam }), auctionController.delete);
 
 // POST: Place a bid (Auto Bidding supported)
 route.post('/:id/bid', requireVerified, actionLimiter('bid'), validate({ params: idParam, body: bidBody }), auctionController.placeBid);
+
+// POST: report a listing to the moderators (one open report per user per lot)
+route.post('/:id/reports', requireVerified, actionLimiter('comment'), validate({ params: idParam }), moderationController.createReport);
 
 //Route đăng comment
 route.post('/:id/comments', requireVerified, actionLimiter('comment'), validate({ params: idParam, body: commentBody }), auctionController.postComment);

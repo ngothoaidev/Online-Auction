@@ -121,7 +121,8 @@ export default function UserList({ setActiveTab }) {
   };
 
   const handleBanUser = async (userId) => {
-    if (!(await confirm({ title: 'Ban this user?', message: 'They are signed out everywhere and cannot bid, list or order until unbanned.', confirmLabel: 'Ban user', tone: 'danger' }))) return;
+    const decision = await confirm({ title: 'Ban this user?', message: 'They are signed out everywhere and cannot bid, list or order until unbanned.', confirmLabel: 'Ban user', tone: 'danger', reason: { label: 'Reason for the ban', required: true } });
+    if (!decision) return;
     
     try {
       setActionLoading(true);
@@ -130,7 +131,9 @@ export default function UserList({ setActiveTab }) {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
         },
+        body: JSON.stringify({ reason: decision.reason }),
       });
 
       if (response.ok) {
@@ -149,7 +152,8 @@ export default function UserList({ setActiveTab }) {
   };
 
   const handleUnbanUser = async (userId) => {
-    if (!(await confirm({ title: 'Unban this user?', message: 'They can sign in and trade again.', confirmLabel: 'Unban' }))) return;
+    const decision = await confirm({ title: 'Unban this user?', message: 'They can sign in and trade again.', confirmLabel: 'Unban', reason: { label: 'Note' } });
+    if (!decision) return;
     
     try {
       setActionLoading(true);
@@ -158,7 +162,9 @@ export default function UserList({ setActiveTab }) {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
         },
+        body: JSON.stringify({ reason: decision.reason }),
       });
 
       if (response.ok) {

@@ -46,7 +46,8 @@ export default function UpgradeRequests() {
   );
 
   const handleApprove = async (id) => {
-    if (!(await confirm({ title: 'Approve seller request?', message: 'The user will be able to create listings.', confirmLabel: 'Approve' }))) return;
+    const decision = await confirm({ title: 'Approve seller request?', message: 'The user will be able to create listings.', confirmLabel: 'Approve', reason: { label: 'Note' } });
+    if (!decision) return;
     
     setActionLoading(id);
     try {
@@ -57,6 +58,7 @@ export default function UpgradeRequests() {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
+        body: JSON.stringify({ note: decision.reason }),
       });
 
       if (!response.ok) {
@@ -76,7 +78,8 @@ export default function UpgradeRequests() {
   };
 
   const handleReject = async (id) => {
-    if (!(await confirm({ title: 'Reject seller request?', message: 'The user keeps their buyer account and can apply again later.', confirmLabel: 'Reject', tone: 'danger' }))) return;
+    const decision = await confirm({ title: 'Reject seller request?', message: 'The user keeps their buyer account and can apply again after 7 days.', confirmLabel: 'Reject', tone: 'danger', reason: { label: 'Reason' } });
+    if (!decision) return;
     
     setActionLoading(id);
     try {
@@ -87,6 +90,7 @@ export default function UpgradeRequests() {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
+        body: JSON.stringify({ reason: decision.reason }),
       });
 
       if (!response.ok) {

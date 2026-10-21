@@ -6,6 +6,7 @@ import BiddingSection from './BiddingSection';
 import Description from './Description';
 import CommentsSection from './CommentsSection';
 import BidHistory from './BidHistory';
+import ReportListing from './ReportListing';
 import { EmptyState, Skeleton, Button } from '../../components/ui';
 
 export default function ProductDetail() {
@@ -51,6 +52,7 @@ export default function ProductDetail() {
           <div className="lg:sticky lg:top-24 space-y-6">
             <BiddingSection product={product} ended={ended} onChanged={onChanged} clockOffset={clockOffset} connection={connection} />
             <BidHistory productId={id} sellerId={product.sellerId} refreshKey={refreshKey} active={!ended} onChanged={() => refresh()} />
+            {user && me !== product.sellerId && <ReportListing auctionId={product.id} />}
           </div>
         </div>
       </div>

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
-import { Users, FolderTree, ShoppingBag, UserPlus, LogOut, Home, Menu } from 'lucide-react';
+import { Users, FolderTree, ShoppingBag, UserPlus, LogOut, Home, Menu, Flag, ScrollText } from 'lucide-react';
 import { useNav } from '../../hooks/useNavigate.js';
 import { useAuth } from '../../contexts/AuthContext.jsx';
 import { Dialog, IconButton } from '../../components/ui';
@@ -11,6 +11,8 @@ export const ADMIN_NAV = [
   { to: 'products', label: 'Listings', icon: ShoppingBag },
   { to: 'users', label: 'Users', icon: Users },
   { to: 'upgrades', label: 'Seller requests', icon: UserPlus },
+  { to: 'reports', label: 'Reports', icon: Flag },
+  { to: 'audit', label: 'Audit log', icon: ScrollText },
 ];
 
 const linkClass = ({ isActive }) =>

@@ -13,6 +13,14 @@ export function hashPayload(value) {
 
 export const validKey = (key) => typeof key === "string" && /^[A-Za-z0-9._:-]{8,100}$/.test(key);
 
+/** Optional `Idempotency-Key` request header: null when absent, 400 when malformed. */
+export function keyFrom(req) {
+  const key = req.header("Idempotency-Key");
+  if (key === undefined) return null;
+  if (!validKey(key)) throw new AppError(400, "VALIDATION_ERROR", "Idempotency-Key must be 8-100 characters of [A-Za-z0-9._:-]");
+  return key;
+}
+
 /**
  * Run `fn(tx)` at most once per (actor, operation, key), inside the caller's transaction `tx`.
  *  - The key row is claimed with INSERT .. ON CONFLICT DO NOTHING in the SAME transaction as the business writes, so a
