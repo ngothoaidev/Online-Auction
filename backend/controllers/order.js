@@ -7,6 +7,7 @@ import { submitReview } from "../services/reviewCommands.js";
 import { validKey } from "../services/idempotency.js";
 import { AppError } from "../utils/errors.js";
 import { storeOrderUpload, readOrderAsset } from "../services/media.js";
+import * as payments from "../services/payments.js";
 
 /** Load the order and make sure the caller is its buyer or seller (404 unknown, 403 outsider). */
 async function participantOrder(req) {
@@ -74,6 +75,7 @@ const controller = {
                     buyerReviewSubmitted,
                     sellerReviewSubmitted,
                 },
+                payment: await payments.summary(order),
                 reviews: reviews.map(r => ({
                     ...r.review,
                     reviewer: r.reviewer
@@ -114,6 +116,7 @@ const controller = {
 
             res.status(200).json({
                 order: orderDetails,
+                payment: await payments.summary(order),
                 reviews: reviews.map(r => ({
                     ...r.review,
                     reviewer: r.reviewer
@@ -160,6 +163,16 @@ const controller = {
                 payload: req.body ?? {}, expectedVersion: req.body?.expectedVersion, key: idempotencyKey(req),
             });
             res.set('Idempotent-Replayed', String(Boolean(result.replayed))).status(200).json({ message: 'Payment submitted successfully', order: result.body.order });
+        } catch (error) {
+            next(error);
+        }
+    },
+
+    // Step 1 (online): buyer opens a payment attempt with the configured adapter (mock: no real money)
+    createPaymentAttempt: async function(req, res, next) {
+        try {
+            const result = await payments.createAttempt({ orderId: parseInt(req.params.id), actor: asActor(req.user), payload: req.body ?? {}, key: idempotencyKey(req) });
+            res.set('Idempotent-Replayed', String(Boolean(result.replayed))).status(result.status).json(result.body);
         } catch (error) {
             next(error);
         }

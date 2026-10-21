@@ -1,6 +1,7 @@
 import { defineConfig } from '@playwright/test'
 
-// Real journeys against API + seeded DB (see compose.yaml). Start the API with AUTH_RATE_LIMIT_MAX raised: specs log in often.
+// Real journeys against API + seeded DB (see compose.yaml). Start the API with AUTH_/BID_/UPLOAD_RATE_LIMIT_MAX raised:
+// specs log in, bid and list lots often (they list their own lots, so the seed is not used up).
 export default defineConfig({
   testDir: './e2e',
   workers: 1, // every spec shares one seeded dev DB (same lots, same buyers): parallel files race each other's bids

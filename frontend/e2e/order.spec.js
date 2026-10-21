@@ -1,20 +1,14 @@
 import { test, expect } from '@playwright/test'
+import { API, PNG, as, tokenOf, freshBuyNowLot } from './fixtures.js'
 
 // Real browser + API: Buy Now creates the order, the buyer uploads a private proof and submits payment details,
-// the seller then sees the proof through the protected endpoint. Consumes one seeded Buy Now lot per run.
-const API = process.env.E2E_API_URL || 'http://localhost:3000'
-const PNG = Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), Buffer.alloc(200, 5)])
-
-const tokenOf = async (request, identifier) => (await (await request.post(`${API}/auth/login`, { data: { identifier, password: 'Passw0rd!demo' } })).json()).token
-
+// the seller then sees the proof through the protected endpoint. Lists its own lot, so it never runs out of seed data.
 test('buy now -> manual payment with a private proof upload -> seller can open the proof', async ({ browser, request }) => {
   const buyer = await tokenOf(request, 'demo_buyer2')
   const seller = await tokenOf(request, 'demo_seller')
-  const lots = (await (await request.get(`${API}/search?status=active&sortBy=timeNewlyListed`, { headers: { Authorization: `Bearer ${buyer}` } })).json()).data
-  const lot = lots.find((l) => l.buyNowPrice && l.status === 'active' && new Date(l.endTime) - Date.now() > 10 * 60 * 1000)
-  test.skip(!lot, 'no active Buy Now lot left in the seed (re-run npm run db:seed on a fresh DB)')
+  const lot = { id: await freshBuyNowLot(request, seller) }
 
-  const bought = await request.post(`${API}/auction/${lot.id}/buy-now`, { headers: { Authorization: `Bearer ${buyer}`, 'Idempotency-Key': `e2e-buy-${Date.now()}` } })
+  const bought = await request.post(`${API}/auction/${lot.id}/buy-now`, { headers: { ...as(buyer), 'Idempotency-Key': `e2e-buy-${Date.now()}` } })
   expect(bought.status(), await bought.text()).toBe(200)
 
   const ctx = await browser.newContext()

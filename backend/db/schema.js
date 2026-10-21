@@ -196,6 +196,43 @@ export const orders = pgTable('orders', {
   closeReason: varchar('close_reason', { length: 32 }),
 });
 
+// Payment adapter (T20). One row per checkout attempt; amount/currency are copied from the order at creation (server truth).
+// `status` is OUR processing state; `providerStatus` is what the provider reports (for the mock adapter it is the
+// provider's own store, so a lost webhook can be recovered by reconciliation).
+export const paymentAttempts = pgTable('payment_attempts', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  orderId: integer('order_id').notNull().references(() => orders.id, { onDelete: 'cascade' }),
+  buyerId: integer('buyer_id').notNull().references(() => users.id),
+  provider: varchar('provider', { length: 16 }).notNull(),
+  reference: varchar('reference', { length: 64 }).notNull(),
+  amount: decimal('amount', { precision: 15, scale: 0 }).notNull(),
+  currency: varchar('currency', { length: 3 }).notNull().default('VND'),
+  status: varchar('status', { length: 16 }).notNull().default('created'), // created | succeeded | failed | exception
+  providerStatus: varchar('provider_status', { length: 16 }).notNull().default('pending'), // pending | succeeded | failed
+  exceptionReason: varchar('exception_reason', { length: 64 }),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => ({
+  reference: uniqueIndex('payment_attempts_reference_uniq').on(t.provider, t.reference),
+  byOrder: index('payment_attempts_order_idx').on(t.orderId, t.createdAt),
+  open: index('payment_attempts_open_idx').on(t.updatedAt).where(sql`status = 'created'`),
+}));
+
+// Every provider event ever received, deduplicated by the provider's event id (duplicates are acknowledged, never re-applied).
+export const paymentEvents = pgTable('payment_events', {
+  id: serial('id').primaryKey(),
+  provider: varchar('provider', { length: 16 }).notNull(),
+  eventId: varchar('event_id', { length: 100 }).notNull(),
+  reference: varchar('reference', { length: 64 }).notNull(),
+  type: varchar('type', { length: 32 }).notNull(),
+  amount: decimal('amount', { precision: 15, scale: 0 }),
+  currency: varchar('currency', { length: 3 }),
+  outcome: varchar('outcome', { length: 64 }), // applied | failed_recorded | ignored | exception:<reason>
+  receivedAt: timestamp('received_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => ({
+  eventId: uniqueIndex('payment_events_event_uniq').on(t.provider, t.eventId),
+}));
+
 // Uploaded proofs / message images. Never public: read only through the order's participant-checked endpoint.
 export const mediaAssets = pgTable('media_assets', {
   id: uuid('id').primaryKey(),

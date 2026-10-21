@@ -6,7 +6,7 @@ export const paymentDueAt = (from) => new Date(new Date(from).getTime() + PAYMEN
 
 export const TERMINAL = new Set(["completed", "cancelled", "payment_expired"]);
 
-const need = (value, field) => {
+export const need = (value, field) => {
   if (typeof value !== "string" || value.trim() === "") throw new AppError(400, "VALIDATION_ERROR", `${field} is required`);
   return value.trim();
 };

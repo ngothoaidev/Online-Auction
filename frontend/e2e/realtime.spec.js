@@ -1,7 +1,8 @@
 import { test, expect } from '@playwright/test'
+import { API, tokenOf, freshLot } from './fixtures.js'
 
-// Needs API (:3000) + Vite (:5173) against the seeded dev DB. Two real browser contexts, bids sent through the real API.
-const API = process.env.E2E_API_URL || 'http://localhost:3000'
+// Needs API (:3000) + Vite (:5173) against the seeded dev DB (demo users). Two real browser contexts, bids sent through
+// the real API, on a lot this spec lists itself (opening bid by demo_buyer1) so other specs' bids never interfere.
 
 const login = async (request, identifier) => {
   const body = await (await request.post(`${API}/auth/login`, { data: { identifier, password: 'Passw0rd!demo' } })).json()
@@ -11,10 +12,8 @@ const buyers = (request) => Promise.all([login(request, 'demo_buyer1'), login(re
 const vnd = (digits) => `${BigInt(digits).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.')} ₫`
 
 async function openLot(request) {
-  const lots = await (await request.get(`${API}/auction/top?sortBy=mostBids`)).json()
-  const lot = lots.find((l) => l.status === 'active' && l.bidCount > 0 && new Date(l.endTime) - Date.now() > 10 * 60_000)
-  expect(lot, 'seed must contain an active lot with bids').toBeTruthy()
-  return (await (await request.get(`${API}/auction/${lot.id}`)).json())
+  const id = await freshLot(request, await tokenOf(request, 'demo_seller'), { openingBid: { token: await tokenOf(request, 'demo_buyer1'), amount: '1500000' } })
+  return (await (await request.get(`${API}/auction/${id}`)).json())
 }
 
 /** Bid as whoever is NOT leading: win or get outbid, the public price moves either way. */

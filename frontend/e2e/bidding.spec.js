@@ -1,19 +1,11 @@
 import { test, expect } from '@playwright/test'
+import { API, tokenOf as login, freshLot } from './fixtures.js'
 
-// Needs API (:3000) + Vite (:5173) against the seeded dev DB (npm run db:seed in backend). Real browser, real API.
-const API = process.env.E2E_API_URL || 'http://localhost:3000'
-
-async function login(request, identifier) {
-  const res = await request.post(`${API}/auth/login`, { data: { identifier, password: 'Passw0rd!demo' } })
-  expect(res.ok()).toBeTruthy()
-  return (await res.json()).token
-}
-
+// Needs API (:3000) + Vite (:5173) against the seeded dev DB (demo users). Real browser, real API.
+// Each test lists its own lot with an opening bid by demo_buyer1 (maximum 1.500.000 ₫), so state never leaks between specs.
 async function lotWithBids(request) {
-  const lots = await (await request.get(`${API}/auction/top?sortBy=mostBids`)).json()
-  const lot = lots.find((l) => l.bidCount > 0 && l.status === 'active')
-  expect(lot, 'seed must contain a lot with bids').toBeTruthy()
-  return lot
+  const id = await freshLot(request, await login(request, 'demo_seller'), { openingBid: { token: await login(request, 'demo_buyer1'), amount: '1500000' } })
+  return (await (await request.get(`${API}/auction/${id}`)).json())
 }
 
 test('guest sees the lot honestly and is told to sign in (no active bid form)', async ({ page, request }) => {

@@ -51,6 +51,9 @@ route.get('/:id', orderController.getOrderDetails);
 // POST: Submit payment (buyer - Step 1)
 route.post('/:id/payment', orderController.submitPayment);
 
+// POST: Start (or resume) an online payment attempt - mock adapter, no real money (buyer)
+route.post('/:id/payment-attempts', validate({ params: idParam }), orderController.createPaymentAttempt);
+
 // POST: Confirm payment and submit shipping (seller - Step 2)
 route.post('/:id/confirm', orderController.confirmPayment);
 

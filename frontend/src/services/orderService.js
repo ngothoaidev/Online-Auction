@@ -1,3 +1,5 @@
+import { apiFetch } from './apiClient.js';
+
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 const getAuthHeaders = () => {
@@ -189,5 +191,10 @@ orderService.submitShipping = async (orderId, data) => {
   const response = await fetch(`${API_BASE_URL}/order/${orderId}/shipping`, { method: 'POST', headers: getAuthHeaders(), body: JSON.stringify(data) });
   return handleResponse(response);
 };
+
+// --- online payment through the configured adapter (T20; mock = demo, no real money) ---
+orderService.createPaymentAttempt = (orderId, data) => apiFetch(`/order/${orderId}/payment-attempts`, { method: 'POST', body: data, auth: 'required' });
+orderService.simulateMockPayment = (reference, outcome, deliver = true) =>
+  apiFetch(`/payments/mock/${encodeURIComponent(reference)}/simulate`, { method: 'POST', body: { outcome, deliver }, auth: 'required' });
 
 export default orderService;

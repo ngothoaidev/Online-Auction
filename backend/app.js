@@ -19,6 +19,8 @@ import orderService from "./routes/order.js";
 import authenticate from "./middleware/auth.js";
 import { servePublicMedia } from "./middleware/localUpload.js";
 import systemRoute from "./routes/system.js";
+import paymentRoute from "./routes/payments.js";
+import paymentsController from "./controllers/payments.js";
 
 // import productRoute from "./routes/product.routes.js";
 
@@ -36,6 +38,9 @@ const allowedOrigins = (process.env.CORS_ORIGINS || process.env.FRONTEND_URL || 
 app.use(cors({ origin: allowedOrigins, credentials: true }));
 
 app.use(morgan('dev'));
+
+// Payment webhooks need the exact raw bytes for signature verification, so they are mounted before the JSON parser.
+app.post('/payments/webhook/:provider', express.raw({ type: '*/*', limit: '64kb' }), paymentsController.webhook);
 
 app.use(bodyParser.json({ limit: '100kb' }));
 
@@ -68,6 +73,7 @@ app.use('/seller', sellerRequestRoute);
 app.use('/users', userRoute);
 app.use('/reviews', reviewRoute);
 app.use('/order', orderService);
+app.use('/payments', paymentRoute);
 
 // --- Middleware ---
 app.use(not_found);
