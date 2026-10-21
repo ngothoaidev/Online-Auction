@@ -10,6 +10,7 @@ import { checkBidderEligibility, buyNowAvailable } from "../domain/eligibility.j
 import { runIdempotent } from "./idempotency.js";
 import { enqueue } from "./outbox.js";
 import { recordAdminAction } from "./adminAudit.js";
+import { observe } from "../utils/metrics.js";
 import { paymentDueAt, need } from "../domain/orderTransitions.js";
 import { sanitizeRichText } from "../utils/sanitize.js";
 
@@ -23,7 +24,9 @@ async function dbClock(tx, auctionId) {
 
 /** The auction row, locked for the rest of the transaction (all bid/Buy Now/moderation/settlement commands share this lock). */
 async function lockAuction(tx, auctionId) {
+  const waited = performance.now();
   const [auction] = await tx.select().from(auctions).where(eq(auctions.id, auctionId)).for("update");
+  observe("auction_lock_wait_ms", {}, performance.now() - waited); // contention on one hot lot shows up here first
   if (!auction) throw new AppError(404, "NOT_FOUND", "Auction not found");
   return auction;
 }

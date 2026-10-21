@@ -1,9 +1,10 @@
 import express from "express";
 import bodyParser from "body-parser";
-import morgan from "morgan";
 import cors from "cors";
 import helmet from "helmet";
 import requestId from "./middleware/request_id.js";
+import observeRequests from "./middleware/observe.js";
+import healthRoute from "./routes/health.js";
 import session from "express-session";
 import passport from "./config/passport.js";
 import auctionRoute from "./routes/auction.js";
@@ -24,7 +25,6 @@ import notificationRoute from "./routes/notifications.js";
 import moderationRoute from "./routes/moderation.js";
 import paymentsController from "./controllers/payments.js";
 
-// import productRoute from "./routes/product.routes.js";
 
 function requireEnv(name) {
     if (!process.env[name]) throw new Error(`Missing required environment variable ${name}`);
@@ -39,7 +39,9 @@ app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } })); // A
 const allowedOrigins = (process.env.CORS_ORIGINS || process.env.FRONTEND_URL || 'http://localhost:5173').split(',').map((o) => o.trim());
 app.use(cors({ origin: allowedOrigins, credentials: true }));
 
-app.use(morgan('dev'));
+// JSON access log + HTTP metrics; liveness/readiness/metrics before sessions/auth (cheap, no cookies)
+app.use(observeRequests);
+app.use(healthRoute);
 
 // Payment webhooks need the exact raw bytes for signature verification, so they are mounted before the JSON parser.
 app.post('/payments/webhook/:provider', express.raw({ type: '*/*', limit: '64kb' }), paymentsController.webhook);

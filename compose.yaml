@@ -1,4 +1,7 @@
-# Local development stack. No real credentials/providers; test DB is a separate database.
+# Local stack: PostgreSQL + API + worker + Vite. No real credentials or providers (emails stay in memory, payments are
+# the mock gateway). `docker compose up` -> http://localhost:5173 ; demo users in README.
+# node_modules live in container volumes, never in the bind-mounted source folders: installing Linux binaries into
+# ./backend/node_modules would break a Windows/macOS host checkout (native modules such as bcrypt).
 services:
   db:
     image: postgres:16-alpine
@@ -19,40 +22,57 @@ services:
   api:
     image: node:22-alpine
     working_dir: /app
-    command: sh -c "npm ci --no-audit && npm run db:migrate && npm start"
-    environment:
+    # install -> migrate -> idempotent demo seed -> serve
+    command: sh -c "npm ci --no-audit --no-fund && npm run db:migrate && npm run db:seed && npm start"
+    environment: &backend-env
       DATABASE_URL: postgres://auction:auction@db:5432/auction
       PORT: "3000"
       NODE_ENV: development
       JWT_SECRET: dev-only-jwt-secret
       SESSION_SECRET: dev-only-session-secret
       FRONTEND_URL: http://localhost:5173
-    volumes: ["./backend:/app"]
+      EMAIL_TRANSPORT: local
+      PAYMENT_ADAPTER: mock
+    volumes:
+      - ./backend:/app
+      - backend_modules:/app/node_modules
     ports: ["3000:3000"]
     depends_on:
       db: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3000/health/ready > /dev/null || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 60
+      start_period: 20s
 
   worker:
     image: node:22-alpine
     working_dir: /app
-    command: sh -c "npm ci --no-audit && npm run worker"
+    command: sh -c "npm run worker"   # reuses the modules the api installed (same volume)
     environment:
-      DATABASE_URL: postgres://auction:auction@db:5432/auction
-      JWT_SECRET: dev-only-jwt-secret
-      EMAIL_TRANSPORT: local
-    volumes: ["./backend:/app"]
+      <<: *backend-env
+      WORKER_POLL_MS: "2000"
+    volumes:
+      - ./backend:/app
+      - backend_modules:/app/node_modules
     depends_on:
-      db: { condition: service_healthy }
-      api: { condition: service_started }
+      api: { condition: service_healthy }
 
   frontend:
     image: node:22-alpine
     working_dir: /app
-    command: sh -c "npm ci --no-audit || npm install --no-audit; npm run dev -- --host"
+    command: sh -c "npm ci --no-audit --no-fund && npm run dev -- --host"
     environment:
       VITE_API_URL: http://localhost:3000
-    volumes: ["./frontend:/app"]
+    volumes:
+      - ./frontend:/app
+      - frontend_modules:/app/node_modules
     ports: ["5173:5173"]
+    depends_on:
+      api: { condition: service_healthy }
 
 volumes:
   pgdata:
+  backend_modules:
+  frontend_modules:

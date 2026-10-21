@@ -291,6 +291,15 @@ export const listingReports = pgTable('listing_reports', {
   byStatus: index('listing_reports_status_idx').on(t.status, t.createdAt),
 }));
 
+// Worker liveness (T24): each worker process upserts its row after every pass; /health/ready and /metrics read it.
+export const workerHeartbeats = pgTable('worker_heartbeats', {
+  workerId: varchar('worker_id', { length: 100 }).primaryKey(), // host:pid
+  startedAt: timestamp('started_at', { withTimezone: true }).notNull().defaultNow(),
+  lastBeatAt: timestamp('last_beat_at', { withTimezone: true }).notNull().defaultNow(),
+  lastPassMs: integer('last_pass_ms'),
+  lastPassFailures: integer('last_pass_failures').notNull().default(0),
+});
+
 // Uploaded proofs / message images. Never public: read only through the order's participant-checked endpoint.
 export const mediaAssets = pgTable('media_assets', {
   id: uuid('id').primaryKey(),

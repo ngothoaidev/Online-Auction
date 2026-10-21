@@ -9,17 +9,29 @@ import * as outbox from "./jobs/dispatchOutbox.js";
 import * as paymentReconcile from "./jobs/reconcilePayments.js";
 import * as paymentReminders from "./jobs/paymentReminders.js";
 import { stats as outboxStats } from "./services/outbox.js";
-import { client } from "./db/index.js";
+import os from "node:os";
+import { sql } from "drizzle-orm";
+import db, { client } from "./db/index.js";
+import logger from "./utils/log.js";
 
 const POLL_MS = Number(process.env.WORKER_POLL_MS || 5000);
 const jobs = [settlement, paymentReconcile, paymentExpiry, paymentReminders, mediaCleanup, outbox];
 let stopping = false;
 let inflight = Promise.resolve();
 let lastBeat = Date.now();
+const workerId = `${os.hostname()}:${process.pid}`.slice(0, 100);
 
-const log = (msg, extra = {}) => console.log(JSON.stringify({ ts: new Date().toISOString(), component: "worker", msg, ...extra }));
+const log = (msg, extra = {}) => (extra.error || /failure|crashed/.test(msg) ? logger.warn : logger.info)(msg, { component: "worker", workerId, ...extra });
+
+/** Liveness for /health/ready and /metrics: one row per worker process, refreshed after every pass. */
+const beat = (passMs, failures) => db.execute(sql`
+  INSERT INTO worker_heartbeats (worker_id, last_beat_at, last_pass_ms, last_pass_failures) VALUES (${workerId}, clock_timestamp(), ${passMs}, ${failures})
+  ON CONFLICT (worker_id) DO UPDATE SET last_beat_at = clock_timestamp(), last_pass_ms = ${passMs}, last_pass_failures = ${failures}`)
+  .catch((error) => log("heartbeat write failed", { error: error.message }));
 
 async function tick() {
+  const started = performance.now();
+  let failures = 0;
   for (const job of jobs) {
     try {
       const out = await job.run();
@@ -29,11 +41,14 @@ async function tick() {
       if (settled > 0 || failed.length > 0 || conflicts.length > 0) log(`${job.name} pass`, { settled, failed: failed.length, conflicts: conflicts.length });
       conflicts.forEach((c) => log(`${job.name} needs review`, c));
       failed.forEach((f) => log(`${job.name} failure`, f));
+      failures += failed.length;
     } catch (error) {
+      failures += 1;
       log(`${job.name} crashed`, { error: error.message });
     }
   }
   lastBeat = Date.now();
+  await beat(Math.round(performance.now() - started), failures);
 }
 
 async function loop() {
