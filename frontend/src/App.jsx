@@ -21,6 +21,7 @@ import NotFound from './pages/NotFound';
 import ForgetPassword from './pages/Auth/ForgetPassword';
 import BecomeSeller from './pages/BecomeSeller';
 import OrderCompletion from './pages/OrderCompletion';
+import Notifications from './pages/Notifications';
 import Reviews from './pages/Reviews';
 import UserReviews from './pages/UserReviews';
 
@@ -51,6 +52,7 @@ function App() {
           <Route element={<ProtectedRoute />}>
             <Route path="/verify-account" element={<VerifyAccount />} />
             <Route path="/order/:auctionId" element={<OrderCompletion />} />
+            <Route path="/notifications" element={<Notifications />} />
           </Route>
 
           {/* --- BUYER ONLY --- */}

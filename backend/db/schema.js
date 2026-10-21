@@ -233,6 +233,30 @@ export const paymentEvents = pgTable('payment_events', {
   eventId: uniqueIndex('payment_events_event_uniq').on(t.provider, t.eventId),
 }));
 
+// Notifications (T21): one row per (recipient, channel, logical notification). `dedupe_key` is `<outbox eventId>:<kind>`,
+// so a redelivered event never creates a second row. in_app rows are read by their recipient only; email rows carry
+// delivery status (pending | sent | failed | skipped) and the last error.
+export const notifications = pgTable('notifications', {
+  id: serial('id').primaryKey(),
+  recipientId: integer('recipient_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  channel: varchar('channel', { length: 8 }).notNull(), // in_app | email
+  kind: varchar('kind', { length: 32 }).notNull(),
+  dedupeKey: varchar('dedupe_key', { length: 160 }).notNull(),
+  title: varchar('title', { length: 300 }).notNull(),
+  body: text('body').notNull(),
+  link: varchar('link', { length: 200 }),
+  status: varchar('status', { length: 12 }).notNull(),
+  attempts: integer('attempts').notNull().default(0),
+  lastError: text('last_error'),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  readAt: timestamp('read_at', { withTimezone: true }),
+  sentAt: timestamp('sent_at', { withTimezone: true }),
+}, (t) => ({
+  logical: uniqueIndex('notifications_logical_uniq').on(t.recipientId, t.channel, t.dedupeKey),
+  inbox: index('notifications_inbox_idx').on(t.recipientId, t.channel, t.createdAt),
+  delivery: index('notifications_delivery_idx').on(t.status, t.createdAt).where(sql`channel = 'email'`),
+}));
+
 // Uploaded proofs / message images. Never public: read only through the order's participant-checked endpoint.
 export const mediaAssets = pgTable('media_assets', {
   id: uuid('id').primaryKey(),

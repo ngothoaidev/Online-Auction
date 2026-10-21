@@ -71,19 +71,23 @@ const ctaButton = (text, url, color = '#E0B84C') => `
 `;
 
 // Send email via Brevo API
-// Local adapter: EMAIL_TRANSPORT=local keeps messages in memory (tests/dev) instead of calling the provider.
+// Local adapter: EMAIL_TRANSPORT=local keeps messages in memory (tests/dev) instead of calling the provider;
+// EMAIL_TRANSPORT=local-fail simulates a provider outage (every send throws) for retry demos/tests.
+// `key` identifies the logical message (sent as a custom header for tracing). Brevo offers no idempotent send, so a
+// crash after the provider accepted a message but before we recorded it can resend it: delivery is at least once.
 export const mailSink = [];
 
-const sendEmailViaAPI = async (to, subject, htmlContent) => {
+const sendEmailViaAPI = async (to, subject, htmlContent, { key } = {}) => {
   try {
     if (!to || to.trim() === '') {
       throw new Error('Recipient email address is required');
     }
 
     if (process.env.EMAIL_TRANSPORT === 'local') {
-      mailSink.push({ to: to.trim(), subject, html: htmlContent });
+      mailSink.push({ to: to.trim(), subject, html: htmlContent, key });
       return { success: true, messageId: 'local' };
     }
+    if (process.env.EMAIL_TRANSPORT === 'local-fail') throw new Error('Mail transport unavailable (EMAIL_TRANSPORT=local-fail)');
 
     console.log(`Sending email to: ${to}, Subject: ${subject}`);
 
@@ -102,6 +106,7 @@ const sendEmailViaAPI = async (to, subject, htmlContent) => {
         },
         subject: subject,
         htmlContent: emailWrapper(htmlContent),
+        ...(key ? { headers: { 'X-Notification-Key': key } } : {}),
       }),
     });
 
@@ -641,8 +646,8 @@ export const sendSellerRequestAccepted = async (buyer) => {
 // ============================================
 
 // Generic email sender
-export const sendEmail = async (to, subject, html) => {
-  return sendEmailViaAPI(to, subject, html);
+export const sendEmail = async (to, subject, html, options) => {
+  return sendEmailViaAPI(to, subject, html, options);
 };
 
 export default {

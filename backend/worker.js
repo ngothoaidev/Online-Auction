@@ -1,4 +1,4 @@
-// Background worker: settlement, payment reconciliation, payment expiry, media cleanup and the outbox dispatcher. Separate process from the API; it never imports app.js
+// Background worker: settlement, payment reconciliation/expiry/reminders, media cleanup and the outbox dispatcher (notifications). Separate process from the API; it never imports app.js
 // (no Passport/OAuth needed). Safe to run several copies: every job claims work with row locks.
 import dotenv from "dotenv";
 dotenv.config();
@@ -7,11 +7,12 @@ import * as paymentExpiry from "./jobs/expirePayments.js";
 import * as mediaCleanup from "./jobs/cleanupMedia.js";
 import * as outbox from "./jobs/dispatchOutbox.js";
 import * as paymentReconcile from "./jobs/reconcilePayments.js";
+import * as paymentReminders from "./jobs/paymentReminders.js";
 import { stats as outboxStats } from "./services/outbox.js";
 import { client } from "./db/index.js";
 
 const POLL_MS = Number(process.env.WORKER_POLL_MS || 5000);
-const jobs = [settlement, paymentReconcile, paymentExpiry, mediaCleanup, outbox];
+const jobs = [settlement, paymentReconcile, paymentExpiry, paymentReminders, mediaCleanup, outbox];
 let stopping = false;
 let inflight = Promise.resolve();
 let lastBeat = Date.now();

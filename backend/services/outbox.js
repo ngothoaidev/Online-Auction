@@ -6,11 +6,12 @@ import { sql } from "drizzle-orm";
 import db from "../db/index.js";
 import { outboxEvents } from "../db/schema.js";
 
-/** Append a domain event in the caller's transaction. Idempotent per (aggregate, version, type). */
+/** Append a domain event in the caller's transaction. Idempotent per (aggregate, version, type); true if newly added. */
 export async function enqueue(tx, { aggregateType, aggregateId, aggregateVersion, eventType, publicPayload, privatePayload = null }) {
-  await tx.insert(outboxEvents)
+  const added = await tx.insert(outboxEvents)
     .values({ aggregateType, aggregateId, aggregateVersion, eventType, publicPayload, privatePayload })
-    .onConflictDoNothing();
+    .onConflictDoNothing().returning({ eventId: outboxEvents.eventId });
+  return added.length > 0;
 }
 
 const num = (name, fallback) => Number(process.env[name] || fallback);

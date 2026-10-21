@@ -5,6 +5,7 @@ import { Search, Menu, ArrowRight, Plus, LayoutDashboard } from 'lucide-react';
 
 import CategoryDropper from './CategoryDropper.jsx';
 import ProfileDropper from './ProfileDropper.jsx';
+import NotificationsLink from './NotificationsLink.jsx';
 import MobileMenu from './MobileMenu.jsx';
 import ThemeToggle from '../ThemeToggle.jsx';
 import { IconButton } from '../ui';
@@ -92,6 +93,7 @@ export default function Header() {
                   <action.Icon size={18} aria-hidden="true" />
                   {action.label}
                 </Link>
+                <NotificationsLink />
                 <ProfileDropper user={user} logout={logout} />
               </>
             ) : (

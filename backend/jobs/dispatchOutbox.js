@@ -1,8 +1,9 @@
 import { dispatch } from "../services/outbox.js";
+import { consumer as notifications } from "../services/notifications.js";
 
-// Internal consumers ({ name, handle(event) }), e.g. notifications (T21). Each must dedupe by eventId.
+// Internal consumers ({ name, handle(event) }). Each must dedupe by eventId (delivery is at least once).
 // The public SSE stream (T19) reads committed outbox rows per auction itself; it is not a competing consumer here.
-export const consumers = [];
+export const consumers = [notifications];
 
 export const name = "outbox";
 export async function run() {
