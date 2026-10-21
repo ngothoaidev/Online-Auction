@@ -1,9 +1,11 @@
 import { useState } from 'react';
+import { useFeedback } from '../../components/ui/Feedback.jsx';
 import { Reply, X } from 'lucide-react';
 import { commentSchema } from '../../schemas/auction.schemas';
 import { validateForm } from '../../utils/validation';
 
 export default function Comment({ comment, onReplySubmit }) {
+  const { notify } = useFeedback();
   const [isReplying, setIsReplying] = useState(false);
   const [replyText, setReplyText] = useState("");
 
@@ -12,7 +14,7 @@ export default function Comment({ comment, onReplySubmit }) {
     const validation = validateForm(commentSchema, { content: replyText });
     
     if (!validation.success) {
-      alert(validation.message);
+      notify(validation.message, 'error');
       return;
     }
     

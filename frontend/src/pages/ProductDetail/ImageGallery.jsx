@@ -18,7 +18,7 @@ export default function ImageGallery({ productId, title = 'Lot' }) {
     return () => { cancelled = true; };
   }, [productId]);
 
-  if (loading) return <Skeleton className="aspect-square w-full" />;
+  if (loading) return <div className="space-y-3"><Skeleton className="aspect-square w-full" /><Skeleton className="h-[72px] w-64" /></div>; // same height as the loaded gallery
   if (!images.length) return <div className="flex aspect-square items-center justify-center rounded-(--radius-card) border border-(--line) bg-(--surface-sunken) text-(--muted)">No images</div>;
 
   const step = (d) => setSelected((i) => (i + d + images.length) % images.length);

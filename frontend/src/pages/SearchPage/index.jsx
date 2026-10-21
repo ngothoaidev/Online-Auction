@@ -92,6 +92,7 @@ export default function SearchPage() {
           {state.status === 'ready' && state.items.length > 0 && (
             <>
               <p className="mb-4 text-sm text-(--muted)">{state.totalItems} {state.totalItems === 1 ? 'lot' : 'lots'}</p>
+              <h2 className="sr-only">Results</h2>{/* cards are h3: keep the heading outline h1 -> h2 -> h3 */}
               <ul className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
                 {state.items.map((item) => <li key={item.id} className="flex"><AuctionCard product={item} /></li>)}
               </ul>

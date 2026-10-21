@@ -1,0 +1,106 @@
+{
+ "env": {
+  "when": "2026-10-21T20:36:07.170Z",
+  "api": "http://localhost:3002",
+  "secondsPerPhase": 20,
+  "hardware": {
+   "cpu": "AMD Ryzen 7 8845H w/ Radeon 780M Graphics",
+   "cores": 16,
+   "memGB": 14,
+   "os": "Windows_NT 10.0.26200"
+  },
+  "node": "v24.18.0",
+  "postgres": "PostgreSQL 16.14 on x86_64-pc-linux-musl",
+  "topology": "API, worker, PostgreSQL (Docker Desktop) and this load generator on ONE machine"
+ },
+ "phases": {
+  "catalogReads": {
+   "concurrency": 20,
+   "requests": 7959,
+   "rps": 396,
+   "latencyMs": {
+    "n": 7959,
+    "p50": 42,
+    "p95": 89,
+    "p99": 103,
+    "max": 151
+   },
+   "ok": 7959,
+   "refusedByRule": {},
+   "errors": {},
+   "errorRate": 0
+  },
+  "contendedBidding": {
+   "bidders": 50,
+   "lots": 1,
+   "requests": 1557,
+   "rps": 67,
+   "latencyMs": {
+    "n": 1557,
+    "p50": 385,
+    "p95": 549,
+    "p99": 637,
+    "max": 791
+   },
+   "ok": 235,
+   "refusedByRule": {
+    "BID_TOO_LOW": 1322
+   },
+   "errors": {},
+   "errorRate": 0,
+   "lot": {
+    "bidCount": 235,
+    "version": 235
+   },
+   "realtime": {
+    "subscribers": 20,
+    "note": "send of the bid that created a version -> SSE arrival at each subscriber (upper bound: includes the bid's own processing)",
+    "latencyMs": {
+     "n": 4700,
+     "p50": 801,
+     "p95": 1198,
+     "p99": 1450,
+     "max": 1682
+    }
+   }
+  },
+  "spreadBidding": {
+   "bidders": 50,
+   "lots": 20,
+   "requests": 2953,
+   "rps": 146,
+   "latencyMs": {
+    "n": 2953,
+    "p50": 191,
+    "p95": 263,
+    "p99": 304,
+    "max": 382
+   },
+   "ok": 2007,
+   "refusedByRule": {
+    "BID_TOO_LOW": 938,
+    "BID_NOT_HIGHER": 8
+   },
+   "errors": {},
+   "errorRate": 0
+  },
+  "settlement": {
+   "lots": 30,
+   "settled": 30,
+   "orders": 30,
+   "lagMs": {
+    "n": 30,
+    "p50": 838,
+    "p95": 2160,
+    "p99": 2175,
+    "max": 2175
+   },
+   "workerPollMs": 1000
+  }
+ },
+ "invariants": {
+  "duplicate_orders": 0,
+  "leader_without_maximum": 0,
+  "price_above_leader_max": 0
+ }
+}

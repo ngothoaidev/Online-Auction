@@ -41,6 +41,7 @@ async function loop() {
   while (!stopping) {
     inflight = tick();
     await inflight;
+    if (process.env.WORKER_ONCE) return shutdown("WORKER_ONCE"); // one pass, for tests and cron-style runs
     await new Promise((r) => { const t = setTimeout(r, POLL_MS); t.unref?.(); if (stopping) clearTimeout(t); });
   }
 }

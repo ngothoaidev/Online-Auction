@@ -167,10 +167,11 @@ test("payment × expiry race (25 rounds): exactly one of them wins, the order ne
     await orderSvc.expireDuePayments();
     const o = await get(id);
     const tr = await transitions(id);
-    assert.ok(["pending_confirmation", "payment_expired"].includes(o.status), `round ${round}: ${o.status}`);
-    assert.equal(tr.length, 1);
-    assert.equal(o.status === "pending_confirmation", pay.status === 200, `round ${round}`);
-    assert.equal(o.version, 1);
+    const why = `round ${round}: order=${o.status} v${o.version} transitions=${JSON.stringify(tr)} pay=${pay.status} ${JSON.stringify(pay.body)}`; // full context if this ever flakes again
+    assert.ok(["pending_confirmation", "payment_expired"].includes(o.status), why);
+    assert.equal(tr.length, 1, why);
+    assert.equal(o.status === "pending_confirmation", pay.status === 200, why);
+    assert.equal(o.version, 1, why);
   }
 });
 

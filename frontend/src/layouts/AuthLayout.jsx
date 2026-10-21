@@ -1,4 +1,6 @@
 import { Outlet, Link } from 'react-router-dom';
+import { Suspense } from 'react';
+import PageLoading from '../components/ui/PageLoading.jsx';
 
 // Brand panel is CSS only (no third-party image host); the form side is a plain landmark region.
 const AuthLayout = () => (
@@ -14,7 +16,7 @@ const AuthLayout = () => (
     </aside>
     <main id="auth-main" tabIndex={-1} className="flex w-full flex-col bg-(--surface) outline-none lg:w-1/2">
       <div className="px-6 pt-6 lg:hidden"><Link to="/" className="font-display text-xl font-semibold text-(--ink)"><span className="text-(--brand)">AURUM</span> Auctions</Link></div>
-      <div className="flex flex-1 items-center justify-center px-6 py-10 sm:px-10"><Outlet /></div>
+      <div className="flex flex-1 items-center justify-center px-6 py-10 sm:px-10"><Suspense fallback={<PageLoading />}><Outlet /></Suspense></div>
     </main>
   </div>
 );

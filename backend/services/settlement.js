@@ -6,6 +6,7 @@ import { auctions, bids, bidderMaxima, orders, users, auctionCommandAudit } from
 import { fromDb, toStr } from "../domain/money.js";
 import { recompute } from "../domain/bidding.js";
 import { enqueue } from "./outbox.js";
+import { faultPoint } from "../utils/fault.js";
 import { paymentDueAt } from "../domain/orderTransitions.js";
 
 /**
@@ -92,6 +93,7 @@ export async function settleDue({ limit = 50, hooks = {} } = {}) {
       const out = await db.transaction(async (tx) => {
         const r = await settleOne(tx, id, { lock: "skip" });
         if (r.settled && hooks.beforeCommit) await hooks.beforeCommit(id);
+        if (r.settled) faultPoint("settle.before_commit");
         return r;
       });
       if (out.settled) result.settled += 1; else result.skipped += 1;

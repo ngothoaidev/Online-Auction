@@ -1,10 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
+import { useFeedback } from '../../components/ui/Feedback.jsx';
 import SafeHtml from '../../components/SafeHtml.jsx';
 import { FileText, Pencil, Save, X } from 'lucide-react';
 import auctionService from '../../services/auctionService';
-import RichTextEditor from '../../components/RichTextEditor';
+const RichTextEditor = lazy(() => import('../../components/RichTextEditor')); // editor code loads only for the owner, on edit
 
 export default function Description({ productId, isOwner = false }) {
+  const { notify } = useFeedback();
   const [content, setContent] = useState("");
   const [newContent, setNewContent] = useState(""); // Only for NEW additions
   const [loading, setLoading] = useState(true);
@@ -46,7 +48,7 @@ export default function Description({ productId, isOwner = false }) {
 
   const handleSave = async () => {
     if (!newContent.trim() || newContent === "<p></p>") {
-      alert("Please enter some content before saving.");
+      notify("Please enter some content before saving.", 'error');
       return;
     }
     
@@ -62,7 +64,7 @@ export default function Description({ productId, isOwner = false }) {
       setIsEditing(false);
     } catch (err) {
       console.error("Error saving description:", err);
-      alert("Failed to save description. Please try again.");
+      notify("Failed to save description. Please try again.", 'error');
     } finally {
       setSaving(false);
     }
@@ -124,10 +126,12 @@ export default function Description({ productId, isOwner = false }) {
             </p>
           </div>
           
-          <RichTextEditor
-            value={newContent}
-            onChange={setNewContent}
-          />
+          <Suspense fallback={<p className="text-sm text-(--muted)">Loading editor…</p>}>
+            <RichTextEditor
+              value={newContent}
+              onChange={setNewContent}
+            />
+          </Suspense>
           
           {/* Preview of existing content */}
           <div className="mt-6 pt-4 border-t border-[var(--border)]">

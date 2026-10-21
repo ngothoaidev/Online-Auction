@@ -6,6 +6,7 @@ import auctionService from '../../services/auctionService';
 import { formatVnd } from '../../utils/money.js';
 import { formatTimeLeft } from '../../utils/format.js';
 import { searchUrl } from '../../utils/searchUrl.js';
+import { Skeleton } from '../../components/ui';
 
 const STEPS = [
   ['Create an account', 'Register and confirm your email. Selling needs a short approval.'],
@@ -26,6 +27,16 @@ function Hero({ lot, user }) {
           {!user && <Link to="/register" className="inline-flex min-h-12 items-center rounded-(--radius-control) border border-(--input-border) px-6 font-semibold text-(--ink) hover:bg-(--surface-hover)">Create an account</Link>}
         </div>
       </div>
+      {lot === undefined && (
+        // same box and line heights as the loaded card, so nothing below moves when it arrives (CLS)
+        <div aria-hidden="true" className="block overflow-hidden rounded-(--radius-card) border border-(--line) bg-(--surface) lg:col-span-7">
+          <Skeleton className="aspect-16/10 rounded-none" />
+          <div className="flex flex-wrap items-end justify-between gap-3 p-5">
+            <div><p className="text-sm">&nbsp;</p><p className="text-xl">&nbsp;</p></div>
+            <div><p className="text-sm">&nbsp;</p><p className="text-lg">&nbsp;</p><p className="text-sm">&nbsp;</p></div>
+          </div>
+        </div>
+      )}
       {lot && (
         <Link to={`/auction/${lot.id}`} className="group block overflow-hidden rounded-(--radius-card) border border-(--line) bg-(--surface) shadow-(--card-shadow) lg:col-span-7">
           <div className="aspect-16/10 bg-(--surface-sunken)">
@@ -50,13 +61,13 @@ function Hero({ lot, user }) {
 
 export default function HomePage() {
   const { user } = useAuth();
-  const [lot, setLot] = useState(null);
+  const [lot, setLot] = useState(undefined); // undefined = loading, null = no lot to feature
 
   useEffect(() => {
     let cancelled = false;
     auctionService.getTopAuctions({ sortBy: 'endingSoon', limit: 1 })
       .then((rows) => { if (!cancelled) setLot(Array.isArray(rows) ? rows[0] ?? null : null); })
-      .catch(() => {});
+      .catch(() => { if (!cancelled) setLot(null); });
     return () => { cancelled = true; };
   }, []);
 

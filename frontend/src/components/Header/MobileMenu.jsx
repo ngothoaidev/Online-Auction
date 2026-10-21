@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react';
+import ThemeToggle from '../ThemeToggle.jsx';
 import { Link } from 'react-router-dom';
 import { Search, ChevronDown, LogOut } from 'lucide-react';
 import { useNav } from '../../hooks/useNavigate.js';
@@ -61,6 +62,11 @@ export default function MobileMenu({ open, onClose, focusSearch, categories, use
           })}
         </ul>
       </nav>
+
+      <div className="mt-6 flex items-center justify-between border-t border-(--line) pt-5 sm:hidden">
+        <span className="font-medium text-(--ink)">Theme</span>
+        <ThemeToggle />
+      </div>
 
       <div className="mt-6 border-t border-(--line) pt-5">
         {user ? (

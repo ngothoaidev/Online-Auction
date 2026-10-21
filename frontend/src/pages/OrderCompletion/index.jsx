@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useFeedback } from '../../components/ui/Feedback.jsx';
 import { useParams, Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import orderService from '../../services/orderService';
@@ -30,6 +31,7 @@ const STEP_LABELS = [
 ];
 
 export default function OrderCompletion() {
+  const { confirm, notify } = useFeedback();
   const { auctionId } = useParams();
   const { user } = useAuth();
   const [order, setOrder] = useState(null);
@@ -149,7 +151,7 @@ export default function OrderCompletion() {
     // Validate message
     const validation = validateForm(chatMessageSchema, { message: newMessage });
     if (!validation.success) {
-      alert(validation.message);
+      notify(validation.message, 'error');
       return;
     }
 
@@ -160,7 +162,7 @@ export default function OrderCompletion() {
       await loadMessages();
     } catch (err) {
       console.error('Error sending message:', err);
-      alert(err.message || 'Failed to send message');
+      notify(err.message || 'Failed to send message', 'error');
     } finally {
       setSendingMessage(false);
     }
@@ -173,7 +175,7 @@ export default function OrderCompletion() {
     // Validate payment form
     const validation = validateForm(paymentFormSchema, paymentForm);
     if (!validation.success) {
-      alert(validation.message);
+      notify(validation.message, 'error');
       return;
     }
 
@@ -182,7 +184,7 @@ export default function OrderCompletion() {
       const result = await orderService.submitPayment(order.id, validation.data);
       setOrder(result.order);
     } catch (err) {
-      alert(err.message);
+      notify(err.message, 'error');
     } finally {
       setSubmitting(false);
     }
@@ -195,7 +197,7 @@ export default function OrderCompletion() {
     // Validate confirm payment form
     const validation = validateForm(confirmPaymentSchema, confirmForm);
     if (!validation.success) {
-      alert(validation.message);
+      notify(validation.message, 'error');
       return;
     }
 
@@ -208,7 +210,7 @@ export default function OrderCompletion() {
       setOrder(result.order);
       loadData({ silent: true });
     } catch (err) {
-      alert(err.message);
+      notify(err.message, 'error');
     } finally {
       setSubmitting(false);
     }
@@ -217,14 +219,14 @@ export default function OrderCompletion() {
   const handleConfirmReceipt = async () => {
     if (submitting) return;
 
-    if (!confirm('Are you sure you have received the item?')) return;
+    if (!(await confirm({ title: 'Confirm receipt?', message: 'Confirm only once the item has arrived as described. The seller is then asked to review you.', confirmLabel: 'I received it' }))) return;
 
     try {
       setSubmitting(true);
       const result = await orderService.confirmReceipt(order.id);
       setOrder(result.order);
     } catch (err) {
-      alert(err.message);
+      notify(err.message, 'error');
     } finally {
       setSubmitting(false);
     }
@@ -237,7 +239,7 @@ export default function OrderCompletion() {
     // Validate review form
     const validation = validateForm(reviewFormSchema, reviewForm);
     if (!validation.success) {
-      alert(validation.message);
+      notify(validation.message, 'error');
       return;
     }
 
@@ -248,7 +250,7 @@ export default function OrderCompletion() {
       // Reload the full order data to get updated status
       await loadData();
     } catch (err) {
-      alert(err.message);
+      notify(err.message, 'error');
     } finally {
       setSubmitting(false);
     }
@@ -267,7 +269,7 @@ export default function OrderCompletion() {
       }
     } catch (error) {
       console.error('Image upload error:', error);
-      alert('Failed to upload image: ' + error.message);
+      notify('Failed to upload image: ' + error.message, 'error');
       throw error;
     }
   };
@@ -284,7 +286,7 @@ export default function OrderCompletion() {
     // Validate cancel form
     const validation = validateForm(cancelOrderSchema, cancelForm);
     if (!validation.success) {
-      alert(validation.message);
+      notify(validation.message, 'error');
       return;
     }
 
@@ -294,7 +296,7 @@ export default function OrderCompletion() {
       setOrder(result.order);
       setShowCancelModal(false);
     } catch (err) {
-      alert(err.message);
+      notify(err.message, 'error');
     } finally {
       setSubmitting(false);
     }
@@ -856,12 +858,13 @@ export default function OrderCompletion() {
                 ) : canUserReview() ? (
                   <form onSubmit={handleSubmitReview} className="space-y-4">
                     <div>
-                      <label className="block text-sm font-medium text-(--text) mb-3">
+                      <p id="review-rating-label" className="block text-sm font-medium text-(--text) mb-3">
                         Rate the {isBuyer ? 'seller' : 'buyer'}
-                      </label>
-                      <div className="flex gap-4">
+                      </p>
+                      <div role="group" aria-labelledby="review-rating-label" className="flex gap-4">
                         <button
                           type="button"
+                          aria-pressed={reviewForm.rating === 1}
                           onClick={() => setReviewForm({ ...reviewForm, rating: 1 })}
                           className={`flex-1 py-4 rounded-xl border-2 transition ${
                             reviewForm.rating === 1
@@ -869,11 +872,12 @@ export default function OrderCompletion() {
                               : 'border-(--border) hover:border-(--success)'
                           }`}
                         >
-                          <span className="text-3xl">👍</span>
+                          <span aria-hidden="true" className="text-3xl">👍</span>
                           <p className="text-sm font-medium text-(--text) mt-1">Positive</p>
                         </button>
                         <button
                           type="button"
+                          aria-pressed={reviewForm.rating === -1}
                           onClick={() => setReviewForm({ ...reviewForm, rating: -1 })}
                           className={`flex-1 py-4 rounded-xl border-2 transition ${
                             reviewForm.rating === -1
@@ -881,16 +885,17 @@ export default function OrderCompletion() {
                               : 'border-(--border) hover:border-(--danger)'
                           }`}
                         >
-                          <span className="text-3xl">👎</span>
+                          <span aria-hidden="true" className="text-3xl">👎</span>
                           <p className="text-sm font-medium text-(--text) mt-1">Negative</p>
                         </button>
                       </div>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-(--text) mb-2">
+                      <label htmlFor="review-comment" className="block text-sm font-medium text-(--text) mb-2">
                         Comment (Optional)
                       </label>
                       <textarea
+                        id="review-comment"
                         value={reviewForm.comment}
                         onChange={(e) => setReviewForm({ ...reviewForm, comment: e.target.value })}
                         className="w-full px-4 py-3 rounded-xl border border-(--border) bg-(--input-bg) text-(--text) focus:ring-2 focus:ring-(--focus) focus:border-transparent"

@@ -73,11 +73,11 @@ export default function AuctionCard({ product }) {
         <dl className="mt-auto grid grid-cols-2 gap-3 border-t border-(--line) pt-3">
           <div>
             <dt className="text-xs text-(--muted)">{hasBids ? 'Current bid' : 'Starting price'}</dt>
-            <dd className="font-lot text-sm font-semibold text-(--ink)">{formatVnd(price)}</dd>
+            <dd className="font-lot whitespace-nowrap text-sm font-semibold text-(--ink)">{formatVnd(price)}</dd>
           </div>
           <div>
             <dt className="text-xs text-(--muted)">Buy now</dt>
-            <dd className="font-lot text-sm font-semibold text-(--ink)">{product.buyNowPrice ? formatVnd(product.buyNowPrice) : 'Not offered'}</dd>
+            <dd className="font-lot whitespace-nowrap text-sm font-semibold text-(--ink)">{product.buyNowPrice ? formatVnd(product.buyNowPrice) : 'Not offered'}</dd>
           </div>
         </dl>
 

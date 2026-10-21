@@ -5,6 +5,7 @@
 import { sql } from "drizzle-orm";
 import db from "../db/index.js";
 import { outboxEvents } from "../db/schema.js";
+import { faultPoint } from "../utils/fault.js";
 
 /** Append a domain event in the caller's transaction. Idempotent per (aggregate, version, type); true if newly added. */
 export async function enqueue(tx, { aggregateType, aggregateId, aggregateVersion, eventType, publicPayload, privatePayload = null }) {
@@ -57,6 +58,7 @@ export async function dispatch({
     try {
       for (const consumer of consumers) { current = consumer.name; await consumer.handle(event); }
       current = "dispatcher";
+      faultPoint("outbox.after_consumer");
       const done = await db.execute(sql`
         UPDATE outbox_events SET dispatched_at = clock_timestamp(), lease_until = NULL, last_error = NULL
         WHERE event_id = ${event.eventId} AND attempts = ${event.attempts} AND dispatched_at IS NULL RETURNING event_id`);

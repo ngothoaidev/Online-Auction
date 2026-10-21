@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useFeedback } from '../../components/ui/Feedback.jsx';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNav } from '../../hooks/useNavigate';
 
@@ -14,6 +15,7 @@ import { formatDate } from '../../utils/format';
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 export default function ProfileSidebar({ userData, isOwnProfile }) {
+  const { notify } = useFeedback();
     const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
     const [isChangePasswordModalOpen, setIsChangePasswordModalOpen] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
@@ -53,7 +55,7 @@ export default function ProfileSidebar({ userData, isOwnProfile }) {
 
         } catch (error) {
             console.error("Upload error:", error);
-            alert("Failed to upload image");
+            notify("Failed to upload image", 'error');
         }
     };
 
@@ -99,7 +101,7 @@ export default function ProfileSidebar({ userData, isOwnProfile }) {
 
         } catch (error) {
             console.error("Profile update error:", error);
-            alert(error.message || "Failed to save profile changes.");
+            notify(error.message || "Failed to save profile changes.", 'error');
         }
     };
 

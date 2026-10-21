@@ -1,3 +1,4 @@
+import { lazy } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import ProtectedRoute from './components/ProtectedRoute';
 import AuthLayout from './layouts/AuthLayout';
@@ -8,24 +9,26 @@ import ProductDetail from './pages/ProductDetail';
 import SearchPage from './pages/SearchPage';
 import Login from './pages/Auth/Login';
 import Register from './pages/Auth/Register';
-import VerifyAccount from './pages/Auth/VerifyAccount';
-import AuthCallback from './pages/Auth/AuthCallback';
-import Profile from './pages/Profile';
-import CreateAuction from './pages/CreateAuction';
-import AdminDashboard from './pages/AdminDashboard';
-import CategoryList from './pages/AdminDashboard/CategoryList.jsx';
-import ProductList from './pages/AdminDashboard/ProductList.jsx';
-import UserList from './pages/AdminDashboard/UserList.jsx';
-import UpgradeRequests from './pages/AdminDashboard/UpgradeRequests.jsx';
-import Reports from './pages/AdminDashboard/Reports';
-import AuditLog from './pages/AdminDashboard/AuditLog';
 import NotFound from './pages/NotFound';
-import ForgetPassword from './pages/Auth/ForgetPassword';
-import BecomeSeller from './pages/BecomeSeller';
-import OrderCompletion from './pages/OrderCompletion';
-import Notifications from './pages/Notifications';
-import Reviews from './pages/Reviews';
-import UserReviews from './pages/UserReviews';
+
+// Loaded on demand (route-level code splitting). Home, search, lot detail and auth stay in the main bundle.
+const VerifyAccount = lazy(() => import('./pages/Auth/VerifyAccount'));
+const AuthCallback = lazy(() => import('./pages/Auth/AuthCallback'));
+const Profile = lazy(() => import('./pages/Profile'));
+const CreateAuction = lazy(() => import('./pages/CreateAuction'));
+const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
+const CategoryList = lazy(() => import('./pages/AdminDashboard/CategoryList.jsx'));
+const ProductList = lazy(() => import('./pages/AdminDashboard/ProductList.jsx'));
+const UserList = lazy(() => import('./pages/AdminDashboard/UserList.jsx'));
+const UpgradeRequests = lazy(() => import('./pages/AdminDashboard/UpgradeRequests.jsx'));
+const Reports = lazy(() => import('./pages/AdminDashboard/Reports'));
+const AuditLog = lazy(() => import('./pages/AdminDashboard/AuditLog'));
+const ForgetPassword = lazy(() => import('./pages/Auth/ForgetPassword'));
+const BecomeSeller = lazy(() => import('./pages/BecomeSeller'));
+const OrderCompletion = lazy(() => import('./pages/OrderCompletion'));
+const Notifications = lazy(() => import('./pages/Notifications'));
+const Reviews = lazy(() => import('./pages/Reviews'));
+const UserReviews = lazy(() => import('./pages/UserReviews'));
 
 function App() {
   return (

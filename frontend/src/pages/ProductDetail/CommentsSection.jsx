@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useFeedback } from '../../components/ui/Feedback.jsx';
 import { MessageSquare, Send } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext'; // Import Auth
 import { useNav } from '../../hooks/useNavigate';     // Import Nav
@@ -6,6 +7,7 @@ import Comment from './Comment';
 import auctionService from '../../services/auctionService';
 
 export default function CommentsSection({ productId }) {
+  const { notify } = useFeedback();
   const { user } = useAuth(); 
   const nav = useNav();
   
@@ -72,7 +74,7 @@ export default function CommentsSection({ productId }) {
       setComments(prev => [formattedComment, ...prev]); 
       setCommentText('');
     } catch (error) {
-      alert('Failed to post comment. Please try again.');
+      notify('Failed to post comment. Please try again.', 'error');
       console.error(error);
     } finally {
         setIsSubmitting(false);
@@ -108,7 +110,7 @@ export default function CommentsSection({ productId }) {
             )
         );
     } catch (error) {
-        alert("Failed to reply. Please try again.");
+        notify("Failed to reply. Please try again.", 'error');
     }
   };
 
@@ -131,7 +133,7 @@ export default function CommentsSection({ productId }) {
           onKeyPress={(e) => e.key === 'Enter' && handleComment()}
           placeholder={user ? "Ask a question about this item..." : "Please login to ask a question"}
           disabled={isSubmitting}
-          className="flex-1 px-4 py-2 rounded-lg border focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+          className="min-w-0 flex-1 px-4 py-2 rounded-lg border focus:ring-2 focus:ring-(--focus) focus:border-transparent transition-all"
           style={{ 
             backgroundColor: 'var(--bg)', 
             borderColor: 'var(--border)', 

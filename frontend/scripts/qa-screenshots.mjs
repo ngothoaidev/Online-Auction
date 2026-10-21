@@ -16,7 +16,7 @@ const PAGES = {
   profile: "/profile/demo_seller",
   home: "/",
   search: "/search?q=",
-  detail: "/auction/1",
+  detail: `/auction/${process.env.QA_LOT || 1}`,
   login: "/login",
   register: "/register",
 };

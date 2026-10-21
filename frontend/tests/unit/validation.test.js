@@ -19,3 +19,16 @@ describe('validateForm (Zod 4)', () => {
     expect(r.fieldErrors.confirmPassword).toBe('Passwords do not match')
   })
 })
+
+describe('review form schema', () => {
+  it('accepts positive/negative and refuses anything else with a readable message', async () => {
+    const { reviewFormSchema } = await import('../../src/schemas/order.schemas.js')
+    expect(validateForm(reviewFormSchema, { rating: 1, comment: 'Great' }).success).toBe(true)
+    expect(validateForm(reviewFormSchema, { rating: -1 }).success).toBe(true)
+    for (const rating of [0, 2, undefined, '1']) {
+      const r = validateForm(reviewFormSchema, { rating })
+      expect(r.success).toBe(false)
+      expect(r.fieldErrors.rating).toBe('Please select a rating')
+    }
+  })
+})

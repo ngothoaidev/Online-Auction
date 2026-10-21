@@ -29,9 +29,8 @@ export const confirmPaymentSchema = z.object({
 
 // Review submission schema
 export const reviewFormSchema = z.object({
-  rating: z.enum([1, -1], {
-    errorMap: () => ({ message: 'Please select a rating' }),
-  }),
+  // z.enum only takes strings: with numbers it accepted nothing, so every review was refused client-side
+  rating: z.union([z.literal(1), z.literal(-1)], { message: 'Please select a rating' }),
   comment: z.string()
     .max(1000, 'Comment must not exceed 1000 characters')
     .optional(),

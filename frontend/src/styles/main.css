@@ -31,10 +31,7 @@ button {
 }
 
 /* --- FONTS (self-hosted, OFL; latin + vietnamese subsets load on demand) --- */
-@import '@fontsource-variable/inter';
-@import '@fontsource-variable/source-serif-4';
-@import '@fontsource/ibm-plex-mono/400.css';
-@import '@fontsource/ibm-plex-mono/500.css';
+@import './fonts.css';
 
 /* --- SEMANTIC TOKENS (AURUM, design D8.1) ---
    Roles: canvas / surface / ink / muted / line / brand / success / danger / warning / focus.

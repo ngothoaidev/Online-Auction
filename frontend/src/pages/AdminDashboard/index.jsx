@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { Suspense } from 'react';
+import PageLoading from '../../components/ui/PageLoading.jsx';
 import { NavLink, Outlet } from 'react-router-dom';
 import { Users, FolderTree, ShoppingBag, UserPlus, LogOut, Home, Menu, Flag, ScrollText } from 'lucide-react';
 import { useNav } from '../../hooks/useNavigate.js';
@@ -61,7 +63,7 @@ export default function AdminDashboard() {
       </Dialog>
 
       <main id="admin-main" tabIndex={-1} className="p-4 outline-none sm:p-6 lg:ml-60 lg:p-8">
-        <Outlet />
+        <Suspense fallback={<PageLoading />}><Outlet /></Suspense>
       </main>
     </div>
   );

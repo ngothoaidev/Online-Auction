@@ -1,4 +1,6 @@
 import { Outlet } from 'react-router-dom';
+import { Suspense } from 'react';
+import PageLoading from '../components/ui/PageLoading.jsx';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 
@@ -9,7 +11,7 @@ const MainLayout = () => {
       <Header />
 
       <main id="main-content" tabIndex={-1} className="content outline-none">
-        <Outlet />
+        <Suspense fallback={<PageLoading />}><Outlet /></Suspense>
       </main>
 
       <Footer />

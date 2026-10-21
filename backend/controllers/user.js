@@ -154,9 +154,9 @@ const controller = {
                 rating: {
                     positive: user.positiveRatingCount || 0,
                     negative: (user.ratingCount || 0) - (user.positiveRatingCount || 0),
-                    percentage: user.ratingCount > 0 
-                        ? Math.round((user.positiveRatingCount / user.ratingCount) * 100) 
-                        : 100,
+                    percentage: user.ratingCount > 0
+                        ? Math.round((user.positiveRatingCount / user.ratingCount) * 100)
+                        : null, // no reviews is "no rating yet", never 100%
                 },
                 counts: auctions,
             });

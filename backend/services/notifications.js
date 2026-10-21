@@ -11,6 +11,7 @@ import { auctions, notifications, orders, users } from "../db/schema.js";
 import { formatVnd } from "../domain/money.js";
 import { sendEmail } from "../utils/email.js";
 import { enqueue } from "./outbox.js";
+import { faultPoint } from "../utils/fault.js";
 import { AppError } from "../utils/errors.js";
 
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
@@ -119,6 +120,7 @@ export async function handle(event) {
     }
     try {
       await sendEmail(email, row.title, emailHtml(row), { key: `notification-${row.id}` });
+      faultPoint("notify.after_send");
       await db.update(notifications).set({ status: "sent", sentAt: new Date(), attempts: sql`${notifications.attempts} + 1`, lastError: null }).where(eq(notifications.id, row.id));
     } catch (error) {
       await db.update(notifications).set({ status: "failed", attempts: sql`${notifications.attempts} + 1`, lastError: String(error.message).slice(0, 500) }).where(eq(notifications.id, row.id));

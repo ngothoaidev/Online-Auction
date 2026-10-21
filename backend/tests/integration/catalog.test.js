@@ -63,10 +63,13 @@ test("a seller with no reviews has rating null (not 100%); with reviews it is th
   assert.equal(card.seller.rating, null);
   assert.equal(card.seller.ratingCount, 0);
   assert.equal((await t.call("GET", `/auction/${lotParent}`)).body.seller.rating, null);
+  const profile = async () => (await t.call("GET", `/users/profile?username=${seller.username}`)).body.rating;
+  assert.equal((await profile()).percentage, null, "the public profile too");
   await t.sql`UPDATE users SET rating_count = 4, positive_rating_count = 3 WHERE user_id = ${seller.id}`;
   card = (await t.call("GET", "/auction/top")).body[0];
   assert.equal(card.seller.rating, 75);
   assert.equal((await t.call("GET", `/auction/${lotParent}`)).body.seller.rating, 75);
+  assert.deepEqual(await profile(), { positive: 3, negative: 1, percentage: 75 });
 });
 
 test("a lot with no bids has no top bid object (the card must not invent a price)", async () => {
