@@ -4,7 +4,7 @@ import AxeBuilder from "@axe-core/playwright";
 
 const base = process.env.E2E_BASE_URL || "http://localhost:5173";
 const only = (process.argv.find((a) => a.startsWith("--pages=")) || "").replace("--pages=", "").split(",").filter(Boolean);
-const PAGES = { home: "/", search: "/search?q=", detail: "/auction/1", login: "/login", register: "/register", forgot: "/forgot-password", profile: "/profile/demo_seller", become: "/become-seller", create: "/create-auction", admin: "/admin" };
+const PAGES = { home: "/", search: "/search?q=", detail: `/auction/${process.env.QA_LOT || 1}`, login: "/login", register: "/register", forgot: "/forgot-password", profile: "/profile/demo_seller", become: "/become-seller", create: "/create-auction", admin: "/admin" };
 const AS = { become: "demo_buyer1", create: "demo_seller", admin: "demo_admin" }; // pages that need a signed-in role
 const API = process.env.E2E_API_URL || "http://localhost:3000";
 const tokens = {};

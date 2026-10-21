@@ -47,9 +47,9 @@ export const formatDate = (date, includeTime = false) => {
  * @returns {string} Object.timeLeft - Formatted time remaining
  * @returns {string} Object.urgencyLevel - One of: 'normal', 'warning', 'critical'
  */
-export const formatTimeLeft = (endTime) => {
+/** `now` (ms) lets callers pass a server-corrected clock. */
+export const formatTimeLeft = (endTime, now = Date.now()) => {
   const end = new Date(endTime);
-  const now = new Date();
   const difference = end - now;
 
   // Check if Ended

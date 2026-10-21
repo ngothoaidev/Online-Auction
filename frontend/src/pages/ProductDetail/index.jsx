@@ -11,7 +11,7 @@ import { EmptyState, Skeleton, Button } from '../../components/ui';
 export default function ProductDetail() {
   const { user } = useAuth() ?? {};
   const { id } = useParams();
-  const { status, data: product, refresh, applyCommandResult } = useAuction(id);
+  const { status, data: product, refresh, applyCommandResult, clockOffset, connection } = useAuction(id);
 
   if (status === 'loading') {
     return (
@@ -49,7 +49,7 @@ export default function ProductDetail() {
 
         <div className="space-y-6 lg:col-span-5">
           <div className="lg:sticky lg:top-24 space-y-6">
-            <BiddingSection product={product} ended={ended} onChanged={onChanged} />
+            <BiddingSection product={product} ended={ended} onChanged={onChanged} clockOffset={clockOffset} connection={connection} />
             <BidHistory productId={id} sellerId={product.sellerId} refreshKey={refreshKey} active={!ended} onChanged={() => refresh()} />
           </div>
         </div>

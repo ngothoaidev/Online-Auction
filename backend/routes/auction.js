@@ -35,6 +35,9 @@ route.get('/comments/:id', validate({ params: idParam }), auctionController.getC
 // Get: Specific Auction
 route.get('/:id', validate({ params: idParam }), auctionController.getById);
 
+// GET: public live updates (SSE) for one auction; public payload only, no auth
+route.get('/:id/events', validate({ params: idParam }), auctionController.events);
+
 route.use(requireAuth);
 
 // POST: Create New Auction

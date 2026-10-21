@@ -2,6 +2,7 @@ import auctionService from "../services/auction.js";
 import { commands } from "../services/auctionCommands.js";
 import { validKey } from "../services/idempotency.js";
 import { AppError } from "../utils/errors.js";
+import { streamAuction } from "../services/realtime.js";
 
 // Optional for now: the SPA starts sending one key per reviewed intent in T15, after which the header becomes mandatory.
 function idempotencyKey(req) {
@@ -56,6 +57,14 @@ const controller = {
             }
             
             res.json(auction);
+        } catch (error) {
+            next(error);
+        }
+    },
+
+    events: async function(req, res, next) {
+        try {
+            await streamAuction(req, res, Number(req.params.id));
         } catch (error) {
             next(error);
         }

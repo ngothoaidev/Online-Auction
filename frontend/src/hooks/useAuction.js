@@ -1,17 +1,26 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { apiFetch, isAbort } from '../services/apiClient.js';
 import { useAuth } from '../contexts/AuthContext.jsx';
+import { useAuctionEvents } from './useAuctionEvents.js';
+
+const EVENT_FIELDS = ['currentPrice', 'bidCount', 'endTime', 'status', 'version', 'closeReason'];
 
 /**
- * Canonical lot snapshot. Snapshots are ordered by `version`: a response (fetch OR command result) that is older than
- * what we already show is dropped, so a slow request can never move the page backwards.
+ * Canonical lot snapshot. Snapshots are ordered by `version`: a response (fetch, command result OR live event) that is
+ * older than what we already show is dropped, so a slow request can never move the page backwards.
+ * `clockOffset` = server clock - local clock, taken from fresh responses (never from replayed events).
  */
 export function useAuction(id) {
   const { user } = useAuth() ?? {};
   const [state, setState] = useState({ status: 'loading', data: null, error: null });
+  const [clockOffset, setClockOffset] = useState(0);
   const controller = useRef(null);
+  const version = useRef(null);
+  const refetchTimer = useRef(null);
 
   const accept = useCallback((incoming) => {
+    if (incoming.version !== undefined && incoming.version > (version.current ?? -1)) version.current = incoming.version;
+    if (incoming.serverTime) setClockOffset(Date.parse(incoming.serverTime) - Date.now());
     setState((s) => {
       const cur = s.data;
       if (cur && incoming.version !== undefined && cur.version !== undefined && incoming.version < cur.version) return s;
@@ -26,6 +35,7 @@ export function useAuction(id) {
     if (!silent) setState((s) => ({ ...s, status: s.data ? s.status : 'loading' }));
     try {
       const data = await apiFetch(`/auction/${id}`, { signal: c.signal });
+      if (c.signal.aborted) return null;
       accept(data);
       return data;
     } catch (error) {
@@ -36,6 +46,7 @@ export function useAuction(id) {
   }, [id, accept]);
 
   useEffect(() => {
+    version.current = null;
     setState({ status: 'loading', data: null, error: null });
     refresh({ silent: false });
     return () => controller.current?.abort();
@@ -49,5 +60,22 @@ export function useAuction(id) {
     return refresh();
   }, [accept, refresh]);
 
-  return { ...state, refresh, applyCommandResult };
+  /**
+   * Live event: show the public fields at once, then refetch (debounced) for what events do not carry
+   * (minimum next bid, capabilities, history). Duplicates and out-of-order events are dropped by version.
+   */
+  const onEvent = useCallback((e) => {
+    if (e.auctionId !== undefined && String(e.auctionId) !== String(id)) return;
+    if (version.current === null || !(e.version > version.current)) return;
+    const patch = {};
+    for (const k of EVENT_FIELDS) if (e[k] !== undefined) patch[k] = e[k];
+    accept(patch);
+    clearTimeout(refetchTimer.current);
+    refetchTimer.current = setTimeout(() => refresh(), 250);
+  }, [id, accept, refresh]);
+  useEffect(() => () => clearTimeout(refetchTimer.current), []);
+
+  const connection = useAuctionEvents(state.data ? id : null, { getVersion: () => version.current, onEvent, onResync: refresh });
+
+  return { ...state, refresh, applyCommandResult, clockOffset, connection };
 }

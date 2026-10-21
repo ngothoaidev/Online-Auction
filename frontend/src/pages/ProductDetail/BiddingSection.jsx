@@ -17,7 +17,22 @@ const OUTCOME = {
   outbid: { tone: 'warning', title: 'You were outbid', message: (r) => `Your bid was accepted, but a higher maximum was already in place. The price is now ${formatVnd(r.currentPrice)}. You can bid again with a higher maximum.` },
 };
 
-export default function BiddingSection({ product, ended = false, onChanged }) {
+/** Local clock corrected to the server's, ticking every second (countdown and the deadline switch). */
+function useServerNow(offsetMs) {
+  const [now, setNow] = useState(() => Date.now() + offsetMs);
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now() + offsetMs), 1000); // a new offset shows within a second
+    return () => clearInterval(t);
+  }, [offsetMs]);
+  return now;
+}
+
+const CONNECTION_TEXT = {
+  stale: 'Live updates paused, reconnecting. The price is re-checked every 10 seconds.',
+  offline: 'You are offline. The price shown may be out of date.',
+};
+
+export default function BiddingSection({ product, ended = false, onChanged, clockOffset = 0, connection = 'live' }) {
   const { user } = useAuth() ?? {};
   const navigate = useNavigate();
   const watchlist = useWatchlist();
@@ -29,14 +44,15 @@ export default function BiddingSection({ product, ended = false, onChanged }) {
   const caps = product.capabilities ?? { canBid: false, canBuyNow: false, reasons: {} };
   const min = product.minimumNextBid;
   const hasBids = (product.bidCount ?? 0) > 0;
-  const closed = ended || product.status !== 'active';
+  const now = useServerNow(clockOffset);
+  const closed = ended || product.status !== 'active' || Date.parse(product.endTime) <= now;
   const check = useMemo(() => validateBid(text, min), [text, min]);
 
   // keep the field empty-or-valid when the server floor moves under the person
   useEffect(() => { if (touched && text && !validateBid(text, min).ok) setAnnounce(`The minimum bid is now ${formatVnd(min)}.`); }, [min]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const saved = user ? watchlist.has(product.id) : false;
-  const time = formatTimeLeft(product.endTime);
+  const time = formatTimeLeft(product.endTime, now);
   const rating = product.seller?.rating;
 
   const startReview = (e) => {
@@ -110,6 +126,7 @@ export default function BiddingSection({ product, ended = false, onChanged }) {
           <dd className="font-lot text-sm font-semibold text-(--ink)">{closed ? (product.closeReason === 'buy_now' ? 'Bought now' : 'Bidding closed') : time.timeLeft}</dd>
         </div>
       </dl>
+      <p role="status" className="mt-2 text-sm text-(--warning)">{closed ? '' : CONNECTION_TEXT[connection] ?? ''}</p>
 
       {!closed && (
         <form onSubmit={startReview} noValidate className="mt-5 space-y-3">

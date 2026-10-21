@@ -1,6 +1,6 @@
 // Single place that knows how to talk to the API: optional bearer token, JSON in/out, AbortSignal, structured errors.
 // It never retries commands on its own (a retry of a command must reuse the SAME Idempotency-Key, decided by the caller).
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+export const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 export class ApiError extends Error {
   constructor(status, body) {

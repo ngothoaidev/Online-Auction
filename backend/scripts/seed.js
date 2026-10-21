@@ -4,7 +4,7 @@ import dotenv from "dotenv";
 import bcrypt from "bcrypt";
 import postgres from "postgres";
 import { drizzle } from "drizzle-orm/postgres-js";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import * as s from "../db/schema.js";
 dotenv.config();
 
@@ -42,7 +42,8 @@ const sub = {
 
 const seller = await user("demo_seller");
 const existing = await db.select().from(s.auctions).where(eq(s.auctions.sellerId, seller.id));
-if (existing.length === 0) {
+// re-runnable for demos: once every seeded lot has closed, add a fresh batch (closed lots stay as history)
+if (!existing.some((a) => a.status === "active" && a.endTime > new Date())) {
   const { commands } = await import("../services/auctionCommands.js");
   const hours = (h) => new Date(Date.now() + h * 3600 * 1000);
   const lots = [
@@ -68,7 +69,7 @@ if (existing.length === 0) {
   // a little bidding history through the real command path
   const b1 = await user("demo_buyer1");
   const b2 = await user("demo_buyer2");
-  const all = await db.select().from(s.auctions).where(eq(s.auctions.sellerId, seller.id));
+  const all = await db.select().from(s.auctions).where(and(eq(s.auctions.sellerId, seller.id), eq(s.auctions.status, "active")));
   for (const a of all.slice(0, 5)) {
     const start = BigInt(a.startingPrice);
     await commands.placeBid({ auctionId: a.id, actor: b1, amount: (start * 13n / 10n).toString() });

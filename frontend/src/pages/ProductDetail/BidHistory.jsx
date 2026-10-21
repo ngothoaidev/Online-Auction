@@ -57,7 +57,7 @@ export default function BidHistory({ productId, sellerId, refreshKey = 0, active
         {state.status === 'error' && <EmptyState title="Bid history could not be loaded" />}
         {state.status === 'ready' && state.rows.length === 0 && <EmptyState title="No bids yet">{filter === 'mine' ? 'You have not bid on this lot.' : 'Be the first to bid.'}</EmptyState>}
         {state.status === 'ready' && state.rows.length > 0 && (
-          <div className="max-h-[480px] overflow-auto">
+          <div className="max-h-[480px] overflow-auto" tabIndex={0} role="region" aria-labelledby="bid-history-title">
             <table className="w-full text-left text-sm">
               <caption className="sr-only">Price changes, newest first</caption>
               <thead className="sticky top-0 bg-(--surface) text-(--muted)">
