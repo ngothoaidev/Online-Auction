@@ -71,7 +71,8 @@ export async function settleOne(tx, auctionId, { lock = "skip" } = {}) {
   });
   await enqueue(tx, {
     aggregateType: "auction", aggregateId: auctionId, aggregateVersion: version, eventType: "auction.ended",
-    publicPayload: { auctionId, version, status: "ended", currentPrice: toStr(currentPrice), bidCount: auction.bidCount, endTime: auction.endTime, winnerId: leaderId, closeReason, serverTime: settledAt },
+    publicPayload: { auctionId, version, status: "ended", currentPrice: toStr(currentPrice), bidCount: auction.bidCount, endTime: auction.endTime, closeReason, serverTime: settledAt },
+    privatePayload: { sellerId: auction.sellerId, winnerId: leaderId, orderId },
   });
   return { settled: true, outcome: closeReason, orderId, winnerId: leaderId };
 }

@@ -39,10 +39,10 @@ async function loadActor(tx, userId) {
 
 const audit = (tx, row) => tx.insert(auctionCommandAudit).values(row);
 
-/** Public snapshot that goes into outbox events and command results (never contains a private maximum). */
+/** Public event payload (D9.1). Who leads/won goes in the private payload for internal consumers only. */
 const snapshot = (a, now) => ({
   auctionId: a.id, version: a.version, status: a.status, currentPrice: toStr(fromDb(a.currentPrice)), bidCount: a.bidCount,
-  endTime: a.endTime, winnerId: a.winnerId ?? null, serverTime: now,
+  endTime: a.endTime, serverTime: now,
 });
 
 export const commands = {
@@ -110,7 +110,8 @@ export const commands = {
         privatePayload: { maximum: money.toString() }, versionBefore: auction.version, versionAfter: version,
       });
       if (publicChange) {
-        await enqueue(tx, { aggregateType: "auction", aggregateId: auctionId, aggregateVersion: version, eventType: "auction.bid_placed", publicPayload: snapshot(updated, now) });
+        await enqueue(tx, { aggregateType: "auction", aggregateId: auctionId, aggregateVersion: version, eventType: "auction.bid_placed", publicPayload: snapshot(updated, now),
+          privatePayload: { sellerId: auction.sellerId, leaderId: result.leaderId, previousLeaderId: auction.winnerId ?? null } });
       }
 
       const messages = { success: "You are the highest bidder!", updated: "Your maximum bid has been updated.", outbid: "A higher maximum was already in place: you have been outbid." };
@@ -163,7 +164,8 @@ export const commands = {
         commandId: key || `buy-now-${auctionId}-${sequence}`, auctionId, actorId: actor.id, sequence, kind: "buy_now", decision: "success",
         privatePayload: { orderId: order.id }, versionBefore: auction.version, versionAfter: version,
       });
-      await enqueue(tx, { aggregateType: "auction", aggregateId: auctionId, aggregateVersion: version, eventType: "auction.ended", publicPayload: { ...snapshot(updated, now), closeReason: "buy_now" } });
+      await enqueue(tx, { aggregateType: "auction", aggregateId: auctionId, aggregateVersion: version, eventType: "auction.ended", publicPayload: { ...snapshot(updated, now), closeReason: "buy_now" },
+        privatePayload: { sellerId: auction.sellerId, winnerId: actor.id, orderId: order.id } });
 
       return {
         status: 200,
@@ -222,7 +224,8 @@ export const commands = {
         privatePayload: { bidId, bidderId: bid.bidderId, reason: reason ?? null, leaderBefore: auction.winnerId, leaderAfter: next.leaderId }, versionBefore: auction.version, versionAfter: version,
       });
       await enqueue(tx, { aggregateType: "auction", aggregateId: auctionId, aggregateVersion: version, eventType: "auction.bid_rejected",
-        publicPayload: { auctionId, version, status: auction.status, currentPrice: toStr(next.currentPrice), bidCount: auction.bidCount, endTime: auction.endTime, winnerId: next.leaderId, serverTime: clock.now } });
+        publicPayload: { auctionId, version, status: auction.status, currentPrice: toStr(next.currentPrice), bidCount: auction.bidCount, endTime: auction.endTime, serverTime: clock.now },
+        privatePayload: { sellerId: auction.sellerId, bidderId: bid.bidderId, leaderId: next.leaderId, previousLeaderId: auction.winnerId ?? null } });
 
       return { message: "Bid rejected successfully", bidId, alreadyRejected: false, currentPrice: toStr(next.currentPrice), winnerId: next.leaderId, version };
     });
@@ -265,7 +268,8 @@ export const commands = {
         privatePayload: { reason: reason ?? null, bidCount: auction.bidCount }, versionBefore: auction.version, versionAfter: version,
       });
       await enqueue(tx, { aggregateType: "auction", aggregateId: auctionId, aggregateVersion: version, eventType: "auction.cancelled",
-        publicPayload: { auctionId, version, status: "cancelled", currentPrice: toStr(fromDb(auction.currentPrice)), bidCount: auction.bidCount, endTime: auction.endTime, winnerId: null, serverTime: clock.now } });
+        publicPayload: { auctionId, version, status: "cancelled", currentPrice: toStr(fromDb(auction.currentPrice)), bidCount: auction.bidCount, endTime: auction.endTime, serverTime: clock.now },
+        privatePayload: { sellerId: auction.sellerId, leaderId: auction.winnerId ?? null } });
       return { message: "Auction cancelled", auctionId, version };
     });
   },

@@ -1,14 +1,16 @@
-// Background worker: settlement (and, from T10, payment expiry). Separate process from the API; it never imports app.js
+// Background worker: settlement, payment expiry, media cleanup and the outbox dispatcher. Separate process from the API; it never imports app.js
 // (no Passport/OAuth needed). Safe to run several copies: every job claims work with row locks.
 import dotenv from "dotenv";
 dotenv.config();
 import * as settlement from "./jobs/settleDue.js";
 import * as paymentExpiry from "./jobs/expirePayments.js";
 import * as mediaCleanup from "./jobs/cleanupMedia.js";
+import * as outbox from "./jobs/dispatchOutbox.js";
+import { stats as outboxStats } from "./services/outbox.js";
 import { client } from "./db/index.js";
 
 const POLL_MS = Number(process.env.WORKER_POLL_MS || 5000);
-const jobs = [settlement, paymentExpiry, mediaCleanup];
+const jobs = [settlement, paymentExpiry, mediaCleanup, outbox];
 let stopping = false;
 let inflight = Promise.resolve();
 let lastBeat = Date.now();
@@ -22,7 +24,7 @@ async function tick() {
       const settled = (out?.due?.settled ?? 0) + (out?.legacy?.settled ?? 0);
       const failed = out?.due?.failed ?? [];
       if (settled > 0 || failed.length > 0) log(`${job.name} pass`, { settled, failed: failed.length, conflicts: out?.legacy?.conflicts?.length ?? 0 });
-      failed.forEach((f) => log("settlement failure", f));
+      failed.forEach((f) => log(`${job.name} failure`, f));
     } catch (error) {
       log(`${job.name} crashed`, { error: error.message });
     }
@@ -49,6 +51,9 @@ async function shutdown(signal) {
 }
 process.on("SIGTERM", () => shutdown("SIGTERM"));
 process.on("SIGINT", () => shutdown("SIGINT"));
-setInterval(() => log("heartbeat", { lastPassAgoMs: Date.now() - lastBeat }), 60_000).unref();
+setInterval(async () => {
+  const outbox = await outboxStats().catch((error) => ({ error: error.message }));
+  log("heartbeat", { lastPassAgoMs: Date.now() - lastBeat, outbox });
+}, 60_000).unref();
 
 loop();

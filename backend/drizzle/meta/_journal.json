@@ -50,6 +50,13 @@
       "when": 1791755593950,
       "tag": "0006_favorites_fk",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1792605200320,
+      "tag": "0007_outbox_dispatch",
+      "breakpoints": true
     }
   ]
 }

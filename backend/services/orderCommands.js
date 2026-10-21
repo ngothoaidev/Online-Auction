@@ -71,6 +71,7 @@ export async function applyTransition(tx, { orderId, command, actor, payload = {
     await enqueue(tx, {
       aggregateType: "order", aggregateId: orderId, aggregateVersion: updated.version, eventType: `order.${plan.to}`,
       publicPayload: { orderId, auctionId: head.auctionId, status: plan.to, version: updated.version, at: now },
+      privatePayload: { buyerId: order.buyerId, sellerId: order.sellerId, actorType: actor.type, actorId: actor.id ?? null },
     });
     return { status: 200, resourceId: String(orderId), body: { order: updated } };
   }

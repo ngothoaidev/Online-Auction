@@ -294,7 +294,7 @@ export const auctionCommandAudit = pgTable('auction_command_audit', {
   byAuction: index('auction_command_audit_auction_idx').on(t.auctionId, t.sequence),
 }));
 
-// --- Transactional outbox (dispatcher arrives in T18; rows are written atomically with the domain change) ---
+// --- Transactional outbox: rows are written atomically with the domain change; services/outbox.js dispatches them ---
 export const outboxEvents = pgTable('outbox_events', {
   eventId: uuid('event_id').primaryKey().defaultRandom(),
   aggregateType: varchar('aggregate_type', { length: 32 }).notNull(),
@@ -302,14 +302,18 @@ export const outboxEvents = pgTable('outbox_events', {
   aggregateVersion: integer('aggregate_version').notNull(),
   eventType: varchar('event_type', { length: 64 }).notNull(),
   publicPayload: jsonb('public_payload').notNull(),
+  // recipients/participants for internal consumers (notifications); never served on a public channel
+  privatePayload: jsonb('private_payload'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   attempts: integer('attempts').notNull().default(0),
   nextAttemptAt: timestamp('next_attempt_at', { withTimezone: true }).notNull().defaultNow(),
   leaseUntil: timestamp('lease_until', { withTimezone: true }),
   dispatchedAt: timestamp('dispatched_at', { withTimezone: true }),
+  deadAt: timestamp('dead_at', { withTimezone: true }),
+  lastError: text('last_error'),
 }, (t) => ({
   logical: uniqueIndex('outbox_events_logical_uniq').on(t.aggregateType, t.aggregateId, t.aggregateVersion, t.eventType),
-  pending: index('outbox_events_pending_idx').on(t.nextAttemptAt).where(sql`dispatched_at IS NULL`),
+  pending: index('outbox_events_pending_idx').on(t.nextAttemptAt).where(sql`dispatched_at IS NULL AND dead_at IS NULL`),
 }));
 
 // --- RELATIONS ---
