@@ -267,6 +267,7 @@ const controller = {
 export async function oauthFinish(provider, res, err, user) {
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
     const fail = (code) => res.redirect(`${frontendUrl}/login?error=${code}`);
+    if (err) console.error(`${provider} oauth error:`, err.message, err.oauthError?.data ?? '');
     if (err || !user) return fail(`${provider}_failed`);
     try {
         if (user.status === 'banned') return fail('account_banned');
