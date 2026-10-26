@@ -38,6 +38,7 @@ export default function Footer() {
       </div>
       <div className="border-t border-(--line) px-4 py-4 text-center text-xs text-(--muted)">
         &copy; {new Date().getFullYear()} Aurum Auctions. Portfolio project: payments here are manual or simulated; no real money is processed.
+        {' · '}<Link className="underline hover:text-(--ink)" to="/privacy">Privacy &amp; data deletion</Link>
       </div>
     </footer>
   );

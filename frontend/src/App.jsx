@@ -29,6 +29,7 @@ const OrderCompletion = lazy(() => import('./pages/OrderCompletion'));
 const Notifications = lazy(() => import('./pages/Notifications'));
 const Reviews = lazy(() => import('./pages/Reviews'));
 const UserReviews = lazy(() => import('./pages/UserReviews'));
+const Privacy = lazy(() => import('./pages/Privacy'));
 
 function App() {
   return (
@@ -52,6 +53,7 @@ function App() {
           <Route path="/profile/:username" element={<Profile />} />
           <Route path="/profile/:username/reviews" element={<UserReviews />} />
           <Route path="/reviews" element={<Reviews />} />
+          <Route path="/privacy" element={<Privacy />} />
 
           {/* --- STANDARD USERS --- */}
           <Route element={<ProtectedRoute />}>
