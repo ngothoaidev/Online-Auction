@@ -1,0 +1,234 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Aurum Auctions public API",
+    "version": "1.0.0",
+    "summary": "Read-only catalog of an online auction for collectibles.",
+    "description": "Public, unauthenticated read endpoints: categories, search, lot details, bid history, public profiles and reviews. Money values are strings of integer VND. Every error is JSON: { code, message, requestId, details? }. Authenticated commands (bidding, listings, orders) are not part of this public spec."
+  },
+  "servers": [
+    { "url": "https://online-auction-uf4s.onrender.com", "description": "Production" },
+    { "url": "http://localhost:3000", "description": "Local development" }
+  ],
+  "tags": [
+    { "name": "catalog" },
+    { "name": "lots" },
+    { "name": "people" },
+    { "name": "health" }
+  ],
+  "paths": {
+    "/categories": {
+      "get": {
+        "tags": ["catalog"],
+        "operationId": "listCategories",
+        "summary": "Category tree",
+        "responses": {
+          "200": { "description": "Top-level categories with their subcategories", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Category" } } } } }
+        }
+      }
+    },
+    "/search": {
+      "get": {
+        "tags": ["catalog"],
+        "operationId": "searchLots",
+        "summary": "Search lots (12 per page)",
+        "parameters": [
+          { "name": "q", "in": "query", "description": "Full-text query", "schema": { "type": "string", "maxLength": 200 } },
+          { "name": "category", "in": "query", "description": "Exact category name (\"All\" = no filter); a parent category includes its children", "schema": { "type": "string", "maxLength": 100 } },
+          { "name": "minPrice", "in": "query", "schema": { "type": "number", "minimum": 0 } },
+          { "name": "maxPrice", "in": "query", "schema": { "type": "number", "minimum": 0 } },
+          { "name": "sortBy", "in": "query", "schema": { "type": "string", "enum": ["relevance", "popularity", "price-asc", "price-desc", "ending-soon", "newest", "aToZ", "zToA"] } },
+          { "name": "status", "in": "query", "schema": { "type": "string", "enum": ["all", "active", "sold", "ended", "cancelled"] } },
+          { "name": "page", "in": "query", "schema": { "type": "integer", "minimum": 1, "maximum": 10000, "default": 1 } }
+        ],
+        "responses": {
+          "200": { "description": "A page of matching lots", "content": { "application/json": { "schema": { "type": "object" } } } },
+          "400": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/auction/top": {
+      "get": {
+        "tags": ["catalog"],
+        "operationId": "listTopLots",
+        "summary": "Featured lots for the home page",
+        "parameters": [
+          { "name": "sortBy", "in": "query", "schema": { "type": "string", "enum": ["newest", "endingSoon", "mostBids", "highestPrice"], "default": "newest" } },
+          { "name": "status", "in": "query", "schema": { "type": "string", "enum": ["active", "sold", "ended", "cancelled"], "default": "active" } }
+        ],
+        "responses": {
+          "200": { "description": "Lots", "content": { "application/json": { "schema": { "type": "object" } } } },
+          "400": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/auction/{id}": {
+      "get": {
+        "tags": ["lots"],
+        "operationId": "getLot",
+        "summary": "Lot snapshot: price, minimum next bid, end time, seller rating and what the caller may do",
+        "parameters": [{ "$ref": "#/components/parameters/LotId" }],
+        "responses": {
+          "200": { "description": "Lot", "content": { "application/json": { "schema": { "type": "object" } } } },
+          "400": { "$ref": "#/components/responses/Error" },
+          "404": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/auction/{id}/events": {
+      "get": {
+        "tags": ["lots"],
+        "operationId": "streamLotEvents",
+        "summary": "Server-Sent Events stream of live price changes for one lot",
+        "parameters": [
+          { "$ref": "#/components/parameters/LotId" },
+          { "name": "since", "in": "query", "description": "Last version the client has; Last-Event-ID wins over it", "schema": { "type": "integer", "minimum": 0 } }
+        ],
+        "responses": {
+          "200": { "description": "Event stream; on a reset event, refetch GET /auction/{id}", "content": { "text/event-stream": { "schema": { "type": "string" } } } },
+          "404": { "$ref": "#/components/responses/Error" },
+          "429": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/auction/bids/{id}": {
+      "get": {
+        "tags": ["lots"],
+        "operationId": "getBidHistory",
+        "summary": "Public price history of a lot",
+        "parameters": [
+          { "$ref": "#/components/parameters/LotId" },
+          { "name": "f", "in": "query", "schema": { "type": "string", "enum": ["all", "mine", "recent"], "default": "all" } }
+        ],
+        "responses": {
+          "200": { "description": "Bids, newest first", "content": { "application/json": { "schema": { "type": "object" } } } },
+          "400": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/auction/images/{id}": {
+      "get": {
+        "tags": ["lots"],
+        "operationId": "getLotImages",
+        "summary": "Photo URLs of a lot",
+        "parameters": [{ "$ref": "#/components/parameters/LotId" }],
+        "responses": { "200": { "description": "Images", "content": { "application/json": { "schema": {} } } }, "400": { "$ref": "#/components/responses/Error" } }
+      }
+    },
+    "/auction/description/{id}": {
+      "get": {
+        "tags": ["lots"],
+        "operationId": "getLotDescription",
+        "summary": "Sanitized HTML description and its edit log",
+        "parameters": [{ "$ref": "#/components/parameters/LotId" }],
+        "responses": { "200": { "description": "Description", "content": { "application/json": { "schema": {} } } }, "400": { "$ref": "#/components/responses/Error" } }
+      }
+    },
+    "/auction/comments/{id}": {
+      "get": {
+        "tags": ["lots"],
+        "operationId": "getLotComments",
+        "summary": "Public questions and answers on a lot",
+        "parameters": [{ "$ref": "#/components/parameters/LotId" }],
+        "responses": { "200": { "description": "Comments", "content": { "application/json": { "schema": {} } } }, "400": { "$ref": "#/components/responses/Error" } }
+      }
+    },
+    "/users/profile": {
+      "get": {
+        "tags": ["people"],
+        "operationId": "getPublicProfile",
+        "summary": "Public profile and rating of a user (rating.percentage is null without reviews)",
+        "parameters": [{ "name": "username", "in": "query", "required": true, "schema": { "type": "string", "minLength": 1, "maxLength": 50 } }],
+        "responses": {
+          "200": { "description": "Profile", "content": { "application/json": { "schema": { "type": "object" } } } },
+          "400": { "$ref": "#/components/responses/Error" },
+          "404": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/reviews": {
+      "get": {
+        "tags": ["people"],
+        "operationId": "listReviews",
+        "summary": "Reviews between buyers and sellers",
+        "parameters": [
+          { "name": "reviewerId", "in": "query", "schema": { "type": "integer" } },
+          { "name": "targetId", "in": "query", "schema": { "type": "integer" } },
+          { "name": "auctionId", "in": "query", "schema": { "type": "integer" } },
+          { "name": "page", "in": "query", "schema": { "type": "integer", "minimum": 1, "default": 1 } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "minimum": 1, "default": 20 } }
+        ],
+        "responses": { "200": { "description": "A page of reviews", "content": { "application/json": { "schema": { "type": "object" } } } } }
+      }
+    },
+    "/reviews/stats": {
+      "get": {
+        "tags": ["people"],
+        "operationId": "getReviewStats",
+        "summary": "Positive/negative counts for the same filters as /reviews",
+        "parameters": [
+          { "name": "reviewerId", "in": "query", "schema": { "type": "integer" } },
+          { "name": "targetId", "in": "query", "schema": { "type": "integer" } },
+          { "name": "auctionId", "in": "query", "schema": { "type": "integer" } }
+        ],
+        "responses": { "200": { "description": "Counts", "content": { "application/json": { "schema": { "type": "object" } } } } }
+      }
+    },
+    "/reviews/{id}": {
+      "get": {
+        "tags": ["people"],
+        "operationId": "getReview",
+        "summary": "One review",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer", "minimum": 1 } }],
+        "responses": { "200": { "description": "Review", "content": { "application/json": { "schema": { "type": "object" } } } }, "404": { "$ref": "#/components/responses/Error" } }
+      }
+    },
+    "/health/live": {
+      "get": {
+        "tags": ["health"],
+        "operationId": "live",
+        "summary": "Liveness",
+        "responses": { "200": { "description": "The process answers", "content": { "application/json": { "schema": { "type": "object", "properties": { "status": { "const": "ok" } } } } } } }
+      }
+    },
+    "/health/ready": {
+      "get": {
+        "tags": ["health"],
+        "operationId": "ready",
+        "summary": "Readiness: database, migrations and worker status",
+        "responses": {
+          "200": { "description": "Ready", "content": { "application/json": { "schema": { "type": "object" } } } },
+          "503": { "description": "Database unreachable or migrations pending", "content": { "application/json": { "schema": { "type": "object" } } } }
+        }
+      }
+    }
+  },
+  "components": {
+    "parameters": {
+      "LotId": { "name": "id", "in": "path", "required": true, "description": "Lot (auction) id", "schema": { "type": "integer", "minimum": 1 } }
+    },
+    "schemas": {
+      "Category": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "name": { "type": "string" },
+          "subcategories": { "type": "array", "items": { "$ref": "#/components/schemas/Category" } }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "required": ["code", "message", "requestId"],
+        "properties": {
+          "code": { "type": "string", "description": "Stable machine-readable code, e.g. NOT_FOUND, VALIDATION_ERROR, BID_TOO_LOW" },
+          "message": { "type": "string", "description": "Human-readable explanation" },
+          "requestId": { "type": "string", "description": "Also sent as the X-Request-Id header; quote it when reporting a problem" },
+          "details": { "description": "Extra context for some codes, e.g. minimumNextBid" }
+        }
+      }
+    },
+    "responses": {
+      "Error": { "description": "Error envelope", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
+    }
+  }
+}

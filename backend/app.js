@@ -1,4 +1,5 @@
 import express from "express";
+import { STATUS_CODES } from "node:http";
 import bodyParser from "body-parser";
 import cors from "cors";
 import helmet from "helmet";
@@ -37,6 +38,18 @@ if (Number(process.env.TRUST_PROXY_HOPS)) app.set('trust proxy', Number(process.
 
 // --- Dependencies ---
 app.use(requestId);
+// Older handlers answer errors with a bare { message } / { error }: give every 4xx/5xx JSON object the documented
+// envelope { code, message, requestId } so clients and agents can branch on `code`. Bodies that already have a code pass through.
+app.use((req, res, next) => {
+    const json = res.json.bind(res);
+    res.json = (body) => json(res.statusCode >= 400 && body?.constructor === Object && !body.code ? {
+        code: (STATUS_CODES[res.statusCode] ?? 'Error').toUpperCase().replace(/[^A-Z]+/g, '_'),
+        message: body.message ?? body.error ?? STATUS_CODES[res.statusCode],
+        requestId: req.id,
+        ...body,
+    } : body);
+    next();
+});
 app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } })); // API is consumed cross-origin by the SPA
 const allowedOrigins = (process.env.CORS_ORIGINS || process.env.FRONTEND_URL || 'http://localhost:5173').split(',').map((o) => o.trim());
 app.use(cors({ origin: allowedOrigins, credentials: true }));

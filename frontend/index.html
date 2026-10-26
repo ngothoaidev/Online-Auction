@@ -8,7 +8,25 @@
     <title>Aurum Auctions</title>
   </head>
   <body>
-    <div id="root"></div>
+    <!-- Static content for crawlers and no-JS visitors; React replaces everything inside #root when it mounts. -->
+    <div id="root">
+      <main class="mx-auto max-w-3xl px-4 py-12">
+        <h1>Aurum Auctions: online auctions for collectibles</h1>
+        <p>Aurum Auctions is an online auction for watches, jewelry, art and other collectibles. Browse live lots, follow prices as they change and bid from any device. Every lot shows its current price, the minimum next bid, the time left and the seller's rating from past buyers.</p>
+        <h2>How bidding works</h2>
+        <p>Bids are placed as a private maximum. You enter the most you are willing to pay, and the system bids for you one step at a time, only as much as needed to keep you in the lead. Some lots also offer a Buy Now price that ends the auction at once.</p>
+        <h2>After the auction</h2>
+        <p>The winner and the seller complete the sale on an order page: payment, shipping, confirmation of receipt and a rating for each other. This is a portfolio project, so payments are manual or simulated and no real money is processed.</p>
+        <h2>Explore</h2>
+        <ul>
+          <li><a href="/search">Browse all lots</a></li>
+          <li><a href="/search?sortBy=timeEndingSoon">Lots ending soon</a></li>
+          <li><a href="/register">Create an account</a></li>
+          <li><a href="/privacy">Privacy policy and data deletion</a></li>
+          <li><a href="/openapi.json">Public API (OpenAPI 3.1)</a></li>
+        </ul>
+      </main>
+    </div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

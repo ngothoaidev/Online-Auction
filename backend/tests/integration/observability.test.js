@@ -118,3 +118,18 @@ test("request ids: a malformed incoming id is replaced, errors carry the id", as
   assert.match(id, /^[0-9a-f-]{36}$/);
   assert.equal((await res.json()).requestId, id);
 });
+
+test("legacy handlers that answer { message } / { error } still return the { code, message, requestId } envelope", async () => {
+  for (const [path, status, code, message] of [
+    ["/auction/999999999", 404, "NOT_FOUND", "Auction Not Found"],
+    ["/users/profile", 400, "BAD_REQUEST", "Username is required"],
+  ]) {
+    const res = await fetch(`${t.base}${path}`);
+    const body = await res.json();
+    assert.equal(res.status, status, path);
+    assert.match(res.headers.get("content-type"), /^application\/json/);
+    assert.deepEqual([body.code, body.message, body.requestId], [code, message, res.headers.get("x-request-id")], path);
+  }
+  const ok = await (await fetch(`${t.base}/health/live`)).json();
+  assert.equal(ok.code, undefined, "success bodies are untouched");
+});
