@@ -6,7 +6,6 @@ import { Users, FolderTree, ShoppingBag, UserPlus, LogOut, Home, Menu, Flag, Scr
 import { useNav } from '../../hooks/useNavigate.js';
 import { useAuth } from '../../contexts/AuthContext.jsx';
 import { Dialog, IconButton } from '../../components/ui';
-import './AdminDashboard.css';
 
 export const ADMIN_NAV = [
   { to: 'categories', label: 'Categories', icon: FolderTree },

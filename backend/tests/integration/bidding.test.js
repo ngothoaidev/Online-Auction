@@ -295,3 +295,33 @@ test("Buy Now keys: a replay returns the same order and never creates a second o
   assert.equal(new Set([first, second, third].map((r) => r.body.orderId)).size, 1);
   assert.equal((await t.sql`SELECT count(*)::int AS n FROM orders WHERE auction_id = ${a}`)[0].n, 1);
 });
+
+test("viewer state: each signed-in bidder sees only their own maximum and the floor the server enforces for them", async () => {
+  const a = await newAuction({ start: 1000000, step: 100000 });
+  assert.equal((await bid(a, 10, "2000000")).body.outcome, "success"); // u10 leads with a private 2.000.000 maximum
+  assert.equal((await bid(a, 11, "1100000")).body.outcome, "outbid"); //  u11 is outbid, price auto-raised to 1.200.000
+  const get = async (i) => {
+    const res = await fetch(`${t.base}/auction/${a}`, { headers: i === undefined ? {} : { Authorization: `Bearer ${i === "seller" ? await t.tokenFor(seller) : tokens[i]}` } });
+    return { cache: res.headers.get("cache-control"), body: await res.json() };
+  };
+
+  const leader = await get(10);
+  assert.deepEqual(leader.body.viewer, { status: "leading", yourMaximum: "2000000", minimumBid: "2000001" });
+  assert.match(leader.cache, /no-store/);
+  assert.deepEqual((await get(11)).body.viewer, { status: "outbid", yourMaximum: "1100000", minimumBid: "1300000" });
+  assert.deepEqual((await get(12)).body.viewer, { status: "none", yourMaximum: null, minimumBid: "1300000" });
+  assert.equal((await get()).body.viewer, null, "guests get no viewer state");
+  assert.equal((await get("seller")).body.viewer, null, "the seller cannot bid, so no viewer state");
+  for (const who of [undefined, 11, 12, "seller"]) {
+    assert.ok(!JSON.stringify((await get(who)).body).includes('"2000000"'), `the leader's maximum leaked to ${who ?? "a guest"}`);
+  }
+
+  // the shown floor is the real one: one below is refused, exactly the floor is accepted
+  const below = (await bid(a, 10, "2000000")).body;
+  assert.equal(below.code, "BID_NOT_HIGHER");
+  assert.equal(below.details.minimumNextBid, leader.body.viewer.minimumBid, "server and viewer state agree on the leader's floor");
+  assert.equal((await bid(a, 10, leader.body.viewer.minimumBid)).body.outcome, "updated");
+  const low = (await bid(a, 11, "1299999")).body;
+  assert.equal(low.details.minimumNextBid, "1300000", "server and viewer state agree on the challenger's floor");
+  assert.equal((await bid(a, 11, "1300000")).body.outcome, "outbid");
+});

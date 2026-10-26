@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { Field } from '../../components/ui';
 import { Link } from 'react-router-dom';
 import { useNav } from '../../hooks/useNavigate';
 
@@ -16,7 +17,7 @@ export default function ForgetPassword() {
     // Form State
     const [email, setEmail] = useState('');
     const [resetToken, setResetToken] = useState('');
-    const [otp, setOtp] = useState(['', '', '', '', '', '']);
+    const [otp, setOtp] = useState(''); // one field, digits only
     const [newPassword, setNewPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
@@ -25,8 +26,7 @@ export default function ForgetPassword() {
     const [loading, setLoading] = useState(false);
     const [successMessage, setSuccessMessage] = useState('');
 
-    // Refs for OTP inputs
-    const otpRefs = useRef([]);
+    const otpRef = useRef(null);
 
     // Handle email submission
     const handleEmailSubmit = async (e) => {
@@ -67,56 +67,13 @@ export default function ForgetPassword() {
         }
     };
 
-    // Handle OTP input change
-    const handleOtpChange = (index, value) => {
-        // Only allow numbers
-        if (value && !/^\d$/.test(value)) return;
-
-        const newOtp = [...otp];
-        newOtp[index] = value;
-        setOtp(newOtp);
-
-        // Auto-focus next input
-        if (value && index < 5) {
-            otpRefs.current[index + 1]?.focus();
-        }
-    };
-
-    // Handle OTP key down (for backspace)
-    const handleOtpKeyDown = (index, e) => {
-        if (e.key === 'Backspace' && !otp[index] && index > 0) {
-            otpRefs.current[index - 1]?.focus();
-        }
-    };
-
-    // Handle OTP paste
-    const handleOtpPaste = (e) => {
-        e.preventDefault();
-        const pastedData = e.clipboardData.getData('text').slice(0, 6);
-        if (!/^\d+$/.test(pastedData)) return;
-
-        const newOtp = [...otp];
-        for (let i = 0; i < pastedData.length; i++) {
-            newOtp[i] = pastedData[i];
-        }
-        setOtp(newOtp);
-
-        // Focus the next empty input or the last one
-        const nextEmptyIndex = newOtp.findIndex(digit => !digit);
-        if (nextEmptyIndex !== -1) {
-            otpRefs.current[nextEmptyIndex]?.focus();
-        } else {
-            otpRefs.current[5]?.focus();
-        }
-    };
-
     // Handle OTP verification
     const handleOtpSubmit = async (e) => {
         e.preventDefault();
         setError('');
         setSuccessMessage('');
 
-        const otpCode = otp.join('');
+        const otpCode = otp;
         
         // Zod Validation
         const validation = validateForm(forgotPasswordOtpSchema, { otp: otpCode });
@@ -217,7 +174,7 @@ export default function ForgetPassword() {
             }
 
             setSuccessMessage('A new OTP has been sent to your email!');
-            setOtp(['', '', '', '', '', '']);
+            setOtp('');
         } catch (err) {
             setError(err.message || 'Failed to resend OTP. Please try again.');
         } finally {
@@ -228,13 +185,13 @@ export default function ForgetPassword() {
     // Focus first OTP input when step changes to 'otp'
     useEffect(() => {
         if (step === 'otp') {
-            otpRefs.current[0]?.focus();
+            otpRef.current?.focus();
         }
     }, [step]);
 
     return (
         <div className="w-full max-w-md">
-            <h2 className="text-3xl font-bold text-[var(--text)] mb-2">Forgot Password</h2>
+            <h1 className="text-3xl font-bold text-[var(--text)] mb-2">Forgot Password</h1>
             <p className="text-[var(--text-muted)] mb-8">
                 {step === 'email' && 'Enter your email address to receive a verification code.'}
                 {step === 'otp' && 'Enter the 6-digit code sent to your email.'}
@@ -242,13 +199,13 @@ export default function ForgetPassword() {
             </p>
             
             {successMessage && (
-                <div className="mb-4 p-3 rounded bg-[var(--success-soft)] border border-[var(--success)] text-[var(--success)] text-sm">
+                <div role="status" className="mb-4 p-3 rounded bg-[var(--success-soft)] border border-[var(--success)] text-[var(--success)] text-sm">
                     {successMessage}
                 </div>
             )}
 
             {error && (
-                <div className="mb-4 p-3 rounded bg-[var(--danger-soft)] border border-[var(--danger)] text-[var(--danger)] text-sm">
+                <div role="alert" className="mb-4 p-3 rounded bg-[var(--danger-soft)] border border-[var(--danger)] text-[var(--danger)] text-sm">
                     {error}
                 </div>
             )}
@@ -257,8 +214,8 @@ export default function ForgetPassword() {
                 /* Email Input Form */
                 <form className="space-y-5" onSubmit={handleEmailSubmit}>
                     <div className="space-y-2">
-                        <label className="block text-sm font-medium text-[var(--text-muted)]">Email address</label>
-                        <input 
+                        <label htmlFor="fp-email" className="block text-sm font-medium text-[var(--text-muted)]">Email address</label>
+                        <input id="fp-email" autoComplete="email"
                             type="email" 
                             required
                             value={email}
@@ -280,25 +237,16 @@ export default function ForgetPassword() {
                 /* OTP Input Form */
                 <form className="space-y-5" onSubmit={handleOtpSubmit}>
                     <div className="space-y-2">
-                        <label className="block text-sm font-medium text-[var(--text-muted)] mb-4">
-                            Verification Code
-                        </label>
-                        <div className="flex justify-between gap-2">
-                            {otp.map((digit, index) => (
-                                <input
-                                    key={index}
-                                    ref={(el) => (otpRefs.current[index] = el)}
-                                    type="text"
-                                    inputMode="numeric"
-                                    maxLength={1}
-                                    value={digit}
-                                    onChange={(e) => handleOtpChange(index, e.target.value)}
-                                    onKeyDown={(e) => handleOtpKeyDown(index, e)}
-                                    onPaste={handleOtpPaste}
-                                    className="w-12 h-14 text-center text-xl font-bold rounded-lg border border-[var(--input-border)] bg-[var(--input-bg)] text-[var(--text)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent transition-all"
-                                />
-                            ))}
-                        </div>
+                        <Field label="Verification code" hint="6 digits. You can paste the whole code.">
+                            <input
+                                ref={otpRef}
+                                value={otp}
+                                onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                                inputMode="numeric"
+                                autoComplete="one-time-code"
+                                className="h-14 text-center text-2xl font-lot tracking-[0.5em]"
+                            />
+                        </Field>
                         <p className="text-sm text-[var(--text-muted)] mt-2">
                             Code sent to: <span className="font-medium text-[var(--text)]">{email}</span>
                         </p>
@@ -317,7 +265,7 @@ export default function ForgetPassword() {
                             type="button"
                             onClick={() => {
                                 setStep('email');
-                                setOtp(['', '', '', '', '', '']);
+                                setOtp('');
                                 setError('');
                                 setSuccessMessage('');
                             }}
@@ -340,7 +288,7 @@ export default function ForgetPassword() {
                 <form className="space-y-5" onSubmit={handlePasswordReset}>
                     <div className="space-y-2">
                         <div className="flex justify-between items-center">
-                            <label className="block text-sm font-medium text-[var(--text-muted)]">New Password</label>
+                            <label htmlFor="fp-new" className="block text-sm font-medium text-[var(--text-muted)]">New Password</label>
                             <button
                                 type="button"
                                 onClick={() => setShowPassword(!showPassword)}
@@ -364,7 +312,7 @@ export default function ForgetPassword() {
                                 )}
                             </button>
                         </div>
-                        <input 
+                        <input id="fp-new" autoComplete="new-password"
                             type={showPassword ? "text" : "password"}
                             required
                             value={newPassword}
@@ -376,7 +324,7 @@ export default function ForgetPassword() {
 
                     <div className="space-y-2">
                         <div className="flex justify-between items-center">
-                            <label className="block text-sm font-medium text-[var(--text-muted)]">Confirm Password</label>
+                            <label htmlFor="fp-confirm" className="block text-sm font-medium text-[var(--text-muted)]">Confirm Password</label>
                             <button
                                 type="button"
                                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
@@ -400,7 +348,7 @@ export default function ForgetPassword() {
                                 )}
                             </button>
                         </div>
-                        <input 
+                        <input id="fp-confirm" autoComplete="new-password"
                             type={showConfirmPassword ? "text" : "password"}
                             required
                             value={confirmPassword}

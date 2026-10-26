@@ -3,15 +3,19 @@ import { useFeedback } from '../../components/ui/Feedback.jsx';
 import { useParams, Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import orderService from '../../services/orderService';
-import { formatCurrency, formatDate, formatTimeAgo } from '../../utils/format';
+import { formatTimeAgo, formatDeadline } from '../../utils/format';
+import { formatVnd } from '../../utils/money.js';
 import ImageUploadModal from '../../components/ImageUploadModal';
 import ProofLink from '../../components/ProofLink';
 import auctionService from '../../services/auctionService';
 import { paymentFormSchema, confirmPaymentSchema, reviewFormSchema, cancelOrderSchema, chatMessageSchema } from '../../schemas/order.schemas';
 import { validateForm } from '../../utils/validation';
 import MockPaymentPanel from './MockPaymentPanel.jsx';
+import { Dialog } from '../../components/ui';
+import { nextStep } from './nextStep.js';
 
-// Status step mapping
+// Status -> step. Step 2 is the seller's turn in both payment paths: confirm a manual payment and ship
+// (pending_confirmation), or ship after the gateway recorded the payment (pending_delivery).
 const STATUS_STEPS = {
   pending_payment: 1,
   pending_confirmation: 2,
@@ -23,12 +27,15 @@ const STATUS_STEPS = {
   payment_expired: -1,
 };
 
-const STEP_LABELS = [
-  'Payment',
-  'Confirmation',
-  'Delivery',
-  'Review',
-];
+const STEP_LABELS = ['Payment', 'Shipping', 'Receipt', 'Reviews'];
+
+const ItemPhoto = ({ src, alt, className }) => (src
+  ? <img src={src} alt={alt} className={`object-cover ${className}`} />
+  : <div role="img" aria-label={`${alt}: no photo`} className={`flex items-center justify-center bg-(--surface-sunken) text-xs text-(--muted) ${className}`}>No photo</div>);
+
+const ChatAvatar = ({ user }) => (user?.avatarUrl
+  ? <img src={user.avatarUrl} alt="" className="h-8 w-8 flex-shrink-0 rounded-full object-cover" />
+  : <span aria-hidden="true" className="inline-flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-(--surface-sunken) text-xs font-semibold text-(--muted)">{(user?.username ?? '?')[0].toUpperCase()}</span>);
 
 export default function OrderCompletion() {
   const { confirm, notify } = useFeedback();
@@ -45,7 +52,8 @@ export default function OrderCompletion() {
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
   const [sendingMessage, setSendingMessage] = useState(false);
-  const messagesEndRef = useRef(null);
+  const chatRef = useRef(null);
+  const [channelChoice, setChannelChoice] = useState(null); // buyer's pick while the server has not locked a payment mode
 
   // Form states
   const [paymentForm, setPaymentForm] = useState({
@@ -78,6 +86,13 @@ export default function OrderCompletion() {
   const isSeller = user?.userId === order?.sellerId;
   const isBuyer = user?.userId === order?.buyerId;
   const isParticipant = isSeller || isBuyer;
+  const step = order ? nextStep(order, isSeller ? 'seller' : 'buyer') : { yourTurn: false, title: '', detail: '' };
+  const ended = order?.status === 'cancelled' || order?.status === 'payment_expired';
+  const channels = payment?.available ?? ['manual'];
+  // paymentMode starts as 'manual' (the default, not a choice); it becomes the gateway's name once a checkout starts,
+  // and from then on the server refuses the other channel.
+  const lockedMode = payment?.mode && payment.mode !== 'manual' ? payment.mode : null;
+  const channel = lockedMode ?? (channels.length === 1 ? channels[0] : channelChoice);
   useEffect(() => {
     loadData();
   }, [auctionId]);
@@ -95,12 +110,9 @@ export default function OrderCompletion() {
   }, [order?.id]);
 
   useEffect(() => {
-    scrollToBottom();
+    const box = chatRef.current;
+    if (box) box.scrollTop = box.scrollHeight; // newest message in view, inside the chat box only
   }, [messages]);
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
 
   const loadData = async ({ attempts = 0, silent = attempts > 0 } = {}) => {
     try {
@@ -358,21 +370,17 @@ export default function OrderCompletion() {
     return (
       <div className="min-h-screen py-8" style={{ backgroundColor: 'var(--bg)' }}>
         <div className="max-w-4xl mx-auto px-4">
-          <div className="bg-(--card) rounded-2xl shadow-lg p-8 text-center">
+          <div className="bg-(--surface) rounded-(--radius-card) border border-(--line) p-8 text-center">
             <h1 className="text-2xl font-bold text-(--text) mb-4">Auction Ended</h1>
             <p className="text-(--text-muted) mb-6">
               This auction has ended. Only the seller and winner can view the order details.
             </p>
             {auction && (
               <div className="border border-(--border) rounded-xl p-6 mb-6">
-                <img
-                  src={auction.image || auction.images?.[0]}
-                  alt={auction.title}
-                  className="w-48 h-48 object-cover rounded-lg mx-auto mb-4"
-                />
+                <ItemPhoto src={auction.image} alt={auction.title} className="w-48 h-48 rounded-lg mx-auto mb-4" />
                 <h2 className="text-xl font-semibold text-(--text)">{auction.title}</h2>
                 <p className="text-(--text-muted) mt-2">
-                  Final Price: <span className="text-(--success) font-bold">{formatCurrency(auction.currentPrice)}</span>
+                  Final Price: <span className="text-(--success) font-bold">{formatVnd(auction.currentPrice)}</span>
                 </p>
               </div>
             )}
@@ -391,14 +399,30 @@ export default function OrderCompletion() {
   return (
     <div className="min-h-screen py-8" style={{ backgroundColor: 'var(--bg)' }}>
       <div className="max-w-6xl mx-auto px-4">
-        {/* Header */}
-        <div className="bg-(--card) rounded-2xl shadow-lg p-6 mb-6">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div>
-              <h1 className="text-2xl font-bold text-(--text)">Order Completion</h1>
-              <p className="text-(--text-muted) mt-1">
-                {isSeller ? 'You are the seller' : 'You are the buyer'}
+        {/* Header: what this person does next, the exact amount and the deadline, before anything else */}
+        <div className="bg-(--surface) rounded-(--radius-card) border border-(--line) p-6 mb-6">
+          <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
+            <div className="min-w-0">
+              <p className="text-sm text-(--muted)">
+                Order #{order?.id} · You are the {isSeller ? 'seller' : 'buyer'}
+                {step.yourTurn && <> · <span className="font-semibold text-(--ink)">Your turn</span></>}
               </p>
+              <h1 className={`mt-1 text-2xl font-semibold ${ended ? 'text-(--danger)' : 'text-(--ink)'}`}>{step.title}</h1>
+              {step.detail && <p className="mt-1 text-(--muted)">{step.detail}</p>}
+              <dl className="mt-4 flex flex-wrap gap-x-10 gap-y-3">
+                <div>
+                  <dt className="text-sm text-(--muted)">Item price</dt>
+                  <dd className="font-lot text-xl font-semibold text-(--ink)">{formatVnd(order?.finalPrice)}</dd>
+                  <dd className="text-sm text-(--muted)">Shipping is arranged with the seller and not included.</dd>
+                </div>
+                {order?.status === 'pending_payment' && order?.paymentDueAt && (
+                  <div>
+                    <dt className="text-sm text-(--muted)">Pay before</dt>
+                    <dd className="text-base font-semibold text-(--ink)">{formatDeadline(order.paymentDueAt)}</dd>
+                    <dd className="text-sm text-(--muted)">Unpaid orders expire automatically.</dd>
+                  </div>
+                )}
+              </dl>
             </div>
             {order?.status === 'pending_payment' && isSeller && (
               <button
@@ -414,45 +438,17 @@ export default function OrderCompletion() {
         {/* Payment mode + deadline: this site never holds money */}
         {order?.status === 'pending_payment' && (
           <div role="note" className="mb-6 rounded-2xl border border-(--line) bg-(--surface-sunken) p-4 text-sm text-(--ink)">
-            {payment?.mode === 'mock' ? (
+            {lockedMode === 'mock' ? (
               <p><strong>Mock gateway (demo).</strong> This order is paid through a simulated gateway. No real money moves.</p>
             ) : (
-              <p>
-                <strong>Manual payment.</strong> Pay the seller directly, then upload your receipt below. This site does not process or hold payments.
-                {payment?.available?.includes('mock') && ' For the demo you can use the mock gateway instead; an order is paid one way only.'}
-              </p>
+              <p>Payment goes directly from the buyer to the seller. This site does not process or hold payments.</p>
             )}
-            {order?.paymentDueAt && <p className="mt-1 text-(--muted)">Pay before {new Date(order.paymentDueAt).toLocaleString()}; unpaid orders expire automatically.</p>}
-          </div>
-        )}
-
-        {order?.status === 'payment_expired' && (
-          <div role="alert" className="mb-6 rounded-2xl border border-(--danger) bg-(--danger-soft) p-6">
-            <h3 className="text-lg font-semibold text-(--danger)">Payment window closed</h3>
-            <p className="mt-1 text-(--ink)">No payment was recorded before the deadline, so this order expired. The lot is not reopened.</p>
-          </div>
-        )}
-
-        {/* Cancelled Status */}
-        {order?.status === 'cancelled' && (
-          <div className="bg-(--danger-soft) border border-(--danger) rounded-2xl p-6 mb-6">
-            <div className="flex items-center gap-3">
-              <svg className="w-8 h-8 text-(--danger)" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <div>
-                <h3 className="text-lg font-semibold text-(--danger)">Order Cancelled</h3>
-                {order?.cancelReason && (
-                  <p className="text-(--danger) mt-1">Reason: {order.cancelReason}</p>
-                )}
-              </div>
-            </div>
           </div>
         )}
 
         {/* Progress Steps */}
         {order?.status !== 'cancelled' && order?.status !== 'payment_expired' && (
-          <div className="bg-(--card) rounded-2xl shadow-lg p-6 mb-6">
+          <div className="bg-(--surface) rounded-(--radius-card) border border-(--line) p-6 mb-6">
             <div className="flex items-center justify-between">
               {STEP_LABELS.map((label, index) => {
                 const stepNum = index + 1;
@@ -502,19 +498,15 @@ export default function OrderCompletion() {
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
             {/* Auction Info */}
-            <div className="bg-(--card) rounded-2xl shadow-lg p-6">
+            <div className="bg-(--surface) rounded-(--radius-card) border border-(--line) p-6">
               <h2 className="text-lg font-semibold text-(--text) mb-4">Auction Details</h2>
               {auction && (
                 <div className="flex gap-4">
-                  <img
-                    src={auction.image || auction.images?.[0]}
-                    alt={auction.title}
-                    className="w-24 h-24 object-cover rounded-lg flex-shrink-0"
-                  />
+                  <ItemPhoto src={auction.image} alt={auction.title} className="w-24 h-24 rounded-lg flex-shrink-0" />
                   <div className="flex-1 min-w-0">
                     <h3 className="font-semibold text-(--text) truncate">{auction.title}</h3>
                     <p className="text-(--text-muted) text-sm mt-1">
-                      Final Price: <span className="text-(--success) font-bold">{formatCurrency(order?.finalPrice)}</span>
+                      Final Price: <span className="text-(--success) font-bold">{formatVnd(order?.finalPrice)}</span>
                     </p>
                     <p className="text-(--text-muted) text-sm mt-1">
                       Order ID: <span className="font-mono">{order?.id}</span>
@@ -524,13 +516,30 @@ export default function OrderCompletion() {
               )}
             </div>
 
-            {/* Step 1: Payment (Buyer) - mock gateway when enabled; starting it locks the order to that mode */}
-            {order?.status === 'pending_payment' && isBuyer && payment?.available?.includes('mock') && (
+            {/* Step 1: Payment (Buyer). One channel at a time: the server locks the mode once payment starts. */}
+            {order?.status === 'pending_payment' && isBuyer && !lockedMode && channels.length > 1 && (
+              <fieldset className="bg-(--surface) rounded-(--radius-card) border border-(--line) p-6">
+                <legend className="sr-only">How will you pay?</legend>
+                <h2 aria-hidden="true" className="text-lg font-semibold text-(--ink)">How will you pay?</h2>
+                <p className="mt-1 text-sm text-(--muted)">An order is paid one way only. You can switch until you submit.</p>
+                <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                  {[['manual', 'Pay the seller directly', 'Bank transfer or cash, then upload your receipt here.'],
+                    ['mock', 'Mock gateway (demo)', 'A simulated checkout. No real money moves.']].filter(([id]) => channels.includes(id)).map(([id, label, hint]) => (
+                    <label key={id} className={`flex cursor-pointer gap-3 rounded-(--radius-control) border p-4 ${channel === id ? 'border-(--ink) bg-(--surface-sunken)' : 'border-(--input-border)'}`}>
+                      <input type="radio" name="pay-channel" value={id} checked={channel === id} onChange={() => setChannelChoice(id)} className="mt-1" />
+                      <span><span className="block font-semibold text-(--ink)">{label}</span><span className="block text-sm text-(--muted)">{hint}</span></span>
+                    </label>
+                  ))}
+                </div>
+              </fieldset>
+            )}
+
+            {order?.status === 'pending_payment' && isBuyer && channel === 'mock' && (
               <MockPaymentPanel order={order} payment={payment} onChanged={() => loadData({ silent: true })} />
             )}
 
-            {order?.status === 'pending_payment' && isBuyer && payment?.mode !== 'mock' && (
-              <div className="bg-(--card) rounded-2xl shadow-lg p-6">
+            {order?.status === 'pending_payment' && isBuyer && channel === 'manual' && (
+              <div className="bg-(--surface) rounded-(--radius-card) border border-(--line) p-6">
                 <h2 className="text-lg font-semibold text-(--text) mb-4">Submit Payment Details</h2>
                 <form onSubmit={handleSubmitPayment} className="space-y-4">
                   <div>
@@ -554,7 +563,7 @@ export default function OrderCompletion() {
                         <button
                           type="button"
                           onClick={() => openImageUpload('payment')}
-                          className="w-full px-4 py-2 border border-(--border) text-(--text) rounded-xl hover:bg-(--hover) transition"
+                          className="w-full px-4 py-2 border border-(--border) text-(--text) rounded-xl hover:bg-(--surface-hover) transition"
                         >
                           Change Image
                         </button>
@@ -623,7 +632,7 @@ export default function OrderCompletion() {
 
             {/* Step 1: Waiting for Payment (Seller) */}
             {order?.status === 'pending_payment' && isSeller && (
-              <div className="bg-(--card) rounded-2xl shadow-lg p-6">
+              <div className="bg-(--surface) rounded-(--radius-card) border border-(--line) p-6">
                 <h2 className="text-lg font-semibold text-(--text) mb-4">Waiting for Payment</h2>
                 <div className="flex items-center gap-3 text-(--warning)">
                   <svg className="w-6 h-6 animate-pulse" fill="currentColor" viewBox="0 0 20 20">
@@ -636,7 +645,7 @@ export default function OrderCompletion() {
 
             {/* Step 2: Confirm Payment (Seller) */}
             {(order?.status === 'pending_confirmation' || order?.status === 'pending_delivery') && isSeller && (
-              <div className="bg-(--card) rounded-2xl shadow-lg p-6">
+              <div className="bg-(--surface) rounded-(--radius-card) border border-(--line) p-6">
                 <h2 className="text-lg font-semibold text-(--text) mb-4">{order.status === 'pending_delivery' ? 'Payment Recorded: Ship the Item' : 'Confirm Payment & Ship'}</h2>
                 
                 {/* Show buyer's payment info */}
@@ -688,7 +697,7 @@ export default function OrderCompletion() {
                         <button
                           type="button"
                           onClick={() => openImageUpload('shipping')}
-                          className="w-full px-4 py-2 border border-(--border) text-(--text) rounded-xl hover:bg-(--hover) transition"
+                          className="w-full px-4 py-2 border border-(--border) text-(--text) rounded-xl hover:bg-(--surface-hover) transition"
                         >
                           Change Image
                         </button>
@@ -744,7 +753,7 @@ export default function OrderCompletion() {
 
             {/* Step 2: Waiting for Confirmation (Buyer) */}
             {order?.status === 'pending_confirmation' && isBuyer && (
-              <div className="bg-(--card) rounded-2xl shadow-lg p-6">
+              <div className="bg-(--surface) rounded-(--radius-card) border border-(--line) p-6">
                 <h2 className="text-lg font-semibold text-(--text) mb-4">Payment Submitted</h2>
                 <div className="bg-(--success-soft) rounded-xl p-4 mb-4">
                   <div className="flex items-center gap-3 text-(--success)">
@@ -764,7 +773,7 @@ export default function OrderCompletion() {
             )}
 
             {order?.status === 'pending_delivery' && isBuyer && (
-              <div className="bg-(--card) rounded-2xl shadow-lg p-6">
+              <div className="bg-(--surface) rounded-(--radius-card) border border-(--line) p-6">
                 <h2 className="text-lg font-semibold text-(--text) mb-2">Payment Recorded</h2>
                 <p className="text-(--text)">{order.paymentMode === 'mock' ? 'The mock gateway confirmed your payment (demo, no real money).' : 'Your payment was confirmed.'} Waiting for the seller to ship.</p>
               </div>
@@ -772,7 +781,7 @@ export default function OrderCompletion() {
 
             {/* Step 3: Waiting for Delivery/Receipt */}
             {order?.status === 'pending_receipt' && (
-              <div className="bg-(--card) rounded-2xl shadow-lg p-6">
+              <div className="bg-(--surface) rounded-(--radius-card) border border-(--line) p-6">
                 <h2 className="text-lg font-semibold text-(--text) mb-4">
                   {isBuyer ? 'Item Shipped' : 'Item in Transit'}
                 </h2>
@@ -818,7 +827,7 @@ export default function OrderCompletion() {
 
             {/* Step 4: Review */}
             {(order?.status === 'pending_review' || order?.status === 'completed') && (
-              <div className="bg-(--card) rounded-2xl shadow-lg p-6">
+              <div className="bg-(--surface) rounded-(--radius-card) border border-(--line) p-6">
                 <h2 className="text-lg font-semibold text-(--text) mb-4">
                   {order?.status === 'completed' ? 'Transaction Completed' : 'Leave a Review'}
                 </h2>
@@ -941,13 +950,13 @@ export default function OrderCompletion() {
 
           {/* Chat Sidebar */}
           <div className="lg:col-span-1">
-            <div className="bg-(--card) rounded-2xl shadow-lg overflow-hidden sticky top-24">
+            <div className="bg-(--surface) rounded-(--radius-card) border border-(--line) overflow-hidden sticky top-24">
               <div className="p-4 border-b border-(--border)">
                 <h2 className="font-semibold text-(--text)">Chat with {isSeller ? 'Buyer' : 'Seller'}</h2>
               </div>
               
               {/* Messages */}
-              <div className="h-80 overflow-y-auto p-4 space-y-3">
+              <div ref={chatRef} role="log" aria-label="Messages" className="h-80 overflow-y-auto p-4 space-y-3">
                 {messages.length === 0 ? (
                   <p className="text-center text-(--text-muted) text-sm py-8">
                     No messages yet. Start a conversation!
@@ -961,13 +970,7 @@ export default function OrderCompletion() {
                         className={`flex gap-2 ${isCurrentUser ? 'justify-end' : 'justify-start'}`}
                       >
                         {/* Avatar for other user (left side) */}
-                        {!isCurrentUser && (
-                          <img
-                            src={msg.sender?.avatarUrl || 'https://via.placeholder.com/32'}
-                            alt={msg.sender?.username}
-                            className="w-8 h-8 rounded-full flex-shrink-0"
-                          />
-                        )}
+                        {!isCurrentUser && <ChatAvatar user={msg.sender} />}
                         
                         <div className={`flex flex-col ${isCurrentUser ? 'items-end' : 'items-start'} max-w-[70%]`}>
                           {/* Username */}
@@ -991,18 +994,11 @@ export default function OrderCompletion() {
                         </div>
 
                         {/* Avatar for current user (right side) */}
-                        {isCurrentUser && (
-                          <img
-                            src={msg.sender?.avatarUrl || 'https://via.placeholder.com/32'}
-                            alt={msg.sender?.username}
-                            className="w-8 h-8 rounded-full flex-shrink-0"
-                          />
-                        )}
+                        {isCurrentUser && <ChatAvatar user={msg.sender} />}
                       </div>
                     );
                   })
                 )}
-                <div ref={messagesEndRef} />
               </div>
 
               {/* Message Input */}
@@ -1033,16 +1029,14 @@ export default function OrderCompletion() {
       </div>
 
       {/* Cancel Modal */}
-      {showCancelModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-(--card) rounded-2xl shadow-xl max-w-md w-full p-6">
-            <h3 className="text-xl font-bold text-(--text) mb-4">Cancel Order</h3>
+      <Dialog open={showCancelModal} onClose={() => setShowCancelModal(false)} title="Cancel order" pending={submitting}>
             <form onSubmit={handleCancelOrder} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-(--text) mb-2">
+                <label htmlFor="cancel-reason" className="block text-sm font-medium text-(--text) mb-2">
                   Reason for Cancellation
                 </label>
                 <textarea
+                  id="cancel-reason"
                   value={cancelForm.reason}
                   onChange={(e) => setCancelForm({ ...cancelForm, reason: e.target.value })}
                   className="w-full px-4 py-3 rounded-xl border border-(--border) bg-(--input-bg) text-(--text) focus:ring-2 focus:ring-(--focus) focus:border-transparent"
@@ -1056,7 +1050,8 @@ export default function OrderCompletion() {
                 <button
                   type="button"
                   onClick={() => setShowCancelModal(false)}
-                  className="flex-1 py-3 border border-(--border) text-(--text) rounded-xl font-semibold hover:bg-(--hover) transition"
+                  disabled={submitting}
+                  className="flex-1 py-3 border border-(--border) text-(--text) rounded-xl font-semibold hover:bg-(--surface-hover) transition disabled:opacity-50"
                 >
                   Keep Order
                 </button>
@@ -1069,9 +1064,7 @@ export default function OrderCompletion() {
                 </button>
               </div>
             </form>
-          </div>
-        </div>
-      )}
+      </Dialog>
 
       {/* Image Upload Modal */}
       <ImageUploadModal

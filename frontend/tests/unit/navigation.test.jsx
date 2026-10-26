@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, within, fireEvent } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Routes, Route, useLocation } from 'react-router-dom'
 import { searchUrl, TAB_SEARCH_SORT } from '../../src/utils/searchUrl.js'
@@ -85,5 +85,57 @@ describe('Back into /admin after logout', () => {
     expect(await screen.findByText('login page')).toBeInTheDocument()
     expect(screen.queryByText('admin secrets')).toBeNull()
     authState.user = { role: 'admin' }
+  })
+})
+
+describe('useNav().go', () => {
+  it('passes router options through, so notices like "check your email" reach the login page', async () => {
+    const { useNav } = await import('../../src/hooks/useNavigate.js')
+    const Go = () => { const nav = useNav(); return <button onClick={() => nav.go('/login', { state: { message: 'Check your email' } })}>go</button> }
+    const Notice = () => <p>{useLocation().state?.message ?? 'no notice'}</p>
+    render(<MemoryRouter initialEntries={['/register']}><Routes><Route path="/register" element={<Go />} /><Route path="/login" element={<Notice />} /></Routes></MemoryRouter>)
+    await userEvent.click(screen.getByRole('button', { name: 'go' }))
+    expect(screen.getByText('Check your email')).toBeInTheDocument()
+  })
+})
+
+describe('account navigation (design audit F06: phones had no way to bids, saved lots, orders or selling)', () => {
+  it('the same role-aware destinations are offered everywhere', async () => {
+    const { accountLinks } = await import('../../src/components/Header/accountLinks.js')
+    const labels = (role) => accountLinks({ username: 'an', role }).map((l) => l.label)
+    expect(labels('buyer')).toEqual(['Notifications', 'My bids', 'Wins and orders', 'Saved lots', 'Start selling', 'My profile'])
+    expect(labels('seller')).toEqual(expect.arrayContaining(['Create listing', 'My listings', 'Sold']))
+    expect(labels('seller')).not.toContain('Start selling')
+    expect(labels('admin')).toContain('Admin dashboard')
+    expect(accountLinks(null)).toEqual([])
+    expect(accountLinks({ username: 'an', role: 'buyer' }).find((l) => l.label === 'My bids').to).toBe('/profile/an?tab=active-bids')
+  })
+
+  it('the mobile menu lists them for a signed-in user and not for a guest', () => {
+    const { unmount } = render(<MemoryRouter><MobileMenu open onClose={() => {}} user={{ username: 'sel', role: 'seller' }} categories={[]} logout={() => {}} /></MemoryRouter>)
+    const account = screen.getByRole('navigation', { name: 'Account' })
+    expect(within(account).getByRole('link', { name: 'My bids' })).toHaveAttribute('href', '/profile/sel?tab=active-bids')
+    expect(within(account).getByRole('link', { name: 'Create listing' })).toHaveAttribute('href', '/create-auction')
+    unmount()
+    render(<MemoryRouter><MobileMenu open onClose={() => {}} user={null} categories={[]} logout={() => {}} /></MemoryRouter>)
+    expect(screen.queryByRole('navigation', { name: 'Account' })).toBeNull()
+  })
+})
+
+describe('desktop Categories button', () => {
+  it('a click right after hovering keeps the menu open; the next click closes it; keyboard toggles as before', async () => {
+    const { default: CategoryDropper } = await import('../../src/components/Header/CategoryDropper.jsx')
+    render(<MemoryRouter><CategoryDropper categories={[{ id: 1, name: 'Watches', subcategories: [] }]} /></MemoryRouter>)
+    const button = screen.getByRole('button', { name: /categories/i })
+    fireEvent.mouseEnter(button.parentElement)
+    expect(button).toHaveAttribute('aria-expanded', 'true')
+    fireEvent.click(button)
+    expect(button).toHaveAttribute('aria-expanded', 'true')
+    fireEvent.click(button)
+    expect(button).toHaveAttribute('aria-expanded', 'false')
+    fireEvent.mouseLeave(button.parentElement)
+    button.focus()
+    await userEvent.keyboard('{Enter}')
+    expect(button).toHaveAttribute('aria-expanded', 'true')
   })
 })

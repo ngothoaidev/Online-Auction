@@ -20,7 +20,7 @@ function Hero({ lot, user }) {
     <section className="mx-auto grid max-w-7xl items-center gap-8 px-4 py-10 sm:px-6 md:py-16 lg:grid-cols-12 lg:px-10">
       <div className="lg:col-span-5">
         <p className="text-sm font-semibold uppercase tracking-wider text-(--brand)">Online auction</p>
-        <h1 className="font-display mt-3 text-4xl font-semibold leading-tight text-(--ink) md:text-5xl">Collectibles, bid by bid.</h1>
+        <h1 className="tracking-tight mt-3 text-4xl font-semibold leading-tight text-(--ink) md:text-5xl">Collectibles, bid by bid.</h1>
         <p className="mt-4 max-w-md text-lg text-(--muted)">Place a private maximum and let the auction work for you. Every lot closes automatically and the winner is recorded at once.</p>
         <div className="mt-6 flex flex-wrap gap-3">
           <Link to="/search" className="inline-flex min-h-12 items-center rounded-(--radius-control) bg-(--ink) px-6 font-semibold text-(--on-ink) hover:opacity-90">Browse all lots</Link>
@@ -78,7 +78,7 @@ export default function HomePage() {
       <ProductTabs />
 
       <section aria-labelledby="how-it-works" className="mx-auto mt-16 max-w-7xl px-4 sm:px-6 lg:px-10">
-        <h2 id="how-it-works" className="font-display text-3xl font-semibold text-(--ink)">How bidding works</h2>
+        <h2 id="how-it-works" className="tracking-tight text-3xl font-semibold text-(--ink)">How bidding works</h2>
         <ol className="mt-6 grid gap-4 md:grid-cols-3">
           {STEPS.map(([title, text], i) => (
             <li key={title} className="rounded-(--radius-card) border border-(--line) bg-(--surface) p-5">

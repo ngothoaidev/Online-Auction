@@ -95,17 +95,13 @@ export const reviewService = {
         totalReviews: sql`count(*)::int`,
         positiveReviews: sql`count(case when ${reviews.isGoodRating} = true then 1 end)::int`,
         negativeReviews: sql`count(case when ${reviews.isGoodRating} = false then 1 end)::int`,
-        positivePercentage: sql`round((count(case when ${reviews.isGoodRating} = true then 1 end)::numeric / count(*)::numeric) * 100, 2)`,
+        // NULL (not 0%) when there are no reviews: "no reviews yet" is not "all negative".
+        positivePercentage: sql`round((count(case when ${reviews.isGoodRating} = true then 1 end)::numeric / nullif(count(*), 0)::numeric) * 100, 2)`,
       })
       .from(reviews)
       .where(whereClause);
 
-    return stats || {
-      totalReviews: 0,
-      positiveReviews: 0,
-      negativeReviews: 0,
-      positivePercentage: 0,
-    };
+    return stats;
   },
 
   /**

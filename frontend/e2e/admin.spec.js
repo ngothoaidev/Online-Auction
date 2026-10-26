@@ -29,6 +29,14 @@ test('admin routes: /admin redirects to categories, deep links work, guests and 
   await expect(ap).toHaveURL(/\/admin\/categories$/)
   await ap.goto('/admin/upgrades')
   await expect(ap.getByRole('link', { name: 'Seller requests' })).toHaveAttribute('aria-current', 'page')
+
+  // the Users page shortcut is a real link (it used to call a missing callback and throw)
+  const errors = []
+  ap.on('pageerror', (e) => errors.push(e.message))
+  await ap.goto('/admin/users')
+  await ap.getByRole('link', { name: 'Upgrade Requests' }).click()
+  await expect(ap).toHaveURL(/\/admin\/upgrades$/)
+  expect(errors).toEqual([])
   await adminCtx.close()
 })
 
@@ -49,6 +57,10 @@ test('admin on a phone: drawer navigation, Escape closes it, destructive actions
   await drawer.getByRole('link', { name: 'Listings' }).click()
   await expect(page).toHaveURL(/\/admin\/products$/)
   await expect(drawer).toHaveCount(0)
+
+  await page.goto('/admin/upgrades')
+  await expect(page.getByRole('button', { name: 'Refresh requests' })).toBeVisible()
+  expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth), 'no sideways scroll at 390px').toBeLessThanOrEqual(0)
 
   await page.goto('/admin/users')
   const ban = page.getByRole('button', { name: /ban/i }).first()

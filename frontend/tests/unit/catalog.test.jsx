@@ -90,7 +90,16 @@ describe('WatchlistContext', () => {
 })
 
 describe('AuctionCard', () => {
-  const renderCard = (p) => render(<MemoryRouter><WatchlistProvider><AuctionCard product={p} /></WatchlistProvider></MemoryRouter>)
+  const renderCard = (p, variant) => render(<MemoryRouter><WatchlistProvider><AuctionCard product={p} variant={variant} /></WatchlistProvider></MemoryRouter>)
+
+  it('on the profile Wins / Sold tabs the card links back to the order; elsewhere it does not', async () => {
+    apiFetch.mockResolvedValue({ auctionIds: [] })
+    const { unmount } = renderCard(lot(), 'won')
+    expect(screen.getByRole('link', { name: 'View order for Omega Seamaster' })).toHaveAttribute('href', '/order/7')
+    unmount()
+    renderCard(lot())
+    expect(screen.queryByRole('link', { name: /view order/i })).toBeNull()
+  })
 
   it('is an article with real links and a sibling favourite button; lots without bids show the starting price, not NaN', async () => {
     apiFetch.mockResolvedValue({ auctionIds: [] })

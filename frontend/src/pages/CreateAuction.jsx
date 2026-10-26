@@ -76,7 +76,7 @@ export default function CreateAuction() {
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6">
-      <h1 className="font-display text-3xl font-semibold text-(--ink)">Create a listing</h1>
+      <h1 className="tracking-tight text-3xl font-semibold text-(--ink)">Create a listing</h1>
       <p className="mt-1 text-(--muted)">Prices are whole amounts in ₫. Bids and the deadline cannot be changed after the first bid.</p>
 
       <div id="listing-errors" tabIndex={-1} role="alert" className="outline-none">
@@ -120,7 +120,7 @@ export default function CreateAuction() {
           </Field>
           <div>
             <p id="desc-label" className="mb-1.5 text-sm font-medium text-(--ink)">Description</p>
-            <RichTextEditor value={form.description} onChange={(html) => setForm((f) => ({ ...f, description: html }))} />
+            <RichTextEditor labelledBy="desc-label" value={form.description} onChange={(html) => setForm((f) => ({ ...f, description: html }))} />
           </div>
         </Section>
 

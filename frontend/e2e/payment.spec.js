@@ -14,6 +14,7 @@ test('buy now -> mock gateway payment in the UI -> seller ships -> buyer waits f
   await buyerCtx.addInitScript((t) => localStorage.setItem('authToken', t), buyer)
   const page = await buyerCtx.newPage()
   await page.goto(`/order/${lotId}`)
+  await page.getByRole('radio', { name: /mock gateway/i }).check()
   const panel = page.getByRole('region', { name: 'Pay with the mock gateway' })
   await expect(panel.getByText('no real money moves')).toBeVisible()
   await expect(panel.getByText('2.500.000 ₫')).toBeVisible()

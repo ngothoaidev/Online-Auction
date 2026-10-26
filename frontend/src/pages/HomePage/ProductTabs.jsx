@@ -32,7 +32,7 @@ export default function ProductTabs() {
   return (
     <section aria-labelledby="featured-lots" className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-10">
       <div className="flex flex-wrap items-end justify-between gap-4">
-        <h2 id="featured-lots" className="font-display text-3xl font-semibold text-(--ink)">Lots to watch</h2>
+        <h2 id="featured-lots" className="tracking-tight text-3xl font-semibold text-(--ink)">Lots to watch</h2>
         <div role="group" aria-label="Sort lots" className="flex flex-wrap gap-2">
           {TABS.map((tab) => (
             <button

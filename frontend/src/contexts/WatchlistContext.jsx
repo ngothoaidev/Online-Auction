@@ -26,9 +26,8 @@ export function WatchlistProvider({ children }) {
     const controller = new AbortController();
     setReady(false);
     apiFetch('/users/favorites', { signal: controller.signal, auth: 'required' })
-      .then((data) => setIds(new Set(data.auctionIds)))
-      .catch(() => {})
-      .finally(() => { if (!controller.signal.aborted) setReady(true); });
+      .then((data) => { setIds(new Set(data.auctionIds)); setReady(true); })
+      .catch(() => {}); // stays not-ready: hearts disabled rather than wrongly "unsaved"
     return () => controller.abort();
   }, [user?.userId, user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -58,7 +57,9 @@ export function WatchlistProvider({ children }) {
   const toggle = useCallback((auctionId) => set(auctionId, !idsRef.current.has(auctionId)), [set]);
 
   const value = useMemo(() => ({
-    has: (id) => ids.has(id), pending: (id) => busy.has(id), set, toggle, ready,
+    // Until the saved list has loaded (or if it failed) hearts are "pending": showing them as unsaved and clickable
+    // would be a guess, and a click could be overwritten when the list arrives.
+    has: (id) => ids.has(id), pending: (id) => !ready || busy.has(id), set, toggle, ready,
   }), [ids, busy, set, toggle, ready]);
 
   return <WatchlistContext.Provider value={value}>{children}</WatchlistContext.Provider>;

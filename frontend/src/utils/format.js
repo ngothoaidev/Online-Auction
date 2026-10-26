@@ -1,29 +1,4 @@
 /**
- * Format currency amount using Vietnamese Dong format
- * @param {number} amount - The amount to format
- * @returns {string} Formatted currency string
- */
-export const formatCurrency = (amount) => {
-  // If amount > 1 billion, show in billions with "B"
-  if (amount >= 1000000000) {
-    const billions = amount / 1000000000;
-    return `${billions.toFixed(1)}B ₫`;
-  }
-  // If amount > 1000000, show in millions with "M"
-  if (amount >= 1000000) {
-    const millions = amount / 1000000;
-    return `${millions.toFixed(1)}M ₫`;
-  }
-  // If amount > 1000, show in thousands with "K"
-  if (amount >= 1000) {
-    const thousands = amount / 1000;
-    return `${thousands.toFixed(1)}K ₫`;
-  }
-  const formattedAmount = amount / 1;
-  return `${formattedAmount.toFixed(1)} ₫`;
-};
-
-/**
  * Format the ending date
  * @param {string|Date} date - The auction end time (ISO string or Date object)
  * @param {boolean} includeTime - Whether to include time
@@ -47,8 +22,8 @@ export const formatDate = (date, includeTime = false) => {
  * @returns {string} Object.timeLeft - Formatted time remaining
  * @returns {string} Object.urgencyLevel - One of: 'normal', 'warning', 'critical'
  */
-/** `now` (ms) lets callers pass a server-corrected clock. */
-export const formatTimeLeft = (endTime, now = Date.now()) => {
+/** `now` (ms) lets callers pass a server-corrected clock. `seconds`: show seconds in the final 5 minutes (only for a 1s tick). */
+export const formatTimeLeft = (endTime, now = Date.now(), { seconds = false } = {}) => {
   const end = new Date(endTime);
   const difference = end - now;
 
@@ -86,12 +61,20 @@ export const formatTimeLeft = (endTime, now = Date.now()) => {
     timeLeft = `${days}d ${hours}h`;
   } else if (hours > 0) {
     timeLeft = `${hours}h ${minutes}m`;
+  } else if (seconds && minutes < 5) {
+    const s = Math.floor((difference / 1000) % 60);
+    timeLeft = minutes > 0 ? `${minutes}m ${s}s` : `${s}s`;
   } else {
     timeLeft = minutes > 0 ? `${minutes}m` : '< 1m';
   }
 
   return { timeLeft, urgencyLevel };
 };
+
+/** Absolute deadline with the viewer's time zone, e.g. "23 Oct 2026, 21:35 GMT+7". */
+export const formatDeadline = (date) => new Intl.DateTimeFormat('en-GB', {
+  day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZoneName: 'short',
+}).format(new Date(date));
 
 export function formatTimeAgo(timestamp) {
   const now = new Date();

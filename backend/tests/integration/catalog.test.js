@@ -77,3 +77,18 @@ test("a lot with no bids has no top bid object (the card must not invent a price
   assert.equal(card.bids, undefined);
   assert.equal(card.currentPrice, "1000");
 });
+
+test("profile 'Won' counts only closed, settled lots (never a current leader) and equals the Wins tab; no reviews is a null rate", async () => {
+  const lot = async (status, settled) => (await t.sql`INSERT INTO auctions (seller_id, category_id, title, description, starting_price, current_price, step_price, end_time, status, winner_id, settled_at)
+    VALUES (${seller.id}, ${parentId}, ${"won? " + status}, 'd', 1000, 1000, 100, now() + interval '1 day', ${status}, ${b.id}, ${settled ? t.sql`now()` : null}) RETURNING auction_id AS id`)[0].id;
+  await lot("active", false); // b is only leading
+  await lot("ended", false); // closed, settlement still pending
+  const won = [await lot("ended", true), await lot("sold", true)];
+
+  const profile = (await t.call("GET", `/users/profile?username=${b.username}`)).body;
+  assert.equal(profile.counts.totalWonAuctions, 2);
+  assert.equal(profile.counts.reviewsReceived.positiveRate, null);
+  const tab = await t.call("GET", `/auction/profile?username=${b.username}&status=won-auctions`);
+  assert.equal(tab.status, 200);
+  assert.deepEqual(tab.body.map((x) => x.id).sort(), won.sort());
+});

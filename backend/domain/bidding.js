@@ -23,6 +23,20 @@ export function competitivePrice(startingPrice, step, ranked) {
 export const minimumNextBid = ({ startingPrice, currentPrice, step }, hasLeader) => (hasLeader ? currentPrice + step : startingPrice);
 
 /**
+ * One bidder's private position, for showing them (and only them) where they stand. Same `state` as decideBid and the
+ * same rules: `minimumBid` is the smallest amount decideBid would accept from this bidder right now.
+ */
+export function viewerPosition(state, bidderId) {
+  const leader = rank(state.maxima)[0];
+  const own = state.maxima.find((m) => m.bidderId === bidderId);
+  const isLeading = Boolean(leader) && leader.bidderId === bidderId;
+  const minimumBid = !leader ? state.startingPrice
+    : isLeading ? own.max + 1n
+    : maxBig(state.currentPrice + state.step, own ? own.max + 1n : 0n);
+  return { yourMaximum: own?.max ?? null, isLeading, minimumBid };
+}
+
+/**
  * state: { startingPrice, step, currentPrice, maxima: [{ bidderId, max, priority }] }  (eligible maxima only)
  * cmd:   { bidderId, amount (BigInt), sequence }
  * Returns { outcome: 'success'|'updated'|'outbid', maxima, leaderId, currentPrice, events: [{ bidderId, amount, type }], ownMax }

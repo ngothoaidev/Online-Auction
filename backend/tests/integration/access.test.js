@@ -101,3 +101,21 @@ test("OAuth callback guard: banned users are redirected without a token, normal 
   assert.equal((await authService.validateToken(token)).userId, buyer.id);
   assert.match(redirects[2], /error=google_failed/);
 });
+
+test("OAuth link by email claims an unverified account (pre-hijack) but leaves a verified one alone", async () => {
+  const accountSecurity = (await import("../../services/accountSecurity.js")).default;
+  const userService = (await import("../../services/user.js")).default;
+  const authService = (await import("../../services/auth.js")).default;
+  const squatter = await t.createUser("squatter", { isVerified: false, role: "unauthorized" });
+  const squatterToken = t.tokenFor(squatter);
+  const claimed = await accountSecurity.linkProvider(await userService.getByEmail(squatter.email), { googleId: "g-1" });
+  assert.deepEqual([claimed.isVerified, claimed.role, claimed.googleId], [true, "buyer", "g-1"]);
+  assert.equal(await authService.validatePassword(squatter.password, claimed.encryptedPassword), false, "pre-set password is gone");
+  assert.equal((await t.call("GET", "/auth/me", { token: await squatterToken })).status, 401, "earlier tokens are revoked");
+
+  const owner = await t.createUser("owner");
+  const linked = await accountSecurity.linkProvider(await userService.getByEmail(owner.email), { facebookId: "f-1" });
+  assert.equal(linked.facebookId, "f-1");
+  assert.equal(await authService.validatePassword(owner.password, linked.encryptedPassword), true, "verified owner keeps the password");
+  assert.equal(linked.authVersion, 0);
+});

@@ -4,8 +4,10 @@ import { z } from "zod";
 import { validate } from "../validation/index.js";
 import userController from "../controllers/user.js";
 import { requireAuth, requireAdmin } from "../middleware/auth.js";
+import { localImages, cloudinaryConfigured } from "../middleware/localUpload.js";
 
 const route = new Router();
+const avatarImage = (req, res, next) => (cloudinaryConfigured() ? uploadAvatar.single('avatar') : localImages('avatar', 1))(req, res, next);
 
 // GET: Get user profile by username
 route.get('/profile', userController.getUserProfile);
@@ -28,7 +30,7 @@ route.post('/favorites/:auctionId', userController.toggleFavorite);
 route.put('/info', userController.updateUserInfo);
 
 // PUT: update current user avatar
-route.put('/avatar', uploadAvatar.single('avatar'), userController.updateUserAvatar);
+route.put('/avatar', avatarImage, userController.updateUserAvatar);
 
 route.use(requireAdmin);
 

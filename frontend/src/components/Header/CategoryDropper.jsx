@@ -8,19 +8,25 @@ export default function CategoryDropper({ categories }) {
   const [activeSub, setActiveSub] = useState(null); // Track active sub-category by ID
   const containerRef = useRef(null);
   const timeoutRef = useRef(null); // To handle smooth close delays
+  const openedByHover = useRef(false);
 
   // --- HANDLERS ---
 
-  // Toggle Main Dropdown
-  const toggleOpen = () => setIsOpen((prev) => !prev);
+  // Click/Enter toggles. A mouse user hovers first (which opens it), so that first click confirms instead of closing.
+  const toggleOpen = () => {
+    if (openedByHover.current) { openedByHover.current = false; return; }
+    setIsOpen((prev) => !prev);
+  };
 
   // Hover Handlers (Desktop) with delay to prevent flickering
   const handleMouseEnter = () => {
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    if (!isOpen) openedByHover.current = true;
     setIsOpen(true);
   };
 
   const handleMouseLeave = () => {
+    openedByHover.current = false;
     timeoutRef.current = setTimeout(() => {
       setIsOpen(false);
       setActiveSub(null); // Reset sub-menus on close
@@ -119,6 +125,8 @@ export default function CategoryDropper({ categories }) {
                   {cat.subcategories?.length > 0 && (
                     <button
                         onClick={(e) => toggleSub(e, cat.id)}
+                        aria-label={`${cat.name} subcategories`}
+                        aria-expanded={isSubOpen}
                         className={`p-2 ml-1 rounded-md transition-all hover:bg-(--bg-hover)
                         ${isSubOpen ? 'text-(--accent) opacity-100' : 'opacity-40 hover:opacity-100'}`}
                     >

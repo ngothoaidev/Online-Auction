@@ -146,7 +146,7 @@ export default function PriceDropdown({ priceRange, setPriceRange, activeDropdow
                     </button>
                     <button onClick={() => { if (handleApply()) setActiveDropdown(null); }}
                         className="flex-1 py-2 text-xs font-bold rounded-lg hover:brightness-110 transition-colors shadow-md"
-                        style={{ backgroundColor: 'var(--accent)', color: '#1A1205' }}>
+                        style={{ backgroundColor: 'var(--accent)', color: 'var(--on-ink)' }}>
                         Apply
                     </button>
                 </div>

@@ -32,6 +32,8 @@ function requireEnv(name) {
 }
 
 const app = express();
+// Behind a TLS proxy (Render, nginx): number of proxy hops to trust, so secure session cookies and per-IP limits work.
+if (Number(process.env.TRUST_PROXY_HOPS)) app.set('trust proxy', Number(process.env.TRUST_PROXY_HOPS));
 
 // --- Dependencies ---
 app.use(requestId);

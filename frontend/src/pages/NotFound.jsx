@@ -70,7 +70,7 @@ export default function NotFound() {
 
           <button
             onClick={() => nav.home()}
-            className="flex items-center justify-center gap-2 px-6 py-3 rounded-lg transition font-medium text-white bg-blue-600 hover:bg-blue-700 shadow-lg hover:shadow-blue-600/30 hover:-translate-y-1"
+            className="flex items-center justify-center gap-2 px-6 py-3 rounded-lg transition font-medium text-(--on-ink) bg-(--ink) hover:opacity-90"
           >
             <Home size={20} />
             Home Page
@@ -81,13 +81,13 @@ export default function NotFound() {
         <div className="mt-12 pt-8 border-t" style={{ borderColor: 'var(--border)' }}>
           <ul className="flex justify-center gap-6 text-sm" style={{ color: 'var(--text-muted)' }}>
             <li>
-              <button onClick={() => nav.search()} className="hover:text-blue-600 transition underline decoration-transparent hover:decoration-blue-600">
+              <button onClick={() => nav.search()} className="hover:text-(--ink) transition underline decoration-transparent hover:decoration-current">
                 Search
               </button>
             </li>
             {user && (
               <li>
-                <button onClick={() => nav.profile(user.id)} className="hover:text-blue-600 transition underline decoration-transparent hover:decoration-blue-600">
+                <button onClick={() => nav.profile(user.username)} className="hover:text-(--ink) transition underline decoration-transparent hover:decoration-current">
                   Profile
                 </button>
               </li>

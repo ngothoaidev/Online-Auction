@@ -1,7 +1,8 @@
 import { useFeedback } from '../../components/ui/Feedback.jsx';
 import { useState, useEffect, useRef } from "react";
-import { Eye, Trash2, Download, Filter, ChevronDown } from "lucide-react";
+import { Eye, Trash2, Filter, ChevronDown } from "lucide-react";
 import Pagination from "../../components/Pagination";
+import { formatVnd } from '../../utils/money.js';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
@@ -156,20 +157,16 @@ export default function ProductList() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="profile-name text-3xl font-bold">Product Management</h1>
-          <p className="profile-text-muted mt-1">Monitor and manage all auction products</p>
+          <h1 className="text-(--ink) text-3xl font-bold">Product Management</h1>
+          <p className="text-(--muted) mt-1">Monitor and manage all auction products</p>
         </div>
-        <button className="profile-btn-secondary px-4 py-2 rounded-lg font-medium flex items-center gap-2 border hover:shadow-md transition-all">
-          <Download size={18} />
-          Export
-        </button>
       </div>
 
       {/* Filter Bar */}
       <div ref={barRef} className="mb-6">
-        <div className="profile-card rounded-xl p-4">
+        <div className="bg-(--surface) border-(--line) rounded-xl p-4">
           <div className="flex flex-wrap items-center gap-3">
-            <div className="flex items-center gap-2 mr-2 profile-text-muted">
+            <div className="flex items-center gap-2 mr-2 text-(--muted)">
               <Filter size={18} />
               <span className="text-sm font-semibold uppercase tracking-wide">Filter</span>
             </div>
@@ -178,32 +175,32 @@ export default function ProductList() {
             <div className="relative">
               <button
                 onClick={() => toggleDropdown('category')}
-                className="px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-all profile-card border"
+                className="px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-all bg-(--surface) border-(--line) border"
                 style={{ minWidth: '160px' }}
               >
-                <span className="profile-name">{selectedCategory || 'All Categories'}</span>
-                <ChevronDown size={16} className={`profile-text-muted transition-transform ${activeDropdown === 'category' ? 'rotate-180' : ''}`} />
+                <span className="text-(--ink)">{selectedCategory || 'All Categories'}</span>
+                <ChevronDown size={16} className={`text-(--muted) transition-transform ${activeDropdown === 'category' ? 'rotate-180' : ''}`} />
               </button>
               
               {activeDropdown === 'category' && (
-                <div className="absolute top-full left-0 mt-2 w-64 rounded-xl shadow-xl z-50 profile-card border max-h-80 overflow-y-auto">
+                <div className="absolute top-full left-0 mt-2 w-64 rounded-xl shadow-xl z-50 bg-(--surface) border-(--line) border max-h-80 overflow-y-auto">
                   <div className="p-2">
                     <button
                       onClick={() => { setSelectedCategory(null); setActiveDropdown(null); setCurrentPage(1); }}
-                      className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${!selectedCategory ? 'bg-[var(--accent-soft)] text-[var(--accent)]' : 'profile-text-muted hover:bg-[var(--bg-hover)]'}`}
+                      className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${!selectedCategory ? 'bg-[var(--accent-soft)] text-[var(--accent)]' : 'text-(--muted) hover:bg-[var(--bg-hover)]'}`}
                     >
                       All Categories
                     </button>
                     {categories.map((cat) => (
                       <div key={cat.id}>
-                        <div className="px-3 py-2 text-xs font-semibold profile-text-muted uppercase tracking-wide mt-2">
+                        <div className="px-3 py-2 text-xs font-semibold text-(--muted) uppercase tracking-wide mt-2">
                           {cat.name}
                         </div>
                         {cat.subcategories?.map((sub) => (
                           <button
                             key={sub.id}
                             onClick={() => { setSelectedCategory(sub.name); setActiveDropdown(null); setCurrentPage(1); }}
-                            className={`w-full text-left px-3 py-2 pl-6 rounded-lg text-sm transition-colors ${selectedCategory === sub.name ? 'bg-[var(--accent-soft)] text-[var(--accent)]' : 'profile-name hover:bg-[var(--bg-hover)]'}`}
+                            className={`w-full text-left px-3 py-2 pl-6 rounded-lg text-sm transition-colors ${selectedCategory === sub.name ? 'bg-[var(--accent-soft)] text-[var(--accent)]' : 'text-(--ink) hover:bg-[var(--bg-hover)]'}`}
                           >
                             {sub.name}
                           </button>
@@ -219,38 +216,38 @@ export default function ProductList() {
             <div className="relative">
               <button
                 onClick={() => toggleDropdown('price')}
-                className="px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-all profile-card border"
+                className="px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-all bg-(--surface) border-(--line) border"
                 style={{ minWidth: '120px' }}
               >
-                <span className="profile-name">
+                <span className="text-(--ink)">
                   {priceRange.min || priceRange.max 
-                    ? `$${priceRange.min || '0'} - $${priceRange.max || '∞'}` 
+                    ? `${priceRange.min || '0'} – ${priceRange.max || '∞'} ₫` 
                     : 'Price Range'}
                 </span>
-                <ChevronDown size={16} className={`profile-text-muted transition-transform ${activeDropdown === 'price' ? 'rotate-180' : ''}`} />
+                <ChevronDown size={16} className={`text-(--muted) transition-transform ${activeDropdown === 'price' ? 'rotate-180' : ''}`} />
               </button>
               
               {activeDropdown === 'price' && (
-                <div className="absolute top-full left-0 mt-2 w-64 rounded-xl shadow-xl z-50 profile-card border p-4">
+                <div className="absolute top-full left-0 mt-2 w-64 rounded-xl shadow-xl z-50 bg-(--surface) border-(--line) border p-4">
                   <div className="space-y-3">
                     <div>
-                      <label className="block text-xs font-medium profile-text-muted mb-1">Min Price</label>
+                      <label className="block text-xs font-medium text-(--muted) mb-1">Min Price</label>
                       <input
                         type="number"
                         value={priceRange.min}
                         onChange={(e) => setPriceRange(prev => ({ ...prev, min: e.target.value }))}
                         placeholder="0"
-                        className="w-full px-3 py-2 rounded-lg text-sm profile-input border"
+                        className="w-full px-3 py-2 rounded-lg text-sm bg-(--input-bg) text-(--ink) border-(--input-border) border"
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-medium profile-text-muted mb-1">Max Price</label>
+                      <label className="block text-xs font-medium text-(--muted) mb-1">Max Price</label>
                       <input
                         type="number"
                         value={priceRange.max}
                         onChange={(e) => setPriceRange(prev => ({ ...prev, max: e.target.value }))}
                         placeholder="No limit"
-                        className="w-full px-3 py-2 rounded-lg text-sm profile-input border"
+                        className="w-full px-3 py-2 rounded-lg text-sm bg-(--input-bg) text-(--ink) border-(--input-border) border"
                       />
                     </div>
                     <button
@@ -268,20 +265,20 @@ export default function ProductList() {
             <div className="relative">
               <button
                 onClick={() => toggleDropdown('status')}
-                className="px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-all profile-card border"
+                className="px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-all bg-(--surface) border-(--line) border"
                 style={{ minWidth: '120px' }}
               >
-                <span className="profile-name capitalize">{statusFilter === 'all' ? 'All Status' : statusFilter}</span>
-                <ChevronDown size={16} className={`profile-text-muted transition-transform ${activeDropdown === 'status' ? 'rotate-180' : ''}`} />
+                <span className="text-(--ink) capitalize">{statusFilter === 'all' ? 'All Status' : statusFilter}</span>
+                <ChevronDown size={16} className={`text-(--muted) transition-transform ${activeDropdown === 'status' ? 'rotate-180' : ''}`} />
               </button>
               
               {activeDropdown === 'status' && (
-                <div className="absolute top-full left-0 mt-2 w-40 rounded-xl shadow-xl z-50 profile-card border p-2">
+                <div className="absolute top-full left-0 mt-2 w-40 rounded-xl shadow-xl z-50 bg-(--surface) border-(--line) border p-2">
                   {['all', 'active', 'ended', 'sold', 'cancelled'].map((status) => (
                     <button
                       key={status}
                       onClick={() => { setStatusFilter(status); setActiveDropdown(null); setCurrentPage(1); }}
-                      className={`w-full text-left px-3 py-2 rounded-lg text-sm capitalize transition-colors ${statusFilter === status ? 'bg-[var(--accent-soft)] text-[var(--accent)]' : 'profile-name hover:bg-[var(--bg-hover)]'}`}
+                      className={`w-full text-left px-3 py-2 rounded-lg text-sm capitalize transition-colors ${statusFilter === status ? 'bg-[var(--accent-soft)] text-[var(--accent)]' : 'text-(--ink) hover:bg-[var(--bg-hover)]'}`}
                     >
                       {status === 'all' ? 'All Status' : status}
                     </button>
@@ -294,21 +291,21 @@ export default function ProductList() {
             <div className="relative ml-auto">
               <button
                 onClick={() => toggleDropdown('sort')}
-                className="px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-all profile-card border"
+                className="px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-all bg-(--surface) border-(--line) border"
                 style={{ minWidth: '150px' }}
               >
-                <span className="profile-name">
+                <span className="text-(--ink)">
                   {orderBy === 'default' && 'Sort By'}
                   {orderBy === 'price-asc' && 'Price: Low to High'}
                   {orderBy === 'price-desc' && 'Price: High to Low'}
                   {orderBy === 'ending-soon' && 'Ending Soon'}
                   {orderBy === 'newest' && 'Newest First'}
                 </span>
-                <ChevronDown size={16} className={`profile-text-muted transition-transform ${activeDropdown === 'sort' ? 'rotate-180' : ''}`} />
+                <ChevronDown size={16} className={`text-(--muted) transition-transform ${activeDropdown === 'sort' ? 'rotate-180' : ''}`} />
               </button>
               
               {activeDropdown === 'sort' && (
-                <div className="absolute top-full right-0 mt-2 w-48 rounded-xl shadow-xl z-50 profile-card border p-2">
+                <div className="absolute top-full right-0 mt-2 w-48 rounded-xl shadow-xl z-50 bg-(--surface) border-(--line) border p-2">
                   {[
                     { value: 'default', label: 'Default' },
                     { value: 'price-asc', label: 'Price: Low to High' },
@@ -319,7 +316,7 @@ export default function ProductList() {
                     <button
                       key={option.value}
                       onClick={() => { setOrderBy(option.value); setActiveDropdown(null); setCurrentPage(1); }}
-                      className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${orderBy === option.value ? 'bg-[var(--accent-soft)] text-[var(--accent)]' : 'profile-name hover:bg-[var(--bg-hover)]'}`}
+                      className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${orderBy === option.value ? 'bg-[var(--accent-soft)] text-[var(--accent)]' : 'text-(--ink) hover:bg-[var(--bg-hover)]'}`}
                     >
                       {option.label}
                     </button>
@@ -332,7 +329,7 @@ export default function ProductList() {
           {/* Active Filters */}
           {hasActiveFilters && (
             <div className="flex flex-wrap items-center gap-2 mt-4 pt-4 border-t border-[var(--border)]">
-              <span className="text-xs font-medium profile-text-muted">Active filters:</span>
+              <span className="text-xs font-medium text-(--muted)">Active filters:</span>
               
               {selectedCategory && (
                 <span className="px-3 py-1 rounded-full text-xs font-medium bg-[var(--accent-soft)] text-[var(--accent)] flex items-center gap-1">
@@ -343,7 +340,7 @@ export default function ProductList() {
               
               {(priceRange.min || priceRange.max) && (
                 <span className="px-3 py-1 rounded-full text-xs font-medium bg-[var(--accent-soft)] text-[var(--accent)] flex items-center gap-1">
-                  ${priceRange.min || '0'} - ${priceRange.max || '∞'}
+                  {priceRange.min || '0'} – {priceRange.max || '∞'} ₫
                   <button onClick={() => { setPriceRange({ min: "", max: "" }); setCurrentPage(1); }} className="ml-1 hover:opacity-70">×</button>
                 </span>
               )}
@@ -374,11 +371,11 @@ export default function ProductList() {
       </div>
 
       {/* Products Table */}
-      <div className="profile-card rounded-xl overflow-hidden">
+      <div className="bg-(--surface) border-(--line) rounded-xl overflow-hidden">
         {loading ? (
           <div className="text-center py-12">
             <div className="w-12 h-12 border-4 border-[var(--accent)] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-            <p className="profile-text-muted">Loading products...</p>
+            <p className="text-(--muted)">Loading products...</p>
           </div>
         ) : error ? (
           <div className="text-center py-12 text-[var(--danger)]">
@@ -387,45 +384,45 @@ export default function ProductList() {
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="profile-subtle-box">
+              <thead className="bg-(--surface-sunken)">
                 <tr>
-                  <th className="profile-label px-6 py-4 text-left text-sm font-semibold">ID</th>
-                  <th className="profile-label px-6 py-4 text-left text-sm font-semibold">Product</th>
-                  <th className="profile-label px-6 py-4 text-left text-sm font-semibold">Category</th>
-                  <th className="profile-label px-6 py-4 text-left text-sm font-semibold">Seller</th>
-                  <th className="profile-label px-6 py-4 text-left text-sm font-semibold">Status</th>
-                  <th className="profile-label px-6 py-4 text-left text-sm font-semibold">Current Bid</th>
-                  <th className="profile-label px-6 py-4 text-left text-sm font-semibold">End Time</th>
-                  <th className="profile-label px-6 py-4 text-right text-sm font-semibold">Actions</th>
+                  <th className="text-(--muted) px-6 py-4 text-left text-sm font-semibold">ID</th>
+                  <th className="text-(--muted) px-6 py-4 text-left text-sm font-semibold">Product</th>
+                  <th className="text-(--muted) px-6 py-4 text-left text-sm font-semibold">Category</th>
+                  <th className="text-(--muted) px-6 py-4 text-left text-sm font-semibold">Seller</th>
+                  <th className="text-(--muted) px-6 py-4 text-left text-sm font-semibold">Status</th>
+                  <th className="text-(--muted) px-6 py-4 text-left text-sm font-semibold">Current Bid</th>
+                  <th className="text-(--muted) px-6 py-4 text-left text-sm font-semibold">End Time</th>
+                  <th className="text-(--muted) px-6 py-4 text-right text-sm font-semibold">Actions</th>
                 </tr>
               </thead>
-              <tbody className="profile-divider divide-y">
+              <tbody className="divide-(--line) divide-y">
                 {products.map((product) => (
                   <tr key={product.id} className="hover:bg-[var(--bg-hover)] transition-colors">
-                    <td className="profile-text-muted px-6 py-4 text-sm">#{product.id}</td>
+                    <td className="text-(--muted) px-6 py-4 text-sm">#{product.id}</td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        {product.primaryImage && (
-                          <img 
-                            src={product.primaryImage} 
+                        {product.image && (
+                          <img
+                            src={product.image}
                             alt={product.title} 
                             className="w-10 h-10 rounded-lg object-cover"
                           />
                         )}
-                        <span className="profile-name font-medium">{product.title}</span>
+                        <span className="text-(--ink) font-medium">{product.title}</span>
                       </div>
                     </td>
-                    <td className="profile-text-muted px-6 py-4 text-sm">{product.categoryName || 'N/A'}</td>
-                    <td className="profile-text-muted px-6 py-4 text-sm">{product.sellerName || 'Unknown'}</td>
+                    <td className="text-(--muted) px-6 py-4 text-sm">{product.category || 'N/A'}</td>
+                    <td className="text-(--muted) px-6 py-4 text-sm">{product.seller?.username || 'Unknown'}</td>
                     <td className="px-6 py-4">
                       <span className={`px-3 py-1 rounded-full text-xs font-medium capitalize ${getStatusBadge(product.status)}`}>
                         {product.status}
                       </span>
                     </td>
                     <td className="px-6 py-4">
-                      <span className="profile-name font-semibold">${parseFloat(product.currentPrice || product.startingPrice || 0).toLocaleString()}</span>
+                      <span className="text-(--ink) font-lot font-semibold whitespace-nowrap">{formatVnd(product.currentPrice ?? product.startingPrice)}</span>
                     </td>
-                    <td className="profile-text-muted px-6 py-4 text-sm">
+                    <td className="text-(--muted) px-6 py-4 text-sm">
                       {product.endTime ? new Date(product.endTime).toLocaleString() : 'N/A'}
                     </td>
                     <td className="px-6 py-4">
@@ -471,7 +468,7 @@ export default function ProductList() {
       )}
 
       {/* Summary */}
-      <div className="mt-4 profile-text-muted text-sm flex items-center justify-between">
+      <div className="mt-4 text-(--muted) text-sm flex items-center justify-between">
         <span>
           {loading ? 'Loading...' : `Showing ${products.length} of ${totalItems} products`}
         </span>
@@ -482,7 +479,7 @@ export default function ProductList() {
               Active: {products.filter(p => p.status === 'active').length}
             </span>
             <span className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-gray-400"></div>
+              <div className="w-3 h-3 rounded-full bg-(--muted)"></div>
               Ended: {products.filter(p => p.status === 'ended').length}
             </span>
             <span className="flex items-center gap-2">

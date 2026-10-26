@@ -53,7 +53,7 @@ export default function Header() {
       <header className="sticky top-0 z-50 w-full border-b backdrop-blur" style={{ backgroundColor: 'var(--header-bg)', borderColor: 'var(--header-border)', height: 'var(--header-h)' }}>
         <div className="mx-auto flex h-full max-w-7xl items-center gap-4 px-4 sm:px-6 lg:px-10">
           <Link to="/" className="font-display shrink-0 text-xl font-semibold tracking-tight text-(--ink) sm:text-2xl" aria-label="Aurum Auctions home">
-            <span className="text-(--brand)">AURUM</span> Auctions
+            <span className="text-(--brand)">AURUM</span><span className="max-sm:hidden"> Auctions</span>
           </Link>
 
           <nav aria-label="Main" className="hidden lg:block">
@@ -78,8 +78,8 @@ export default function Header() {
           </form>
 
           <div className="ml-auto flex items-center gap-1 sm:gap-2 md:ml-0">
-            {/* below 640px the bar keeps only essentials (WCAG reflow at 320px): search and theme live in the menu */}
-            <IconButton label="Search" className="max-sm:hidden md:hidden" onClick={() => setMenu({ open: true, focusSearch: true })}>
+            {/* below 768px search is one tap away (opens the menu with the field focused); theme lives in the menu below 640px */}
+            <IconButton label="Search" className="md:hidden" onClick={() => setMenu({ open: true, focusSearch: true })}>
               <Search size={22} />
             </IconButton>
 

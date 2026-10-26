@@ -22,7 +22,7 @@ export default function ProofLink({ path, children }) {
   };
 
   return (
-    <button type="button" onClick={open} disabled={busy} className="text-blue-500 hover:underline disabled:opacity-60">
+    <button type="button" onClick={open} disabled={busy} className="text-(--info) hover:underline disabled:opacity-60">
       {busy ? 'Opening…' : children}
     </button>
   );

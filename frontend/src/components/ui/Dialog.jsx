@@ -1,7 +1,8 @@
 import { useEffect, useRef, useId } from 'react';
 import { createPortal } from 'react-dom';
 
-const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+const FOCUSABLE = ['a[href]', 'button:not([disabled])', 'input:not([disabled]):not([type="hidden"])', 'select:not([disabled])', 'textarea:not([disabled])', '[tabindex]']
+  .map((s) => `${s}:not([tabindex="-1"])`).join(', ');
 
 /**
  * Modal dialog / drawer. Moves focus in, traps Tab, closes on Escape (when `dismissible`), restores focus to the

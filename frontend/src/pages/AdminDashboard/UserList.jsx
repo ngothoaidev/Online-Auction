@@ -1,10 +1,12 @@
 import { useFeedback } from '../../components/ui/Feedback.jsx';
 import { useState, useEffect } from "react";
+import { Link } from 'react-router-dom';
+import { Button, Dialog } from '../../components/ui';
 import { Search, Eye, Ban, CheckCircle, UserPlus, Filter, ChevronLeft, ChevronRight, X, User } from "lucide-react";
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
-export default function UserList({ setActiveTab }) {
+export default function UserList() {
   const { confirm, notify } = useFeedback();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -189,9 +191,9 @@ export default function UserList({ setActiveTab }) {
       case 'buyer':
         return 'bg-[var(--info-soft)] text-[var(--info)]';
       case 'admin':
-        return 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400';
+        return 'bg-(--brand-soft) text-(--brand-strong)';
       default:
-        return 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400';
+        return 'bg-(--surface-sunken) text-(--muted)';
     }
   };
 
@@ -212,61 +214,62 @@ export default function UserList({ setActiveTab }) {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="profile-name text-3xl font-bold">User Management</h1>
-          <p className="profile-text-muted mt-1">Manage users, roles, and account status</p>
+          <h1 className="text-(--ink) text-3xl font-bold">User Management</h1>
+          <p className="text-(--muted) mt-1">Manage users, roles, and account status</p>
         </div>
         <div className="flex gap-3">
-          <button onClick={() => setActiveTab('upgrades')} className="profile-btn-secondary px-4 py-2 rounded-lg font-medium flex items-center gap-2 border hover:shadow-md transition-all">
+          <Link to="/admin/upgrades" className="bg-(--surface) text-(--ink) border-(--input-border) hover:bg-(--surface-hover) px-4 py-2 rounded-lg font-medium flex items-center gap-2 border hover:shadow-md transition-all">
             <UserPlus size={18} />
             Upgrade Requests
-          </button>
+          </Link>
         </div>
       </div>
 
       {/* Stats Cards */}
       {stats && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-          <div className="profile-card rounded-xl p-4">
-            <div className="text-2xl font-bold profile-name">{stats.total}</div>
-            <div className="text-sm profile-text-muted">Total Users</div>
+          <div className="bg-(--surface) border-(--line) rounded-xl p-4">
+            <div className="text-2xl font-bold text-(--ink)">{stats.total}</div>
+            <div className="text-sm text-(--muted)">Total Users</div>
           </div>
-          <div className="profile-card rounded-xl p-4">
+          <div className="bg-(--surface) border-(--line) rounded-xl p-4">
             <div className="text-2xl font-bold text-[var(--info)]">{stats.byRole.buyer}</div>
-            <div className="text-sm profile-text-muted">Buyers</div>
+            <div className="text-sm text-(--muted)">Buyers</div>
           </div>
-          <div className="profile-card rounded-xl p-4">
+          <div className="bg-(--surface) border-(--line) rounded-xl p-4">
             <div className="text-2xl font-bold text-[var(--accent)]">{stats.byRole.seller}</div>
-            <div className="text-sm profile-text-muted">Sellers</div>
+            <div className="text-sm text-(--muted)">Sellers</div>
           </div>
-          <div className="profile-card rounded-xl p-4">
+          <div className="bg-(--surface) border-(--line) rounded-xl p-4">
             <div className="text-2xl font-bold text-[var(--danger)]">{stats.byStatus.banned}</div>
-            <div className="text-sm profile-text-muted">Banned</div>
+            <div className="text-sm text-(--muted)">Banned</div>
           </div>
         </div>
       )}
 
       {/* Filters */}
-      <div className="profile-card rounded-xl p-4 mb-6">
+      <div className="bg-(--surface) border-(--line) rounded-xl p-4 mb-6">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           {/* Search */}
           <div className="md:col-span-2 relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-(--muted)" size={20} />
             <input
               type="text"
               placeholder="Search by name or email..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="profile-input w-full pl-10 pr-4 py-3 rounded-lg border focus:outline-none focus:ring-2 focus:ring-(--accent)"
+              className="bg-(--input-bg) text-(--ink) border-(--input-border) w-full pl-10 pr-4 py-3 rounded-lg border focus:outline-none focus:ring-2 focus:ring-(--accent)"
             />
           </div>
 
           {/* Role Filter */}
           <div className="relative">
-            <Filter className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+            <Filter className="absolute left-3 top-1/2 -translate-y-1/2 text-(--muted)" size={20} />
             <select
               value={roleFilter}
+              aria-label="Filter by role"
               onChange={(e) => handleFilterChange('role', e.target.value)}
-              className="profile-input w-full pl-10 pr-4 py-3 rounded-lg border focus:outline-none focus:ring-2 focus:ring-(--accent) appearance-none"
+              className="bg-(--input-bg) text-(--ink) border-(--input-border) w-full pl-10 pr-4 py-3 rounded-lg border focus:outline-none focus:ring-2 focus:ring-(--accent) appearance-none"
             >
               <option value="all">All Roles</option>
               <option value="unauthorized">Unauthorized</option>
@@ -278,11 +281,12 @@ export default function UserList({ setActiveTab }) {
 
           {/* Status Filter */}
           <div className="relative">
-            <Filter className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+            <Filter className="absolute left-3 top-1/2 -translate-y-1/2 text-(--muted)" size={20} />
             <select
               value={statusFilter}
+              aria-label="Filter by status"
               onChange={(e) => handleFilterChange('status', e.target.value)}
-              className="profile-input w-full pl-10 pr-4 py-3 rounded-lg border focus:outline-none focus:ring-2 focus:ring-(--accent) appearance-none"
+              className="bg-(--input-bg) text-(--ink) border-(--input-border) w-full pl-10 pr-4 py-3 rounded-lg border focus:outline-none focus:ring-2 focus:ring-(--accent) appearance-none"
             >
               <option value="all">All Status</option>
               <option value="active">Active</option>
@@ -300,30 +304,30 @@ export default function UserList({ setActiveTab }) {
       )}
 
       {/* Users Table */}
-      <div className="profile-card rounded-xl overflow-hidden">
+      <div className="bg-(--surface) border-(--line) rounded-xl overflow-hidden">
         {loading ? (
           <div className="p-12 text-center">
             <div className="w-8 h-8 border-4 border-[var(--accent)] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-            <p className="profile-text-muted">Loading users...</p>
+            <p className="text-(--muted)">Loading users...</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="profile-subtle-box">
+              <thead className="bg-(--surface-sunken)">
                 <tr>
-                  <th className="profile-label px-6 py-4 text-left text-sm font-semibold">ID</th>
-                  <th className="profile-label px-6 py-4 text-left text-sm font-semibold">User</th>
-                  <th className="profile-label px-6 py-4 text-left text-sm font-semibold">Role</th>
-                  <th className="profile-label px-6 py-4 text-left text-sm font-semibold">Status</th>
-                  <th className="profile-label px-6 py-4 text-left text-sm font-semibold">Verified</th>
-                  <th className="profile-label px-6 py-4 text-left text-sm font-semibold">Join Date</th>
-                  <th className="profile-label px-6 py-4 text-right text-sm font-semibold">Actions</th>
+                  <th className="text-(--muted) px-6 py-4 text-left text-sm font-semibold">ID</th>
+                  <th className="text-(--muted) px-6 py-4 text-left text-sm font-semibold">User</th>
+                  <th className="text-(--muted) px-6 py-4 text-left text-sm font-semibold">Role</th>
+                  <th className="text-(--muted) px-6 py-4 text-left text-sm font-semibold">Status</th>
+                  <th className="text-(--muted) px-6 py-4 text-left text-sm font-semibold">Verified</th>
+                  <th className="text-(--muted) px-6 py-4 text-left text-sm font-semibold">Join Date</th>
+                  <th className="text-(--muted) px-6 py-4 text-right text-sm font-semibold">Actions</th>
                 </tr>
               </thead>
-              <tbody className="profile-divider divide-y">
+              <tbody className="divide-(--line) divide-y">
                 {users.map((user) => (
                   <tr key={user.id} className="hover:bg-(--bg-hover) transition-colors">
-                    <td className="profile-text-muted px-6 py-4 text-sm">#{user.id}</td>
+                    <td className="text-(--muted) px-6 py-4 text-sm">#{user.id}</td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         {user.avatarUrl ? (
@@ -334,8 +338,8 @@ export default function UserList({ setActiveTab }) {
                           </div>
                         )}
                         <div>
-                          <div className="profile-name font-medium">{user.fullName || user.username}</div>
-                          <div className="profile-text-muted text-sm">{user.email}</div>
+                          <div className="text-(--ink) font-medium">{user.fullName || user.username}</div>
+                          <div className="text-(--muted) text-sm">{user.email}</div>
                         </div>
                       </div>
                     </td>
@@ -353,10 +357,10 @@ export default function UserList({ setActiveTab }) {
                       {user.isVerified ? (
                         <CheckCircle size={20} className="text-[var(--success)]" />
                       ) : (
-                        <X size={20} className="text-gray-400" />
+                        <X size={20} className="text-(--muted)" />
                       )}
                     </td>
-                    <td className="profile-text-muted px-6 py-4 text-sm">
+                    <td className="text-(--muted) px-6 py-4 text-sm">
                       {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}
                     </td>
                     <td className="px-6 py-4">
@@ -404,14 +408,14 @@ export default function UserList({ setActiveTab }) {
       {/* Pagination */}
       {totalPages > 1 && (
         <div className="mt-4 flex items-center justify-between">
-          <span className="profile-text-muted text-sm">
+          <span className="text-(--muted) text-sm">
             Showing {users.length} of {totalCount} users (Page {currentPage} of {totalPages})
           </span>
           <div className="flex items-center gap-2">
             <button
               onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
               disabled={currentPage === 1}
-              className="p-2 rounded-lg border profile-card hover:bg-(--bg-hover) disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="p-2 rounded-lg border bg-(--surface) border-(--line) hover:bg-(--bg-hover) disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               <ChevronLeft size={20} />
             </button>
@@ -433,7 +437,7 @@ export default function UserList({ setActiveTab }) {
                   className={`w-10 h-10 rounded-lg border transition-colors ${
                     currentPage === pageNum
                       ? 'bg-[var(--accent)] text-white border-[var(--accent)]'
-                      : 'profile-card hover:bg-(--bg-hover)'
+                      : 'bg-(--surface) border-(--line) hover:bg-(--bg-hover)'
                   }`}
                 >
                   {pageNum}
@@ -443,7 +447,7 @@ export default function UserList({ setActiveTab }) {
             <button
               onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
               disabled={currentPage === totalPages}
-              className="p-2 rounded-lg border profile-card hover:bg-(--bg-hover) disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="p-2 rounded-lg border bg-(--surface) border-(--line) hover:bg-(--bg-hover) disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               <ChevronRight size={20} />
             </button>
@@ -452,20 +456,8 @@ export default function UserList({ setActiveTab }) {
       )}
 
       {/* User Details Modal */}
-      {showUserModal && selectedUser && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="profile-card rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6">
-              {/* Header */}
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-bold profile-name">User Details</h2>
-                <button 
-                  onClick={() => setShowUserModal(false)}
-                  className="p-2 rounded-lg hover:bg-(--bg-hover) transition-colors"
-                >
-                  <X size={20} />
-                </button>
-              </div>
+      {selectedUser && (
+        <Dialog open={showUserModal} onClose={() => setShowUserModal(false)} title="User details" pending={actionLoading}>
 
               {/* User Info */}
               <div className="flex items-center gap-4 mb-6">
@@ -477,8 +469,8 @@ export default function UserList({ setActiveTab }) {
                   </div>
                 )}
                 <div>
-                  <h3 className="text-lg font-bold profile-name">{selectedUser.fullName || selectedUser.username}</h3>
-                  <p className="profile-text-muted">{selectedUser.email}</p>
+                  <h3 className="text-lg font-bold text-(--ink)">{selectedUser.fullName || selectedUser.username}</h3>
+                  <p className="text-(--muted)">{selectedUser.email}</p>
                   <div className="flex gap-2 mt-2">
                     <span className={`px-3 py-1 rounded-full text-xs font-medium capitalize ${getRoleBadge(selectedUser.role)}`}>
                       {selectedUser.role}
@@ -493,50 +485,50 @@ export default function UserList({ setActiveTab }) {
               {/* Details */}
               <div className="space-y-4 mb-6">
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="profile-subtle-box rounded-lg p-3">
-                    <div className="text-sm profile-text-muted">User ID</div>
-                    <div className="font-medium profile-name">#{selectedUser.id}</div>
+                  <div className="bg-(--surface-sunken) rounded-lg p-3">
+                    <div className="text-sm text-(--muted)">User ID</div>
+                    <div className="font-medium text-(--ink)">#{selectedUser.id}</div>
                   </div>
-                  <div className="profile-subtle-box rounded-lg p-3">
-                    <div className="text-sm profile-text-muted">Username</div>
-                    <div className="font-medium profile-name">@{selectedUser.username}</div>
+                  <div className="bg-(--surface-sunken) rounded-lg p-3">
+                    <div className="text-sm text-(--muted)">Username</div>
+                    <div className="font-medium text-(--ink)">@{selectedUser.username}</div>
                   </div>
-                  <div className="profile-subtle-box rounded-lg p-3">
-                    <div className="text-sm profile-text-muted">Verified</div>
-                    <div className="font-medium profile-name">{selectedUser.isVerified ? 'Yes' : 'No'}</div>
+                  <div className="bg-(--surface-sunken) rounded-lg p-3">
+                    <div className="text-sm text-(--muted)">Verified</div>
+                    <div className="font-medium text-(--ink)">{selectedUser.isVerified ? 'Yes' : 'No'}</div>
                   </div>
-                  <div className="profile-subtle-box rounded-lg p-3">
-                    <div className="text-sm profile-text-muted">Join Date</div>
-                    <div className="font-medium profile-name">
+                  <div className="bg-(--surface-sunken) rounded-lg p-3">
+                    <div className="text-sm text-(--muted)">Join Date</div>
+                    <div className="font-medium text-(--ink)">
                       {selectedUser.createdAt ? new Date(selectedUser.createdAt).toLocaleDateString() : 'N/A'}
                     </div>
                   </div>
                 </div>
 
                 {selectedUser.bio && (
-                  <div className="profile-subtle-box rounded-lg p-3">
-                    <div className="text-sm profile-text-muted mb-1">Bio</div>
-                    <div className="profile-name">{selectedUser.bio}</div>
+                  <div className="bg-(--surface-sunken) rounded-lg p-3">
+                    <div className="text-sm text-(--muted) mb-1">Bio</div>
+                    <div className="text-(--ink)">{selectedUser.bio}</div>
                   </div>
                 )}
 
                 {userStats && (
                   <div className="grid grid-cols-2 gap-4">
-                    <div className="profile-subtle-box rounded-lg p-3">
-                      <div className="text-sm profile-text-muted">Total Bids</div>
+                    <div className="bg-(--surface-sunken) rounded-lg p-3">
+                      <div className="text-sm text-(--muted)">Total Bids</div>
                       <div className="text-xl font-bold text-[var(--info)]">{userStats.totalBids}</div>
                     </div>
-                    <div className="profile-subtle-box rounded-lg p-3">
-                      <div className="text-sm profile-text-muted">Total Auctions</div>
+                    <div className="bg-(--surface-sunken) rounded-lg p-3">
+                      <div className="text-sm text-(--muted)">Total Auctions</div>
                       <div className="text-xl font-bold text-[var(--accent)]">{userStats.totalAuctions}</div>
                     </div>
                   </div>
                 )}
 
                 {selectedUser.ratingCount > 0 && (
-                  <div className="profile-subtle-box rounded-lg p-3">
-                    <div className="text-sm profile-text-muted mb-1">Rating</div>
-                    <div className="font-medium profile-name">
+                  <div className="bg-(--surface-sunken) rounded-lg p-3">
+                    <div className="text-sm text-(--muted) mb-1">Rating</div>
+                    <div className="font-medium text-(--ink)">
                       {selectedUser.positiveRatingCount}/{selectedUser.ratingCount} positive reviews
                       ({Math.round((selectedUser.positiveRatingCount / selectedUser.ratingCount) * 100)}%)
                     </div>
@@ -580,9 +572,10 @@ export default function UserList({ setActiveTab }) {
                   )}
                 </div>
               )}
-            </div>
-          </div>
-        </div>
+              <div className="mt-3 flex justify-end">
+                <Button variant="secondary" onClick={() => setShowUserModal(false)} disabled={actionLoading}>Close</Button>
+              </div>
+        </Dialog>
       )}
     </div>
   );

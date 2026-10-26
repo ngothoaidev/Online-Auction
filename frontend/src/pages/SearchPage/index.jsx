@@ -65,7 +65,7 @@ export default function SearchPage() {
         <Link to="/" className="hover:underline">Home</Link> <span aria-hidden="true">/</span> <span aria-current="page" className="text-(--ink)">Search</span>
       </nav>
       <div className="mt-2 flex flex-wrap items-end justify-between gap-3">
-        <h1 className="font-display text-3xl font-semibold text-(--ink)">{heading}</h1>
+        <h1 className="tracking-tight text-3xl font-semibold text-(--ink)">{heading}</h1>
         <Button variant="secondary" className="lg:hidden" onClick={() => setFiltersOpen(true)}><SlidersHorizontal size={16} aria-hidden="true" /> Filters</Button>
       </div>
 

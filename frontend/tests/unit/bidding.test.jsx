@@ -3,6 +3,7 @@ import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { validateBid } from '../../src/utils/bid.js'
+import { formatTimeLeft } from '../../src/utils/format.js'
 
 const placeBid = vi.fn()
 const buyNow = vi.fn()
@@ -132,7 +133,7 @@ describe('capabilities and honest content', () => {
     const dialog = screen.getByRole('dialog', { name: 'Review purchase' })
     expect(buyNow).not.toHaveBeenCalled()
     await userEvent.click(within(dialog).getByRole('button', { name: 'Buy now' }))
-    expect(await screen.findByRole('dialog', { name: 'Purchase complete' })).toBeInTheDocument()
+    expect(await screen.findByRole('dialog', { name: 'Order created' })).toBeInTheDocument()
     expect(buyNow.mock.calls[0][1]).toMatch(/.{8,}/)
   })
 
@@ -150,5 +151,105 @@ describe('capabilities and honest content', () => {
     mount(product({ currentPrice: '123456789', minimumNextBid: '123556789' }))
     expect(screen.getByText('123.456.789 ₫')).toBeInTheDocument()
     expect(screen.getByText('123.556.789 ₫')).toBeInTheDocument()
+  })
+})
+
+describe('private viewer state (after reload the bidder still knows where they stand)', () => {
+  it('a leader sees their maximum and cannot submit the public minimum (it is below their own maximum)', async () => {
+    mount(product({ currentPrice: '1000000', minimumNextBid: '1100000', viewer: { status: 'leading', yourMaximum: '2000000', minimumBid: '2000001' } }))
+    expect(screen.getByText('You are the highest bidder')).toBeInTheDocument()
+    expect(screen.getByText('To raise your maximum')).toBeInTheDocument()
+    expect(screen.getByText('2.000.000 ₫')).toBeInTheDocument()
+    await userEvent.type(screen.getByLabelText(/new maximum bid/i), '1100000')
+    await userEvent.click(screen.getByRole('button', { name: 'Review bid' }))
+    expect(screen.queryByRole('dialog')).toBeNull()
+    expect(screen.getByRole('alert')).toHaveTextContent('2.000.001 ₫')
+    expect(placeBid).not.toHaveBeenCalled()
+  })
+
+  it('an outbid bidder sees it, with their old maximum, and the floor from the server', () => {
+    mount(product({ currentPrice: '1200000', minimumNextBid: '1300000', viewer: { status: 'outbid', yourMaximum: '1100000', minimumBid: '1300000' } }))
+    expect(screen.getByText('You have been outbid')).toBeInTheDocument()
+    expect(screen.getByText('1.100.000 ₫')).toBeInTheDocument()
+    expect(screen.getByLabelText(/your maximum bid/i)).toBeInTheDocument()
+  })
+
+  it('no viewer state (guest, seller, closed) shows no private banner', () => {
+    mount(product({ viewer: null }))
+    expect(screen.queryByText(/highest bidder|been outbid/i)).toBeNull()
+  })
+})
+
+describe('closed lot result (winner and seller can always get back to the order)', () => {
+  const closed = (over) => product({ status: 'ended', endTime: new Date(Date.now() - 60e3).toISOString(), currentPrice: '1234567', settledAt: new Date().toISOString(), winnerId: 9, winnerName: 'bob', ...over })
+  const orderLink = () => screen.queryByRole('link', { name: /view order/i })
+
+  it('the winner gets the exact price and a link to pay', () => {
+    mount(closed({ winnerId: 5 }))
+    expect(screen.getByText('You won this lot for 1.234.567 ₫')).toBeInTheDocument()
+    expect(orderLink()).toHaveAttribute('href', '/order/7')
+    expect(screen.queryByLabelText(/maximum bid/i)).toBeNull()
+  })
+  it('the seller gets the buyer and a link to the order', () => {
+    mount(closed({ sellerId: 5, closeReason: 'buy_now' }))
+    expect(screen.getByText('Bought now to @bob for 1.234.567 ₫')).toBeInTheDocument()
+    expect(orderLink()).toHaveAttribute('href', '/order/7')
+  })
+  it('anyone else sees the public result and no order link', () => {
+    mount(closed())
+    expect(screen.getByText('Sold for 1.234.567 ₫')).toBeInTheDocument()
+    expect(orderLink()).toBeNull()
+  })
+  it('before settlement nobody is told they won, even the last leader', () => {
+    mount(closed({ winnerId: 5, settledAt: null }))
+    expect(screen.getByText('Bidding has closed')).toBeInTheDocument()
+    expect(screen.queryByText(/you won/i)).toBeNull()
+    expect(orderLink()).toBeNull()
+  })
+  it('no winner and cancelled lots say so', () => {
+    const { unmount } = mount(closed({ winnerId: null, bidCount: 0 }))
+    expect(screen.getByText('Ended without a sale')).toBeInTheDocument()
+    unmount()
+    mount(closed({ status: 'cancelled' }))
+    expect(screen.getByText('This listing was cancelled')).toBeInTheDocument()
+  })
+})
+
+describe('what a commitment covers, and when it ends', () => {
+  it('bid review names the amount as item price and says shipping is not included', async () => {
+    mount()
+    await typeAndReview('1500000')
+    const dialog = screen.getByRole('dialog', { name: 'Review your bid' })
+    expect(within(dialog).getByText('Your maximum (item price)')).toBeInTheDocument()
+    expect(within(dialog).getByText('Not included, arranged with the seller')).toBeInTheDocument()
+    expect(within(dialog).getByText(/does not hold money/)).toBeInTheDocument()
+  })
+
+  it('a leader whose maximum is above Buy Now is told buying ends the auction below it', async () => {
+    mount(product({ buyNowPrice: '5000000', viewer: { status: 'leading', yourMaximum: '8000000', minimumBid: '8000001' } }))
+    await userEvent.click(screen.getByRole('button', { name: /buy now for/i }))
+    const dialog = screen.getByRole('dialog', { name: 'Review purchase' })
+    expect(within(dialog).getByText(/below your maximum of 8\.000\.000 ₫/)).toBeInTheDocument()
+  })
+
+  it('shows the absolute deadline, the auto-extend rule, and announces an extension when the deadline moves', () => {
+    const end = new Date(Date.now() + 3 * 60e3).toISOString()
+    const { rerender } = mount(product({ endTime: end, autoExtend: true }))
+    expect(screen.getByText(/^Ends \d{1,2} \w{3} \d{4}/)).toBeInTheDocument()
+    expect(screen.getByText(/adds 5 minutes to the deadline/)).toBeInTheDocument()
+    expect(screen.queryByText(/Deadline extended/)).toBeNull()
+    rerender(<MemoryRouter><BiddingSection product={product({ endTime: new Date(Date.parse(end) + 5 * 60e3).toISOString(), autoExtend: true })} onChanged={vi.fn()} /></MemoryRouter>)
+    expect(screen.getByText(/^Deadline extended to/)).toBeInTheDocument()
+  })
+})
+
+describe('formatTimeLeft', () => {
+  it('shows seconds in the final 5 minutes only when asked (the bid panel ticks every second, cards do not)', () => {
+    const now = Date.parse('2026-10-23T10:00:00Z')
+    const end = new Date(now + (3 * 60 + 7) * 1000)
+    expect(formatTimeLeft(end, now, { seconds: true }).timeLeft).toBe('3m 7s')
+    expect(formatTimeLeft(new Date(now + 42e3), now, { seconds: true }).timeLeft).toBe('42s')
+    expect(formatTimeLeft(end, now).timeLeft).toBe('3m')
+    expect(formatTimeLeft(new Date(now + 20 * 60e3), now, { seconds: true }).timeLeft).toBe('20m')
   })
 })

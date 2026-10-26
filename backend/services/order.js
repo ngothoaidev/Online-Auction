@@ -1,5 +1,5 @@
 import db from "../db/index.js";
-import { orders, orderMessages, users, auctions, reviews } from "../db/schema.js";
+import { orders, orderMessages, users, auctions, auctionImages, reviews } from "../db/schema.js";
 import { eq, and, or, ne, desc } from "drizzle-orm";
 import { attachAsset } from "./media.js";
 
@@ -59,8 +59,14 @@ const service = {
         .from(users)
         .where(eq(users.id, result[0].order.sellerId));
 
+        // The order page shows the item: primary photo (else the first one). The auctions row itself has no image column.
+        const [photo] = await db.select({ imageUrl: auctionImages.imageUrl }).from(auctionImages)
+            .where(eq(auctionImages.auctionId, result[0].order.auctionId))
+            .orderBy(desc(auctionImages.isPrimary), auctionImages.id).limit(1);
+
         return {
             ...result[0],
+            auction: { ...result[0].auction, image: photo?.imageUrl ?? null },
             seller: sellerResult[0],
         };
     },

@@ -53,7 +53,7 @@ export default function Login() {
 
   return (
     <div className="w-full max-w-md">
-      <h1 className="font-display mb-6 text-3xl font-semibold text-(--ink)">Sign in</h1>
+      <h1 className="tracking-tight mb-6 text-3xl font-semibold text-(--ink)">Sign in</h1>
       {notice && <p role="status" className="mb-4 rounded-(--radius-control) bg-(--success-soft) p-3 text-sm text-(--success)">{notice}</p>}
       {error && <p role="alert" className="mb-4 rounded-(--radius-control) bg-(--danger-soft) p-3 text-sm text-(--danger)">{error}</p>}
 

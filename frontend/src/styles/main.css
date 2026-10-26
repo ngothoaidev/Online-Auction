@@ -1,5 +1,8 @@
 @import 'tailwindcss';
 
+/* `dark:` utilities follow the app's theme toggle (.dark on <html>, see ThemeContext), never the OS directly. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 button {
   @apply cursor-pointer;
 }
@@ -38,21 +41,21 @@ button {
    Legacy names (--bg, --text, --accent ...) are BRIDGED to these roles so unmigrated screens follow the palette;
    remove a bridge once its last consumer has moved to the semantic name. */
 :root {
-  --canvas: #F7F5F0;
+  --canvas: #F6F7F9;
   --surface: #FFFFFF;
-  --ink: #171717;
-  --muted: #66645F;
-  --line: #D9D5CD;
-  --brand: #96590F;
+  --ink: #16181D;
+  --muted: #5F6470;
+  --line: #DADDE3;
+  --brand: #5B3FD0;
   --success: #256B4A;
   --danger: #B42318;
   --warning: #855400;
   --focus: #2563EB;
 
-  --surface-sunken: #EFECE5;
-  --surface-hover: #E8E4DA;
-  --brand-soft: #F7EBD8;
-  --brand-strong: #6E4210;
+  --surface-sunken: #EEF0F3;
+  --surface-hover: #E6E9EE;
+  --brand-soft: #EEEAFD;
+  --brand-strong: #3F2A9E;
   --success-soft: #DDEFE5;
   --danger-soft: #FBE4E1;
   --warning-soft: #FBF1D6;
@@ -76,38 +79,34 @@ button {
   --bg-hover: var(--surface-hover);
   --text: var(--ink);
   --text-muted: var(--muted);
-  --text-subtle: #6F6C65;
+  --text-subtle: #646A75;
   --accent: var(--brand);
   --accent-soft: var(--brand-soft);
   --accent-strong: var(--brand-strong);
-  --theme-secondary: var(--brand);
   --border: var(--line);
-  --border-subtle: #E8E4DB;
-  --border-strong: #C2BDB2;
+  --border-subtle: #E6E9EE;
   --card-bg: var(--surface);
-  --card-border: var(--line);
   --card-shadow: 0 1px 2px rgb(23 23 23 / 0.06), 0 2px 8px rgb(23 23 23 / 0.04);
   --input-bg: var(--surface);
-  --input-border: #8F8A7F;
-  --input-border-focus: var(--focus);
+  --input-border: #858B96;
 }
 
 :root.dark {
-  --canvas: #121110;
-  --surface: #1C1B19;
-  --ink: #F2EFE9;
-  --muted: #A8A49B;
-  --line: #36332E;
-  --brand: #E0A84A;
+  --canvas: #111216;
+  --surface: #1A1C21;
+  --ink: #EEF0F4;
+  --muted: #A3A8B3;
+  --line: #30333A;
+  --brand: #A895FF;
   --success: #5BC796;
   --danger: #F2776B;
   --warning: #E3B341;
   --focus: #7AA7FF;
 
-  --surface-sunken: #171614;
-  --surface-hover: #292724;
-  --brand-soft: #3A2A12;
-  --brand-strong: #F3D9A4;
+  --surface-sunken: #15171B;
+  --surface-hover: #25282E;
+  --brand-soft: #2A2350;
+  --brand-strong: #DCD3FF;
   --success-soft: #11291E;
   --danger-soft: #3A1714;
   --warning-soft: #33280B;
@@ -115,11 +114,10 @@ button {
   --info-soft: #14263B;
   --on-ink: #171717;
 
-  --text-subtle: #9A968D;
-  --border-subtle: #262421;
-  --border-strong: #4A4640;
+  --text-subtle: #959AA5;
+  --border-subtle: #23262C;
   --card-shadow: 0 1px 2px rgb(0 0 0 / 0.5), 0 4px 12px rgb(0 0 0 / 0.3);
-  --input-border: #7F7A71;
+  --input-border: #7C818C;
 }
 
 html { scroll-padding-top: calc(var(--header-h) + 16px); }
@@ -132,7 +130,7 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* Editorial display only (hero / page titles); everything else is UI sans. */
+/* Serif is the AURUM wordmark only (header, footer, auth, admin). Titles and all UI text are the sans. */
 .font-display { font-family: var(--font-display); letter-spacing: -0.01em; }
 /* Lot numbers, prices and timers: fixed-width digits so values do not jitter. */
 .font-lot { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }

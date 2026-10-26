@@ -23,7 +23,8 @@ const dark = tokens(':root.dark', light)
 
 describe.each([['light', light], ['dark', dark]])('%s palette meets WCAG AA', (_name, t) => {
   const text = [['ink', 'canvas'], ['ink', 'surface'], ['muted', 'canvas'], ['muted', 'surface'], ['text-subtle', 'canvas'], ['brand', 'canvas'], ['brand', 'surface'],
-    ['success', 'canvas'], ['danger', 'canvas'], ['warning', 'canvas'], ['on-ink', 'ink'], ['brand-strong', 'brand-soft'], ['success', 'success-soft'], ['danger', 'danger-soft'], ['warning', 'warning-soft']]
+    ['success', 'canvas'], ['danger', 'canvas'], ['warning', 'canvas'], ['on-ink', 'ink'], ['brand-strong', 'brand-soft'], ['success', 'success-soft'], ['danger', 'danger-soft'], ['warning', 'warning-soft'],
+    ['on-ink', 'brand']] // text on brand-filled buttons/badges
   it.each(text)('%s on %s >= 4.5:1', (fg, bg) => {
     expect(ratio(t[fg], t[bg])).toBeGreaterThanOrEqual(4.5)
   })

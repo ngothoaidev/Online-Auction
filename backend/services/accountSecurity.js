@@ -1,3 +1,4 @@
+import crypto from "node:crypto";
 import { eq, sql } from "drizzle-orm";
 import db from "../db/index.js";
 import { users } from "../db/schema.js";
@@ -44,6 +45,21 @@ const service = {
   changePasswordWithOtp: (userId, otp, newPassword) => db.transaction(async (tx) => {
     if (!(await consume(tx, userId, PURPOSES.CHANGE_PASSWORD, otp))) return null;
     return setPassword(tx, userId, newPassword);
+  }),
+
+  /**
+   * OAuth sign-in matched an existing account by email: attach the provider id. The provider has proven the email, so an
+   * UNVERIFIED account is claimed — whoever registered that email first (possibly an attacker) loses the password they set
+   * and every token issued so far. Returns the fresh row (its authVersion is the one to sign).
+   */
+  linkProvider: (user, providerIds) => db.transaction(async (tx) => {
+    let patch = providerIds;
+    if (user.isVerified !== true) {
+      await setPassword(tx, user.id, crypto.randomBytes(32).toString("base64url"));
+      patch = { ...providerIds, isVerified: true, role: 'buyer' };
+    }
+    const [row] = await tx.update(users).set(patch).where(eq(users.id, user.id)).returning();
+    return row;
   }),
 };
 

@@ -41,7 +41,7 @@ export default function ImageUploadModal({ isOpen, onClose, onUpload, title = 'U
 
   return (
     <Dialog open={isOpen} onClose={onClose} title={title} description="JPEG, PNG or WebP, up to 5 MB." pending={busy}>
-      <input ref={inputRef} type="file" accept={TYPES.join(',')} className="sr-only" aria-label="Choose image file" onChange={(e) => choose(e.target.files?.[0])} />
+      <input ref={inputRef} type="file" tabIndex={-1} accept={TYPES.join(',')} className="sr-only" aria-label="Choose image file" onChange={(e) => choose(e.target.files?.[0])} />
       {preview ? (
         <img src={preview} alt="Selected file preview" className="max-h-64 w-full rounded-(--radius-control) border border-(--line) object-contain" />
       ) : (

@@ -1,6 +1,7 @@
 import { useState, useEffect, lazy, Suspense } from 'react';
 import { useFeedback } from '../../components/ui/Feedback.jsx';
 import SafeHtml from '../../components/SafeHtml.jsx';
+import { Button, EmptyState } from '../../components/ui';
 import { FileText, Pencil, Save, X } from 'lucide-react';
 import auctionService from '../../services/auctionService';
 const RichTextEditor = lazy(() => import('../../components/RichTextEditor')); // editor code loads only for the owner, on edit
@@ -10,6 +11,8 @@ export default function Description({ productId, isOwner = false }) {
   const [content, setContent] = useState("");
   const [newContent, setNewContent] = useState(""); // Only for NEW additions
   const [loading, setLoading] = useState(true);
+  const [failed, setFailed] = useState(false);
+  const [attempt, setAttempt] = useState(0);
   const [saving, setSaving] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
 
@@ -21,20 +24,23 @@ export default function Description({ productId, isOwner = false }) {
 
   // Fetch dữ liệu thật từ Backend
   useEffect(() => {
+    let cancelled = false;
     const fetchDesc = async () => {
+        setLoading(true);
+        setFailed(false);
         try {
             const data = await auctionService.getDescription(productId);
-            const desc = data.description || "<p>No description provided for this item.</p>";
-            setContent(desc);
+            if (!cancelled) setContent(data?.description || "<p>No description provided for this item.</p>");
         } catch (err) {
             console.error("Error fetching description:", err);
-            setContent("<p>Failed to load description.</p>");
+            if (!cancelled) setFailed(true); // and no Edit: saving now would replace the real description
         } finally {
-            setLoading(false);
+            if (!cancelled) setLoading(false);
         }
     };
     if (productId) fetchDesc();
-  }, [productId]);
+    return () => { cancelled = true; };
+  }, [productId, attempt]);
 
   const handleEditButton = () => {
     setNewContent(""); // Start with empty editor for new content
@@ -70,7 +76,7 @@ export default function Description({ productId, isOwner = false }) {
     }
   };
 
-  if (loading) return <div className="h-64 bg-gray-100 animate-pulse rounded-2xl"></div>;
+  if (loading) return <div className="h-64 bg-(--surface-sunken) animate-pulse rounded-2xl"></div>;
 
   return (
     <div className="bg-[var(--bg-soft)] rounded-2xl p-8 border border-[var(--border)] shadow-sm">
@@ -81,7 +87,7 @@ export default function Description({ productId, isOwner = false }) {
         </h2>
         
         {/* Edit Button - Only visible for auction owner */}
-        {isOwner && !isEditing && (
+        {isOwner && !isEditing && !failed && (
           <button
             onClick={handleEditButton}
             className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-[var(--accent)] hover:bg-[var(--accent)]/10 rounded-lg transition-colors"
@@ -97,7 +103,7 @@ export default function Description({ productId, isOwner = false }) {
             <button
               onClick={handleCancel}
               disabled={saving}
-              className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700 rounded-lg transition-colors"
+              className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-(--muted) hover:bg-(--surface-hover) rounded-lg transition-colors"
             >
               <X size={16} />
               Cancel
@@ -105,7 +111,7 @@ export default function Description({ productId, isOwner = false }) {
             <button
               onClick={handleSave}
               disabled={saving}
-              className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-[var(--accent)] text-[var(--accent-text)] hover:opacity-90 rounded-lg transition-colors disabled:opacity-50"
+              className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-(--ink) text-(--on-ink) hover:opacity-90 rounded-lg transition-colors disabled:opacity-50"
             >
               <Save size={16} />
               {saving ? 'Saving...' : 'Save'}
@@ -128,6 +134,7 @@ export default function Description({ productId, isOwner = false }) {
           
           <Suspense fallback={<p className="text-sm text-(--muted)">Loading editor…</p>}>
             <RichTextEditor
+              label="New description update"
               value={newContent}
               onChange={setNewContent}
             />
@@ -143,8 +150,12 @@ export default function Description({ productId, isOwner = false }) {
         </div>
       )}
 
+      {failed && (
+        <EmptyState title="The description could not be loaded" action={<Button variant="secondary" onClick={() => setAttempt((n) => n + 1)}>Try again</Button>} />
+      )}
+
       {/* View Mode */}
-      {!isEditing && (
+      {!isEditing && !failed && (
         <div className="prose-custom">
             <SafeHtml className="text-[var(--text-muted)]" html={content} />
         </div>

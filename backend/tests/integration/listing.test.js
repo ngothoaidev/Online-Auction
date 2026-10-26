@@ -56,3 +56,17 @@ test("create rules: fewer than 3 photos, SVG, bad money, past/short deadline and
   assert.equal((await create(valid(), { who: "buyer" })).status, 403);
   assert.equal((await t.sql`SELECT count(*)::int AS n FROM auctions`)[0].n, 1, "only the first valid listing exists");
 });
+
+test("avatar upload uses the same local fallback without cloud credentials", async () => {
+  const put = async (photo) => {
+    const fd = new FormData();
+    fd.append("avatar", new Blob([photo], { type: "image/png" }), "a.png");
+    const res = await fetch(`${t.base}/users/avatar`, { method: "PUT", headers: { Authorization: `Bearer ${tokens.buyer}` }, body: fd });
+    return { status: res.status, body: await res.json().catch(() => null) };
+  };
+  const r = await put(PNG);
+  assert.equal(r.status, 200, JSON.stringify(r.body));
+  assert.equal(r.body.user.avatarUrl, r.body.new_url);
+  assert.equal((await fetch(r.body.new_url)).headers.get("content-type"), "image/png");
+  assert.equal((await put(Buffer.from("<svg/>"))).status, 415);
+});

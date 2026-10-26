@@ -15,19 +15,11 @@ const auctionService = {
     return res.json();
   },
   
-  // 1. Lấy ảnh
-  getImages: async (id) => {
-    const res = await fetch(`${API_URL}/auction/images/${id}`);
-    if (!res.ok) return []; 
-    return res.json();
-  },
+  // Reads below throw ApiError on failure. Never turn an error into [] / "": the UI would say "no bids" or
+  // "no description" when it simply does not know (and an owner could save over a description that failed to load).
+  getImages: (id) => apiFetch(`/auction/images/${id}`),
 
-  // 2. Lấy mô tả
-  getDescription: async (id) => {
-    const res = await fetch(`${API_URL}/auction/description/${id}`);
-    if (!res.ok) return { description: "" };
-    return res.json();
-  },
+  getDescription: (id) => apiFetch(`/auction/description/${id}`),
 
   // 2b. Cập nhật mô tả (chỉ dành cho seller)
   updateDescription: async (id, description) => {
@@ -44,30 +36,9 @@ const auctionService = {
     return res.json();
   },
 
-  // 3. Lấy comment
-  getComments: async (id) => {
-    const res = await fetch(`${API_URL}/auction/comments/${id}`);
-    if (!res.ok) return [];
-    return res.json();
-  },
+  getComments: (id) => apiFetch(`/auction/comments/${id}`),
 
-  // 4. Lấy lịch sử đấu giá
-  getBidHistory: async (id, filter) => {
-    try {
-        const token = localStorage.getItem('authToken');
-        
-        const res = await fetch(`${API_URL}/auction/bids/${id}?f=${filter}`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        });
-        if (!res.ok) return [];
-        return res.json();
-    } catch (error) {
-        return [];
-    }
-  },
+  getBidHistory: (id, filter = 'all') => apiFetch(`/auction/bids/${id}?f=${filter}`),
 
   getTopAuctions: async ({ id = null, status = 'active', sortBy = 'newest', page = 1, limit = 5 } = {}) => {
     const queryParams = new URLSearchParams({ status, sortBy, page, limit });

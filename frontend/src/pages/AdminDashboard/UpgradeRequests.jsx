@@ -127,22 +127,23 @@ export default function UpgradeRequests() {
   return (
     <div className="p-6">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="profile-name text-3xl font-bold">Seller Upgrade Requests</h1>
-          <p className="profile-text-muted mt-1">Review and approve bidder upgrade requests</p>
+      <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+        <div className="min-w-0">
+          <h1 className="text-(--ink) text-3xl font-bold">Seller Upgrade Requests</h1>
+          <p className="text-(--muted) mt-1">Review and approve bidder upgrade requests</p>
         </div>
         <div className="flex items-center gap-4">
           <button
             onClick={fetchRequests}
             disabled={loading}
+            aria-label="Refresh requests"
             className="p-2 rounded-lg hover:bg-[var(--bg-hover)] transition-colors"
           >
-            <RefreshCw size={20} className={`profile-text-muted ${loading ? 'animate-spin' : ''}`} />
+            <RefreshCw size={20} className={`text-(--muted) ${loading ? 'animate-spin' : ''}`} />
           </button>
-          <div className="profile-card px-4 py-2 rounded-lg">
-            <div className="text-sm profile-text-muted">Pending Requests</div>
-            <div className="text-2xl font-bold profile-name">
+          <div className="bg-(--surface) border-(--line) px-4 py-2 rounded-lg">
+            <div className="text-sm text-(--muted)">Pending Requests</div>
+            <div className="text-2xl font-bold text-(--ink)">
               {requests.filter(r => r.status === 'pending').length}
             </div>
           </div>
@@ -156,20 +157,20 @@ export default function UpgradeRequests() {
       )}
 
       {/* Filter Tabs */}
-      <div className="profile-tabs-border flex gap-2 mb-6 border-b pb-2">
+      <div className="border-(--line) flex flex-wrap gap-2 mb-6 border-b pb-2">
         {['all', 'pending', 'approved', 'rejected'].map((status) => (
           <button
             key={status}
             onClick={() => setFilterStatus(status)}
             className={`px-4 py-2 rounded-lg font-medium transition-all capitalize relative ${
               filterStatus === status
-                ? 'profile-name'
-                : 'profile-text-muted hover:bg-(--bg-hover)'
+                ? 'text-(--ink)'
+                : 'text-(--muted) hover:bg-(--bg-hover)'
             }`}
           >
             {status}
             {filterStatus === status && (
-              <div className="profile-tab-indicator absolute bottom-0 left-0 right-0 h-0.5 rounded-t" />
+              <div className="bg-(--ink) absolute bottom-0 left-0 right-0 h-0.5 rounded-t" />
             )}
           </button>
         ))}
@@ -179,7 +180,7 @@ export default function UpgradeRequests() {
       {loading ? (
         <div className="text-center py-12">
           <div className="w-12 h-12 border-4 border-[var(--accent)] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="profile-text-muted">Loading requests...</p>
+          <p className="text-(--muted)">Loading requests...</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-4">
@@ -190,7 +191,7 @@ export default function UpgradeRequests() {
               : 0;
             
             return (
-              <div key={request.id} className="profile-card rounded-xl p-6 hover:shadow-lg transition-all">
+              <div key={request.id} className="bg-(--surface) border-(--line) rounded-xl p-6 hover:shadow-lg transition-all">
                 <div className="flex items-start justify-between gap-4">
                   {/* User Info */}
                   <div className="flex items-start gap-4 flex-1">
@@ -201,13 +202,13 @@ export default function UpgradeRequests() {
                     />
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">
-                        <h3 className="profile-name text-lg font-bold">{user.fullName || user.username || 'Unknown User'}</h3>
+                        <h3 className="text-(--ink) text-lg font-bold">{user.fullName || user.username || 'Unknown User'}</h3>
                         <span className={`px-3 py-1 rounded-full text-xs font-medium capitalize ${getStatusBadge(request.status)}`}>
                           {request.status}
                         </span>
                       </div>
-                      <p className="profile-text-muted text-sm mb-1">{user.email}</p>
-                      <div className="flex items-center gap-4 text-sm profile-text-muted">
+                      <p className="text-(--muted) text-sm mb-1">{user.email}</p>
+                      <div className="flex items-center gap-4 text-sm text-(--muted)">
                         <span className="flex items-center gap-1">
                           <Clock size={14} />
                           Requested: {new Date(request.createdAt).toLocaleDateString()}
@@ -232,7 +233,7 @@ export default function UpgradeRequests() {
                           {ratingPercent}%
                         </span>
                       </div>
-                      <div className="profile-text-muted text-xs">Rating ({user.ratingCount || 0} reviews)</div>
+                      <div className="text-(--muted) text-xs">Rating ({user.ratingCount || 0} reviews)</div>
                     </div>
                   </div>
 
@@ -285,7 +286,7 @@ export default function UpgradeRequests() {
       )}
 
       {filteredRequests.length === 0 && (
-        <div className="profile-card rounded-xl p-12 text-center">
+        <div className="bg-(--surface) border-(--line) rounded-xl p-12 text-center">
           <div className="notification-empty-text text-lg mb-2">
             No {filterStatus !== 'all' && filterStatus} requests found
           </div>
@@ -299,7 +300,7 @@ export default function UpgradeRequests() {
 
       {/* Summary */}
       {filteredRequests.length > 0 && (
-        <div className="mt-6 profile-text-muted text-sm">
+        <div className="mt-6 text-(--muted) text-sm">
           Showing {filteredRequests.length} {filterStatus !== 'all' && filterStatus} request(s)
         </div>
       )}

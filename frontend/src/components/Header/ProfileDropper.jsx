@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { User, LogOut, Clock } from 'lucide-react';
+import { LogOut, Clock } from 'lucide-react';
+import { accountLinks } from './accountLinks.js';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
@@ -58,9 +59,11 @@ export default function ProfileDropper({ user, logout }) {
               </p>
             )}
           </div>
-          <Link to={`/profile/${user.username}`} onClick={() => close(false)} className="mt-1 flex min-h-11 items-center gap-3 rounded-(--radius-control) px-3 text-sm font-medium text-(--ink) hover:bg-(--surface-hover)">
-            <User size={16} aria-hidden="true" /> My profile
-          </Link>
+          <nav aria-label="Account" className="mt-1">
+            {accountLinks(user).map((l) => (
+              <Link key={l.to} to={l.to} onClick={() => close(false)} className="flex min-h-11 items-center rounded-(--radius-control) px-3 text-sm font-medium text-(--ink) hover:bg-(--surface-hover)">{l.label}</Link>
+            ))}
+          </nav>
           <button type="button" onClick={() => { close(false); logout(); }} className="flex min-h-11 w-full items-center gap-3 rounded-(--radius-control) px-3 text-sm font-medium text-(--danger) hover:bg-(--danger-soft)">
             <LogOut size={16} aria-hidden="true" /> Log out
           </button>

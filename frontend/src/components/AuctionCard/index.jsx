@@ -13,7 +13,8 @@ const URGENCY_TONE = { critical: 'danger', warning: 'warning', normal: 'neutral'
  * Lot card. Semantics: <article> with a real link on the image and the title (one tab stop each) and a sibling
  * favourite button; nothing is hover-only and the whole card is NOT a clickable div.
  */
-export default function AuctionCard({ product }) {
+/** variant 'won' (profile Wins / Sold tabs): the lot is settled and the viewer is a participant, so the card links to its order. */
+export default function AuctionCard({ product, variant }) {
   const { user } = useAuth() ?? {};
   const watchlist = useWatchlist();
   const [time, setTime] = useState(() => formatTimeLeft(product.endTime));
@@ -85,6 +86,11 @@ export default function AuctionCard({ product }) {
           <StatusBadge tone={URGENCY_TONE[time.urgencyLevel] ?? 'neutral'}>{time.urgencyLevel === 'ended' ? 'Ended' : `Ends ${time.timeLeft}`}</StatusBadge>
           <span className="text-(--muted)">{product.bidCount || 0} {product.bidCount === 1 ? 'bid' : 'bids'}</span>
         </div>
+        {variant === 'won' && (
+          <Link to={`/order/${product.id}`} className="relative z-10 inline-flex min-h-11 items-center justify-center rounded-(--radius-control) border border-(--input-border) px-4 text-sm font-semibold text-(--ink) hover:bg-(--surface-hover)">
+            View order{' '}<span className="sr-only">for {product.title}</span>
+          </Link>
+        )}
         {error && <p role="status" className="relative z-10 text-sm text-(--danger)">{error}</p>}
       </div>
     </article>

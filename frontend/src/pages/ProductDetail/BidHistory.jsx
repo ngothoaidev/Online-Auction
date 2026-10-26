@@ -13,6 +13,7 @@ export default function BidHistory({ productId, sellerId, refreshKey = 0, active
   const me = user?.userId ?? user?.id;
   const [filter, setFilter] = useState('all');
   const [state, setState] = useState({ status: 'loading', rows: [] });
+  const [attempt, setAttempt] = useState(0);
   const [reject, setReject] = useState(null); // { row, pending, error }
   const rejectBtn = useRef(null);
 
@@ -23,7 +24,7 @@ export default function BidHistory({ productId, sellerId, refreshKey = 0, active
       .then((rows) => { if (!cancelled) setState({ status: 'ready', rows: Array.isArray(rows) ? rows : [] }); })
       .catch(() => { if (!cancelled) setState({ status: 'error', rows: [] }); });
     return () => { cancelled = true; };
-  }, [productId, filter, user, refreshKey]);
+  }, [productId, filter, user, refreshKey, attempt]);
 
   const isSeller = me !== undefined && me === Number(sellerId);
 
@@ -54,7 +55,7 @@ export default function BidHistory({ productId, sellerId, refreshKey = 0, active
 
       <div className="mt-4" aria-live="polite" aria-busy={state.status === 'loading'}>
         {state.status === 'loading' && <p className="py-8 text-center text-sm text-(--muted)">Loading bid history…</p>}
-        {state.status === 'error' && <EmptyState title="Bid history could not be loaded" />}
+        {state.status === 'error' && <EmptyState title="Bid history could not be loaded" action={<Button variant="secondary" onClick={() => setAttempt((n) => n + 1)}>Try again</Button>} />}
         {state.status === 'ready' && state.rows.length === 0 && <EmptyState title="No bids yet">{filter === 'mine' ? 'You have not bid on this lot.' : 'Be the first to bid.'}</EmptyState>}
         {state.status === 'ready' && state.rows.length > 0 && (
           <div className="max-h-[480px] overflow-auto" tabIndex={0} role="region" aria-labelledby="bid-history-title">
@@ -80,7 +81,7 @@ export default function BidHistory({ productId, sellerId, refreshKey = 0, active
                         <td className="py-1 pl-3 text-right align-top">
                           {!row.invalidated && row.type !== 'buy_now' && (
                             <button type="button" ref={i === 0 ? rejectBtn : undefined} onClick={() => setReject({ row })} className="min-h-9 rounded-(--radius-control) px-2 text-sm font-semibold text-(--danger) hover:bg-(--danger-soft)">
-                              Remove bidder<span className="sr-only"> {name}</span>
+                              Remove bidder{' '}<span className="sr-only">{name}</span>
                             </button>
                           )}
                         </td>

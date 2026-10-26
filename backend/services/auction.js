@@ -2,11 +2,16 @@ import db from "../db/index.js"
 import { categories, auctions, auctionImages, users, userFavorites, bids, bidderMaxima, descriptionLogs, comments } from "../db/schema.js"
 import { catalogAuction, publicBid, publicComment, descriptionLog } from "../serializers/index.js";
 import { fromDb, toStr } from "../domain/money.js";
-import { minimumNextBid } from "../domain/bidding.js";
+import { minimumNextBid, viewerPosition } from "../domain/bidding.js";
 import { checkBidderEligibility, buyNowAvailable } from "../domain/eligibility.js";
 import { AppError } from "../utils/errors.js";
 import { sanitizeRichText } from "../utils/sanitize.js";
-import { sql, and, or, eq, gte, asc, desc, inArray, isNull } from "drizzle-orm";
+import { sql, and, eq, gte, asc, desc, inArray, isNull, isNotNull } from "drizzle-orm";
+
+// "Won" = the lot is closed and settled with this user as winner. While a lot is active `winnerId` is only the
+// current leader, so it must never count as a win. Shared by the profile counter and the Wins tab.
+export const wonBy = (userId) =>
+    and(eq(auctions.winnerId, userId), inArray(auctions.status, ['sold', 'ended']), isNotNull(auctions.settledAt));
 
 // Latest public price/leader event first (committed per-auction sequence); legacy rows without a sequence fall back to amount, id.
 const bidOrder = () => [sql`${bids.auctionSequence} DESC NULLS LAST`, desc(bids.amount), desc(bids.id)];
@@ -125,7 +130,7 @@ const service = {
                 break;
 
             case 'won-auctions':
-                conditions.push(and(eq(auctions.winnerId, userId), or(eq(auctions.status, 'sold'), eq(auctions.status, 'ended'))));
+                conditions.push(wonBy(userId));
                 break;
 
             case 'favorites': {
@@ -237,6 +242,7 @@ const service = {
 
         const [{ now }] = await db.execute(sql`SELECT clock_timestamp() AS now`);
         const capabilities = await this.capabilitiesFor(auction, viewer, now);
+        const viewerState = await this.viewerStateFor(auction, viewer, now);
 
         // Return formatted data for ProductDetail
         return {
@@ -264,6 +270,8 @@ const service = {
             serverTime: now,
             minimumNextBid: toStr(minimumNextBid({ startingPrice: fromDb(auction.startingPrice), currentPrice: fromDb(auction.currentPrice), step: fromDb(auction.stepPrice) }, auction.bidCount > 0)),
             capabilities,
+            // PRIVATE to the requester (null for guests, the seller and closed lots). Never sent on the public stream.
+            viewer: viewerState,
             
             // IDs for role checking
             sellerId: auction.sellerId,
@@ -320,6 +328,27 @@ const service = {
             }
         }
         return { canBid, canBuyNow, reasons };
+    },
+
+    /**
+     * The signed-in requester's own position on an open lot: { status: 'leading'|'outbid'|'none'|'removed', yourMaximum, minimumBid }.
+     * minimumBid follows the bid command's rules for THIS bidder (a leader must go above their own maximum).
+     */
+    viewerStateFor: async function(auction, viewer, now) {
+        const open = auction.status === 'active' && new Date(now) < new Date(auction.endTime);
+        if (!viewer || !open || viewer.id === auction.sellerId) return null;
+        const rows = await db.select().from(bidderMaxima).where(eq(bidderMaxima.auctionId, auction.id));
+        if (rows.some((m) => m.bidderId === viewer.id && m.disqualifiedAt)) return { status: 'removed', yourMaximum: null, minimumBid: null };
+        const state = {
+            startingPrice: fromDb(auction.startingPrice), step: fromDb(auction.stepPrice), currentPrice: fromDb(auction.currentPrice),
+            maxima: rows.filter((m) => !m.disqualifiedAt).map((m) => ({ bidderId: m.bidderId, max: fromDb(m.maxAmount), priority: m.prioritySequence })),
+        };
+        const p = viewerPosition(state, viewer.id);
+        return {
+            status: p.isLeading ? 'leading' : p.yourMaximum !== null ? 'outbid' : 'none',
+            yourMaximum: p.yourMaximum === null ? null : toStr(p.yourMaximum),
+            minimumBid: toStr(p.minimumBid),
+        };
     },
 
     findImages: async function(id) {

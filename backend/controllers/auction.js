@@ -50,6 +50,8 @@ const controller = {
                 return res.status(404).json({ message: 'Auction Not Found' });
             }
             
+            // A signed-in response carries the requester's private position: never store or share it in a cache.
+            if (req.user) res.set('Cache-Control', 'private, no-store');
             res.json(auction);
         } catch (error) {
             next(error);

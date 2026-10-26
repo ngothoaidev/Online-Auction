@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { decideBid, recompute, rank, competitivePrice, extendedEndTime, BidRejection, FIVE_MIN_MS } from "../../domain/bidding.js";
+import { decideBid, recompute, rank, competitivePrice, extendedEndTime, BidRejection, FIVE_MIN_MS, viewerPosition } from "../../domain/bidding.js";
 import { checkBidderEligibility, buyNowAvailable } from "../../domain/eligibility.js";
 
 const S = 1000n, I = 100n;
@@ -143,4 +143,30 @@ test("eligibility (B05) and Buy Now availability (B06)", () => {
   assert.equal(buyNowAvailable({ ...auction, endTime: now }, now), false, "equality is already ended");
   assert.equal(buyNowAvailable({ ...auction, buyNowPrice: null }, now), false);
   assert.equal(buyNowAvailable({ ...auction, status: "ended" }, now), false);
+});
+
+test("viewerPosition.minimumBid is exactly the floor decideBid enforces, for every bidder in random states", () => {
+  for (let seed = 1; seed <= 300; seed++) {
+    const rnd = prng(seed);
+    const S2 = BigInt(1 + Math.floor(rnd() * 5) * 500), I2 = BigInt(1 + Math.floor(rnd() * 4) * 50);
+    let state = { startingPrice: S2, step: I2, currentPrice: S2, maxima: [] };
+    let seq = 0;
+    for (let n = 0; n < 25; n++) {
+      for (const bidderId of ["u0", "u1", "u2", "u3"]) {
+        const { minimumBid, isLeading, yourMaximum } = viewerPosition(state, bidderId);
+        const own = state.maxima.find((m) => m.bidderId === bidderId);
+        assert.equal(yourMaximum, own?.max ?? null);
+        assert.equal(isLeading, Boolean(state.maxima.length) && rank(state.maxima)[0].bidderId === bidderId);
+        const accepts = (amount) => { try { decideBid(state, { bidderId, amount, sequence: seq + 1 }); return true; } catch (e) { if (e instanceof BidRejection) return false; throw e; } };
+        assert.equal(accepts(minimumBid), true, `seed ${seed}: ${bidderId} refused at the shown minimum ${minimumBid}`);
+        assert.equal(accepts(minimumBid - 1n), false, `seed ${seed}: ${bidderId} accepted below the shown minimum ${minimumBid}`);
+      }
+      const bidderId = "u" + Math.floor(rnd() * 4);
+      const amount = S2 + BigInt(Math.floor(rnd() * 60)) * 50n;
+      try {
+        const r = decideBid(state, { bidderId, amount, sequence: ++seq });
+        state = { ...state, currentPrice: r.currentPrice, maxima: r.maxima };
+      } catch (e) { if (e instanceof BidRejection) seq--; else throw e; }
+    }
+  }
 });

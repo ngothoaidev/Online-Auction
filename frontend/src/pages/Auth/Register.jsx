@@ -36,7 +36,7 @@ export default function Register() {
 
   return (
     <div className="w-full max-w-md">
-      <h1 className="font-display mb-6 text-3xl font-semibold text-(--ink)">Create your account</h1>
+      <h1 className="tracking-tight mb-6 text-3xl font-semibold text-(--ink)">Create your account</h1>
       {error && <p role="alert" className="mb-4 rounded-(--radius-control) bg-(--danger-soft) p-3 text-sm text-(--danger)">{error}</p>}
       <SocialButtons />
       <form onSubmit={submit} noValidate className="space-y-4">

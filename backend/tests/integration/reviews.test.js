@@ -124,6 +124,26 @@ test("counters always equal what the review rows say (randomised edit sequence a
   assert.equal((await counters(seller)).total, fromRows.total, "the repair helper restores exact counters");
 });
 
+test("GET /reviews: an empty set is 200 with null percentage; rows carry the camelCase fields the pages read", async () => {
+  const empty = await t.call("GET", `/reviews?targetId=${outsider.id}`);
+  assert.equal(empty.status, 200);
+  assert.deepEqual(empty.body.data.stats, { totalReviews: 0, positiveReviews: 0, negativeReviews: 0, positivePercentage: null });
+  assert.equal(empty.body.data.pagination.total, 0);
+  assert.equal((await t.call("GET", `/reviews/stats?reviewerId=${outsider.id}`)).status, 200);
+
+  await reset();
+  await t.sql`DELETE FROM reviews`;
+  const { id } = await makeOrder();
+  await review(id, "buyer", true, "fine");
+  const r = await t.call("GET", `/reviews?targetId=${seller.id}`);
+  assert.equal(r.status, 200);
+  const [row] = r.body.data.reviews;
+  assert.equal(row.reviewerUsername, buyer.username);
+  assert.equal(row.auctionTitle, "lot");
+  assert.ok(!Number.isNaN(Date.parse(row.createdAt)));
+  assert.equal(Number(r.body.data.stats.positivePercentage), 100);
+});
+
 test("database constraints back the rules: one review per reviewer per auction, no self reviews, real users/auctions only", async () => {
   const { auctionId } = await makeOrder();
   await t.sql`INSERT INTO reviews (reviewer_id, target_user_id, auction_id, is_good_rating) VALUES (${buyer.id}, ${seller.id}, ${auctionId}, true)`;

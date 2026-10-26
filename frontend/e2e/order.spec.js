@@ -15,9 +15,13 @@ test('buy now -> manual payment with a private proof upload -> seller can open t
   await ctx.addInitScript((t) => localStorage.setItem('authToken', t), buyer)
   const page = await ctx.newPage()
   await page.goto(`/order/${lot.id}`)
-  await expect(page.getByText('Manual payment.')).toBeVisible()
+  await expect(page.getByRole('heading', { level: 1, name: 'Pay the seller' })).toBeVisible()
   await expect(page.getByText(/This site does not process or hold payments/)).toBeVisible()
 
+  // one channel at a time: nothing to fill in until the buyer picks how they pay
+  await expect(page.getByRole('button', { name: 'Upload Payment Proof' })).toHaveCount(0)
+  await page.getByRole('radio', { name: /pay the seller directly/i }).check()
+  await expect(page.getByRole('region', { name: 'Pay with the mock gateway' })).toHaveCount(0)
   await page.getByRole('button', { name: 'Upload Payment Proof' }).click()
   const dialog = page.getByRole('dialog', { name: 'Upload Payment Proof' })
   await dialog.getByLabel('Choose image file').setInputFiles({ name: 'receipt.png', mimeType: 'image/png', buffer: PNG })

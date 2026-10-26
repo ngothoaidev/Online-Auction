@@ -226,3 +226,13 @@ test("new orders carry a payment deadline (default 48h) for Buy Now and for sett
   const so = (await t.sql`SELECT extract(epoch FROM (payment_due_at - created_at))/3600 AS hours FROM orders WHERE auction_id = ${bId}`)[0];
   assert.ok(Math.abs(Number(so.hours) - 48) < 0.01);
 });
+
+test("order details carry the item's primary photo (the order page showed a broken image without it)", async () => {
+  const [{ id }] = await t.sql`INSERT INTO auctions (seller_id, category_id, title, description, starting_price, current_price, step_price, buy_now_price, end_time)
+    VALUES (${seller.id}, ${categoryId}, 'photo lot', 'd', 1000, 1000, 100, 9000, now() + interval '1 day') RETURNING auction_id AS id`;
+  await t.sql`INSERT INTO auction_images (auction_id, image_url, is_primary) VALUES (${id}, 'https://img.test/second.jpg', false), (${id}, 'https://img.test/cover.jpg', true)`;
+  assert.equal((await t.call("POST", `/auction/${id}/buy-now`, { token: tokens.buyer })).status, 200);
+  const res = await t.call("GET", `/order/auction/${id}`, { token: tokens.buyer });
+  assert.equal(res.status, 200, JSON.stringify(res.body));
+  assert.equal(res.body.order.auction.image, "https://img.test/cover.jpg");
+});

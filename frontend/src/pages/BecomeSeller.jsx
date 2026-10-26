@@ -68,7 +68,7 @@ export default function BecomeSeller() {
         try {
             const token = localStorage.getItem('authToken');
             if (!token) {
-                nav.go('/login', { state: { from: { pathname: '/become-seller' } } });
+                nav.go('/login', { state: { from: '/become-seller' } });
                 return;
             }
 
@@ -367,10 +367,11 @@ export default function BecomeSeller() {
 
                 <form onSubmit={handleSubmit} className="space-y-6">
                     <div>
-                        <label className="block text-sm font-medium text-(--text-muted) mb-2">
+                        <label htmlFor="seller-reason" className="block text-sm font-medium text-(--text-muted) mb-2">
                             Why do you want to become a seller? (Optional)
                         </label>
                         <textarea
+                            id="seller-reason"
                             value={reason}
                             onChange={(e) => setReason(e.target.value)}
                             rows={4}

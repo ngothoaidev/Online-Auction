@@ -5,6 +5,7 @@ import { Search, ChevronDown, LogOut } from 'lucide-react';
 import { useNav } from '../../hooks/useNavigate.js';
 import { searchUrl } from '../../utils/searchUrl.js';
 import { Dialog } from '../ui';
+import { accountLinks } from './accountLinks.js';
 
 /** Mobile navigation drawer: a real modal dialog (focus trap, Escape, focus restore) from the shared primitive. */
 export default function MobileMenu({ open, onClose, focusSearch, categories, user, logout }) {
@@ -32,6 +33,17 @@ export default function MobileMenu({ open, onClose, focusSearch, categories, use
           <button type="submit" className="min-h-11 px-3 text-sm font-semibold text-(--ink)">Go</button>
         </div>
       </form>
+
+      {user && (
+        <nav aria-label="Account" className="mb-6">
+          <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-(--muted)">Your account</h3>
+          <ul className="grid grid-cols-2 gap-x-3">
+            {accountLinks(user).map((l) => (
+              <li key={l.to}><Link to={l.to} onClick={onClose} className="flex min-h-11 items-center font-medium text-(--ink)">{l.label}</Link></li>
+            ))}
+          </ul>
+        </nav>
+      )}
 
       <nav aria-label="Categories">
         <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-(--muted)">Browse categories</h3>

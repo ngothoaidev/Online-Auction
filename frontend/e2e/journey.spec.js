@@ -30,6 +30,7 @@ test('list -> bid -> worker settles -> pay -> ship -> receive -> both review -> 
 
   // pay through the mock gateway
   await bp.goto(`/order/${lotId}`)
+  await bp.getByRole('radio', { name: /mock gateway/i }).check()
   const pay = bp.getByRole('region', { name: 'Pay with the mock gateway' })
   await pay.getByLabel('Delivery address').fill('12 Nguyen Hue, District 1, Ho Chi Minh City')
   await pay.getByLabel('Contact phone').fill('+84901234567')

@@ -1,8 +1,9 @@
 import { useFeedback } from '../../components/ui/Feedback.jsx';
 import { useState, useEffect } from "react";
-import { Plus, Edit2, Trash2, Package, ChevronDown, ChevronRight, X, FolderPlus } from "lucide-react";
+import { Plus, Edit2, Trash2, Package, ChevronDown, ChevronRight, FolderPlus } from "lucide-react";
 import { categorySchema } from '../../schemas/admin.schemas';
 import { validateForm } from '../../utils/validation';
+import { Dialog } from '../../components/ui';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
@@ -344,7 +345,7 @@ export default function CategoryList() {
                             ) : (
                               <Trash2 
                                 size={18} 
-                                style={{ color: canDeleteCategory(category) ? 'var(--danger)' : '#9ca3af' }}
+                                style={{ color: canDeleteCategory(category) ? 'var(--danger)' : 'var(--muted)' }}
                               />
                             )}
                           </button>
@@ -402,7 +403,7 @@ export default function CategoryList() {
                               ) : (
                                 <Trash2 
                                   size={16} 
-                                  style={{ color: subcategory.productCount === 0 ? 'var(--danger)' : '#9ca3af' }}
+                                  style={{ color: subcategory.productCount === 0 ? 'var(--danger)' : 'var(--muted)' }}
                                 />
                               )}
                             </button>
@@ -466,26 +467,19 @@ export default function CategoryList() {
       )}
 
       {/* Add Category Modal */}
-      {showAddModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
-          <div className="w-full max-w-md rounded-xl p-6" style={{ backgroundColor: 'var(--bg-soft)' }}>
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold" style={{ color: 'var(--text)' }}>Add New Category</h2>
-              <button onClick={() => { setShowAddModal(false); setModalError(''); setNewCategoryName(''); setNewCategoryDescription(''); }}>
-                <X size={24} style={{ color: 'var(--text-muted)' }} />
-              </button>
-            </div>
+      <Dialog open={showAddModal} onClose={() => { setShowAddModal(false); setModalError(''); setNewCategoryName(''); setNewCategoryDescription(''); }} title="Add new category" pending={modalLoading}>
 
             {modalError && (
-              <div className="mb-4 p-3 rounded-lg text-sm" style={{ backgroundColor: 'var(--danger-soft)', color: 'var(--danger)' }}>
+              <div role="alert" className="mb-4 p-3 rounded-lg text-sm" style={{ backgroundColor: 'var(--danger-soft)', color: 'var(--danger)' }}>
                 {modalError}
               </div>
             )}
 
             <form onSubmit={handleAddCategory} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text-muted)' }}>Category Name *</label>
+                <label htmlFor="new-category-name" className="block text-sm font-medium mb-2" style={{ color: 'var(--text-muted)' }}>Category Name *</label>
                 <input
+                  id="new-category-name"
                   type="text"
                   value={newCategoryName}
                   onChange={(e) => setNewCategoryName(e.target.value)}
@@ -505,6 +499,7 @@ export default function CategoryList() {
                   value={newCategoryDescription}
                   onChange={(e) => setNewCategoryDescription(e.target.value)}
                   placeholder="Brief description of the category..."
+                  aria-label="Description (optional)"
                   rows={3}
                   className="w-full px-4 py-3 rounded-lg transition-all focus:outline-none focus:ring-2 resize-none"
                   style={{ 
@@ -533,36 +528,22 @@ export default function CategoryList() {
                 </button>
               </div>
             </form>
-          </div>
-        </div>
-      )}
+      </Dialog>
 
       {/* Add Subcategory Modal */}
-      {showAddSubModal && selectedParentCategory && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
-          <div className="w-full max-w-md rounded-xl p-6" style={{ backgroundColor: 'var(--bg-soft)' }}>
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <h2 className="text-xl font-bold" style={{ color: 'var(--text)' }}>Add Subcategory</h2>
-                <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
-                  Under: <span style={{ color: 'var(--accent)' }}>{selectedParentCategory.name}</span>
-                </p>
-              </div>
-              <button onClick={() => { setShowAddSubModal(false); setModalError(''); setNewCategoryName(''); setNewCategoryDescription(''); setSelectedParentCategory(null); }}>
-                <X size={24} style={{ color: 'var(--text-muted)' }} />
-              </button>
-            </div>
+      <Dialog open={showAddSubModal && Boolean(selectedParentCategory)} onClose={() => { setShowAddSubModal(false); setModalError(''); setNewCategoryName(''); setNewCategoryDescription(''); setSelectedParentCategory(null); }} title="Add subcategory" description={`Under: ${selectedParentCategory?.name ?? ''}`} pending={modalLoading}>
 
             {modalError && (
-              <div className="mb-4 p-3 rounded-lg text-sm" style={{ backgroundColor: 'var(--danger-soft)', color: 'var(--danger)' }}>
+              <div role="alert" className="mb-4 p-3 rounded-lg text-sm" style={{ backgroundColor: 'var(--danger-soft)', color: 'var(--danger)' }}>
                 {modalError}
               </div>
             )}
 
             <form onSubmit={handleAddSubcategory} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text-muted)' }}>Subcategory Name *</label>
+                <label htmlFor="new-subcategory-name" className="block text-sm font-medium mb-2" style={{ color: 'var(--text-muted)' }}>Subcategory Name *</label>
                 <input
+                  id="new-subcategory-name"
                   type="text"
                   value={newCategoryName}
                   onChange={(e) => setNewCategoryName(e.target.value)}
@@ -582,6 +563,7 @@ export default function CategoryList() {
                   value={newCategoryDescription}
                   onChange={(e) => setNewCategoryDescription(e.target.value)}
                   placeholder="Brief description of the subcategory..."
+                  aria-label="Description (optional)"
                   rows={3}
                   className="w-full px-4 py-3 rounded-lg transition-all focus:outline-none focus:ring-2 resize-none"
                   style={{ 
@@ -610,9 +592,7 @@ export default function CategoryList() {
                 </button>
               </div>
             </form>
-          </div>
-        </div>
-      )}
+      </Dialog>
     </div>
   );
 }

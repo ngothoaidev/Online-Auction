@@ -1,24 +1,33 @@
 import { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import auctionService from '../../services/auctionService';
-import { IconButton, Skeleton } from '../../components/ui';
+import { Button, IconButton, Skeleton } from '../../components/ui';
 
 export default function ImageGallery({ productId, title = 'Lot' }) {
   const [images, setImages] = useState([]);
   const [selected, setSelected] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [failed, setFailed] = useState(false);
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
+    setFailed(false);
     auctionService.getImages(productId)
       .then((data) => { if (!cancelled) { setImages(Array.isArray(data) ? data : []); setSelected(0); } })
-      .catch(() => {})
+      .catch(() => { if (!cancelled) setFailed(true); })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [productId]);
+  }, [productId, attempt]);
 
   if (loading) return <div className="space-y-3"><Skeleton className="aspect-square w-full" /><Skeleton className="h-[72px] w-64" /></div>; // same height as the loaded gallery
+  if (failed) return (
+    <div className="flex aspect-square flex-col items-center justify-center gap-3 rounded-(--radius-card) border border-(--line) bg-(--surface-sunken) text-(--muted)">
+      <p>Photos could not be loaded</p>
+      <Button variant="secondary" onClick={() => setAttempt((n) => n + 1)}>Try again</Button>
+    </div>
+  );
   if (!images.length) return <div className="flex aspect-square items-center justify-center rounded-(--radius-card) border border-(--line) bg-(--surface-sunken) text-(--muted)">No images</div>;
 
   const step = (d) => setSelected((i) => (i + d + images.length) % images.length);

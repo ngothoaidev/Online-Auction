@@ -228,11 +228,12 @@ const controller = {
     updateUserAvatar: async function(req, res) {
         try {
             // 1. Validation
-            if (!req.file) {
+            const file = req.file ?? req.files?.[0]; // Cloudinary -> req.file, local fallback -> req.files
+            if (!file) {
                 return res.status(400).json({ error: 'No image file provided.' });
             }
 
-            const newAvatarUrl = req.file.path;
+            const newAvatarUrl = file.path;
 
             const [updatedUser] = await userService.update(req.user.id, {
                 avatarUrl: newAvatarUrl

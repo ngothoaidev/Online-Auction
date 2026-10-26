@@ -1,5 +1,5 @@
 // Exact money display. Amounts travel as digit strings (up to 15 digits); never go through Number/parseFloat
-// for anything the user commits to. Compact K/M/B formatting in utils/format.js is catalog-only and lossy.
+// for anything the user commits to. There is deliberately no compact (1.2M) formatter: it rounds money.
 
 /** "1234567" -> "1.234.567 ₫"; null/undefined/garbage -> "—" (never "NaN ₫"). */
 export function formatVnd(value) {

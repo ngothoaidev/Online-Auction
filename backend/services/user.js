@@ -3,6 +3,7 @@ import db from "../db/index.js"
 import { users, bids, auctions, userFavorites, categories, reviews } from "../db/schema.js"
 
 import { eq, or, ilike, and, sql, count, desc } from "drizzle-orm";
+import { wonBy } from "./auction.js";
 
 import dotenv from 'dotenv'
 
@@ -110,7 +111,7 @@ const service = {
         const wonAuctions = await db
             .select({ count: count() })
             .from(auctions)
-            .where(eq(auctions.winnerId, userId));
+            .where(wonBy(userId));
 
         // Total active bids (auctions where user has placed a bid and auction is still active)
         const activeBids = await db
@@ -150,9 +151,10 @@ const service = {
         const receivedStats = reviewsReceived[0] || { totalReviews: 0, positiveReviews: 0, negativeReviews: 0 };
         const givenStats = reviewsGiven[0] || { totalReviews: 0, positiveReviews: 0, negativeReviews: 0 };
 
-        const positiveRate = receivedStats.totalReviews > 0 
-            ? ((receivedStats.positiveReviews / receivedStats.totalReviews) * 100).toFixed(2)
-            : 0;
+        // null, not 0: a user without reviews has no rating yet.
+        const positiveRate = receivedStats.totalReviews > 0
+            ? parseFloat(((receivedStats.positiveReviews / receivedStats.totalReviews) * 100).toFixed(2))
+            : null;
 
         return {
             totalBids: bidsResult[0]?.count || 0,
@@ -166,7 +168,7 @@ const service = {
                 total: receivedStats.totalReviews,
                 positive: receivedStats.positiveReviews,
                 negative: receivedStats.negativeReviews,
-                positiveRate: parseFloat(positiveRate),
+                positiveRate,
             },
             reviewsGiven: {
                 total: givenStats.totalReviews,
