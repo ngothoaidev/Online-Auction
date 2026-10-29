@@ -2,10 +2,10 @@ import { Router } from "express";
 import { requireAuth } from "../middleware/auth.js";
 import orderController from "../controllers/order.js";
 import multer from "multer";
-import { validate, idParam } from "../validation/index.js";
+import { validate, idParam } from "../validation/index.ts";
 import { actionLimiter } from "../middleware/rateLimit.js";
 import orderService from "../services/order.js";
-import { AppError } from "../utils/errors.js";
+import { AppError } from "../utils/errors.ts";
 import { MAX_BYTES, PURPOSES } from "../services/media.js";
 
 // In-memory, hard-limited multipart parsing: one file, size capped before anything is written anywhere.

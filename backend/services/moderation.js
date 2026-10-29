@@ -4,10 +4,10 @@
 // edits reputation: ratings only ever come from reviews.
 import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
-import db from "../db/index.js";
-import { adminAudit, auctions, categories, listingReports, sellerRequests, users } from "../db/schema.js";
-import { AppError } from "../utils/errors.js";
-import { need } from "../domain/orderTransitions.js";
+import db from "../db/index.ts";
+import { adminAudit, auctions, categories, listingReports, sellerRequests, users } from "../db/schema.ts";
+import { AppError } from "../utils/errors.ts";
+import { need } from "../domain/orderTransitions.ts";
 import { runIdempotent } from "./idempotency.js";
 import { recordAdminAction } from "./adminAudit.js";
 import { commands as auctionCommands } from "./auctionCommands.js";

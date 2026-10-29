@@ -1,8 +1,19 @@
 // Who may bid / Buy Now. Pure: pass the already-loaded user + auction rows.
 export const RATING_THRESHOLD_PERCENT = 80;
 
+export type Refusal = { status: number; code: string; message: string };
+export type Bidder = {
+  id: number; role: string | null; status: string | null; isVerified: boolean | null;
+  ratingCount: number | null; positiveRatingCount: number | null;
+};
+type BuyNowLot = { status: string | null; buyNowPrice: string | null | undefined; endTime: Date | string; currentPrice: string };
+
 /** Returns null when allowed, else { status, code, message }. */
-export function checkBidderEligibility(user, auction, { disqualified = false } = {}) {
+export function checkBidderEligibility(
+  user: Bidder | null | undefined,
+  auction: { sellerId: number; allowNewbies: boolean | null },
+  { disqualified = false } = {},
+): Refusal | null {
   if (!user) return { status: 401, code: "AUTH_REQUIRED", message: "Please sign in" };
   if (user.status === "banned") return { status: 403, code: "ACCOUNT_BANNED", message: "Your account has been banned" };
   if (!user.isVerified) return { status: 403, code: "EMAIL_NOT_VERIFIED", message: "Please verify your email first" };
@@ -24,7 +35,7 @@ export function checkBidderEligibility(user, auction, { disqualified = false } =
 }
 
 /** Server-side Buy Now rule, independent of who is asking. */
-export function buyNowAvailable(auction, now) {
+export function buyNowAvailable(auction: BuyNowLot, now: Date | string): boolean {
   return auction.status === "active"
     && auction.buyNowPrice !== null && auction.buyNowPrice !== undefined
     && new Date(now) < new Date(auction.endTime)

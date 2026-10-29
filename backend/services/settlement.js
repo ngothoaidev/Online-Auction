@@ -1,13 +1,13 @@
 // Automatic settlement. Runs from the worker, never from a GET.
 // Same lock + clock discipline as the interactive commands: one short transaction per auction.
 import { and, eq, sql } from "drizzle-orm";
-import db from "../db/index.js";
-import { auctions, bids, bidderMaxima, orders, users, auctionCommandAudit } from "../db/schema.js";
-import { fromDb, toStr } from "../domain/money.js";
-import { recompute } from "../domain/bidding.js";
+import db from "../db/index.ts";
+import { auctions, bids, bidderMaxima, orders, users, auctionCommandAudit } from "../db/schema.ts";
+import { fromDb, toStr } from "../domain/money.ts";
+import { recompute } from "../domain/bidding.ts";
 import { enqueue } from "./outbox.js";
-import { faultPoint } from "../utils/fault.js";
-import { paymentDueAt } from "../domain/orderTransitions.js";
+import { faultPoint } from "../utils/fault.ts";
+import { paymentDueAt } from "../domain/orderTransitions.ts";
 
 /**
  * Settle one auction inside `tx` if (and only if) it is still active and its deadline has passed on the DB clock.

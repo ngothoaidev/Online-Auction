@@ -1,4 +1,4 @@
-import { adminAudit } from "../db/schema.js";
+import { adminAudit } from "../db/schema.ts";
 
 // Only these fields of a target are ever copied into the trail (no emails, hashes, tokens, maxima, proofs).
 const FIELDS = {

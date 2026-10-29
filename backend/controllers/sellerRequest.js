@@ -4,7 +4,7 @@ import sellerRequestService from "../services/sellerRequest.js";
 import userService from "../services/user.js";
 import authService from "../services/auth.js";
 
-import { sendSellerRequestRejected, sendSellerRequestAccepted } from "../utils/email.js";
+import { sendSellerRequestRejected, sendSellerRequestAccepted } from "../utils/email.ts";
 
 const controller = {
     // Submit a seller upgrade request (for buyers)

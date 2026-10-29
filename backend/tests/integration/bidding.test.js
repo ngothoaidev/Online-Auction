@@ -1,7 +1,7 @@
 import { test, before, after } from "node:test";
 import assert from "node:assert/strict";
 import { startApp } from "../helpers/app.js";
-import { decideBid, rank } from "../../domain/bidding.js";
+import { decideBid, rank } from "../../domain/bidding.ts";
 
 let t, seller, categoryId, users, tokens;
 const N_USERS = 60;

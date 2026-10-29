@@ -3,9 +3,9 @@
 // the row is marked dispatched replays the event, so every consumer must dedupe by `eventId`. No ordering guarantee
 // across retries either: consumers that care compare `aggregateVersion`.
 import { sql } from "drizzle-orm";
-import db from "../db/index.js";
-import { outboxEvents } from "../db/schema.js";
-import { faultPoint } from "../utils/fault.js";
+import db from "../db/index.ts";
+import { outboxEvents } from "../db/schema.ts";
+import { faultPoint } from "../utils/fault.ts";
 
 /** Append a domain event in the caller's transaction. Idempotent per (aggregate, version, type); true if newly added. */
 export async function enqueue(tx, { aggregateType, aggregateId, aggregateVersion, eventType, publicPayload, privatePayload = null }) {

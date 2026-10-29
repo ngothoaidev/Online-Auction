@@ -3,8 +3,8 @@
 // Its store is the `provider_status` column of payment_attempts, so a lost webhook is recoverable by reconciliation.
 import crypto from "node:crypto";
 import { sql } from "drizzle-orm";
-import db from "../../db/index.js";
-import { AppError } from "../../utils/errors.js";
+import db from "../../db/index.ts";
+import { AppError } from "../../utils/errors.ts";
 
 export const name = "mock";
 

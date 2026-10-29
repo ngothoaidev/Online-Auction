@@ -1,8 +1,11 @@
 import { z } from "zod";
-import { AppError } from "../utils/errors.js";
+import type { RequestHandler } from "express";
+import { AppError } from "../utils/errors.ts";
 
 /** Express middleware: parse + replace req.params/query/body with the validated (and stripped/coerced) values. */
-export const validate = ({ params, query, body } = {}) => (req, _res, next) => {
+type Schemas = { params?: z.ZodTypeAny; query?: z.ZodTypeAny; body?: z.ZodTypeAny };
+
+export const validate = ({ params, query, body }: Schemas = {}): RequestHandler => (req, _res, next) => {
   try {
     if (params) req.params = params.parse(req.params);
     if (query) req.query = query.parse(req.query);

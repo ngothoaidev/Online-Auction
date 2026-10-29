@@ -2,9 +2,9 @@
 // Review row, rating counters and the pending_review -> completed transition commit together under the lock order
 // auction -> order -> target user.
 import { and, eq, sql } from "drizzle-orm";
-import db from "../db/index.js";
-import { auctions, orders, reviews, users } from "../db/schema.js";
-import { AppError } from "../utils/errors.js";
+import db from "../db/index.ts";
+import { auctions, orders, reviews, users } from "../db/schema.ts";
+import { AppError } from "../utils/errors.ts";
 import { runIdempotent } from "./idempotency.js";
 import { applyTransition } from "./orderCommands.js";
 

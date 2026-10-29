@@ -1,7 +1,7 @@
 import crypto from "node:crypto";
 import { eq, sql } from "drizzle-orm";
-import db from "../db/index.js";
-import { users } from "../db/schema.js";
+import db from "../db/index.ts";
+import { users } from "../db/schema.ts";
 import authService from "./auth.js";
 import { PURPOSES, issue, consume, revokeAll, newOtp, newGrant } from "./authChallenges.js";
 

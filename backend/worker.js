@@ -11,8 +11,8 @@ import * as paymentReminders from "./jobs/paymentReminders.js";
 import { stats as outboxStats } from "./services/outbox.js";
 import os from "node:os";
 import { sql } from "drizzle-orm";
-import db, { client } from "./db/index.js";
-import logger from "./utils/log.js";
+import db, { client } from "./db/index.ts";
+import logger from "./utils/log.ts";
 
 const POLL_MS = Number(process.env.WORKER_POLL_MS || 5000);
 const jobs = [settlement, paymentReconcile, paymentExpiry, paymentReminders, mediaCleanup, outbox];

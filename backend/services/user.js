@@ -1,6 +1,6 @@
-import db from "../db/index.js"
+import db from "../db/index.ts"
 
-import { users, bids, auctions, userFavorites, categories, reviews } from "../db/schema.js"
+import { users, bids, auctions, userFavorites, categories, reviews } from "../db/schema.ts"
 
 import { eq, or, ilike, and, sql, count, desc } from "drizzle-orm";
 import { wonBy } from "./auction.js";

@@ -1,6 +1,6 @@
 import { z } from "zod";
-import { formBoolean, moneyInput } from "./index.js";
-import { sanitizeRichText } from "../utils/sanitize.js";
+import { formBoolean, moneyInput } from "./index.ts";
+import { sanitizeRichText } from "../utils/sanitize.ts";
 
 const richText = z.string().max(50000).transform(sanitizeRichText);
 

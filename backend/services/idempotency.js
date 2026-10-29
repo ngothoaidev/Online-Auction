@@ -1,7 +1,7 @@
 import crypto from "node:crypto";
 import { and, eq, lt, sql } from "drizzle-orm";
-import { commandRequests } from "../db/schema.js";
-import { AppError } from "../utils/errors.js";
+import { commandRequests } from "../db/schema.ts";
+import { AppError } from "../utils/errors.ts";
 
 /** Stable SHA-256 over a canonical JSON form (sorted keys) so key order never changes the hash. */
 export function hashPayload(value) {

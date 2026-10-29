@@ -1,11 +1,11 @@
 import orderService from "../services/order.js";
 import userService from "../services/user.js";
 import auctionService from "../services/auction.js";
-import { sendEmail } from "../utils/email.js";
+import { sendEmail } from "../utils/email.ts";
 import { transitionOrder } from "../services/orderCommands.js";
 import { submitReview } from "../services/reviewCommands.js";
 import { keyFrom } from "../services/idempotency.js";
-import { AppError } from "../utils/errors.js";
+import { AppError } from "../utils/errors.ts";
 import { storeOrderUpload, readOrderAsset } from "../services/media.js";
 import * as payments from "../services/payments.js";
 

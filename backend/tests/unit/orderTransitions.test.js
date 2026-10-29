@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { planTransition, TERMINAL } from "../../domain/orderTransitions.js";
+import { planTransition, TERMINAL } from "../../domain/orderTransitions.ts";
 
 const NOW = new Date("2026-03-01T12:00:00Z");
 const base = { id: 1, buyerId: 10, sellerId: 20, paymentMode: "manual", paymentDueAt: new Date("2026-03-02T12:00:00Z") };

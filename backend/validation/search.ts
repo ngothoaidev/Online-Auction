@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-const SORT_ALIASES = { priceLowToHigh: "price-asc", priceHighToLow: "price-desc", timeEndingSoon: "ending-soon", timeNewlyListed: "newest" };
+const SORT_ALIASES: Record<string, string> = { priceLowToHigh: "price-asc", priceHighToLow: "price-desc", timeEndingSoon: "ending-soon", timeNewlyListed: "newest" };
 
 const num = z.preprocess((v) => (v === "" || v === undefined ? undefined : v), z.coerce.number().min(0).max(999999999999999).optional());
 
