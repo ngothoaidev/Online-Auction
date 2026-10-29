@@ -28,7 +28,9 @@ export async function submitReview({ orderId, actor, isGoodRating, comment, key 
     }
     const targetId = isBuyer ? order.sellerId : order.buyerId; // never client-chosen
 
-    await tx.select({ id: users.id }).from(users).where(eq(users.id, targetId)).for("update");                  // 3) target user
+    // 3) target user. NO KEY UPDATE, not UPDATE: the reviews insert takes FK KEY SHARE locks on both parties, so a
+    // FOR UPDATE here deadlocks with the counterpart reviewing another order between the same two users.
+    await tx.select({ id: users.id }).from(users).where(eq(users.id, targetId)).for("no key update");
 
     const [existing] = await tx.select().from(reviews).where(and(eq(reviews.auctionId, order.auctionId), eq(reviews.reviewerId, actor.id)));
     let review;
