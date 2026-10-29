@@ -1,5 +1,5 @@
-import * as moderation from "../services/moderation.js";
-import { keyFrom } from "../services/idempotency.js";
+import * as moderation from "../services/moderation.ts";
+import { keyFrom } from "../services/idempotency.ts";
 import { AppError } from "../utils/errors.ts";
 
 const handler = (fn, status = 200) => async (req, res, next) => {

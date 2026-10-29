@@ -4,9 +4,9 @@ import orderController from "../controllers/order.js";
 import multer from "multer";
 import { validate, idParam } from "../validation/index.ts";
 import { actionLimiter } from "../middleware/rateLimit.js";
-import orderService from "../services/order.js";
+import orderService from "../services/order.ts";
 import { AppError } from "../utils/errors.ts";
-import { MAX_BYTES, PURPOSES } from "../services/media.js";
+import { MAX_BYTES, PURPOSES } from "../services/media.ts";
 
 // In-memory, hard-limited multipart parsing: one file, size capped before anything is written anywhere.
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: MAX_BYTES, files: 1, fields: 5, parts: 6 } });

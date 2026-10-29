@@ -1,4 +1,4 @@
-import * as payments from "../services/payments.js";
+import * as payments from "../services/payments.ts";
 
 export default {
     // Provider webhook: raw body (signature first), no auth; duplicates are acknowledged with 200.

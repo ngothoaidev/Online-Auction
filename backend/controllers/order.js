@@ -1,13 +1,13 @@
-import orderService from "../services/order.js";
-import userService from "../services/user.js";
-import auctionService from "../services/auction.js";
+import orderService from "../services/order.ts";
+import userService from "../services/user.ts";
+import auctionService from "../services/auction.ts";
 import { sendEmail } from "../utils/email.ts";
-import { transitionOrder } from "../services/orderCommands.js";
-import { submitReview } from "../services/reviewCommands.js";
-import { keyFrom } from "../services/idempotency.js";
+import { transitionOrder } from "../services/orderCommands.ts";
+import { submitReview } from "../services/reviewCommands.ts";
+import { keyFrom } from "../services/idempotency.ts";
 import { AppError } from "../utils/errors.ts";
-import { storeOrderUpload, readOrderAsset } from "../services/media.js";
-import * as payments from "../services/payments.js";
+import { storeOrderUpload, readOrderAsset } from "../services/media.ts";
+import * as payments from "../services/payments.ts";
 
 /** Load the order and make sure the caller is its buyer or seller (404 unknown, 403 outsider). */
 async function participantOrder(req) {

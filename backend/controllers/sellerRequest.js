@@ -1,8 +1,8 @@
-import * as moderation from "../services/moderation.js";
-import { keyFrom } from "../services/idempotency.js";
-import sellerRequestService from "../services/sellerRequest.js";
-import userService from "../services/user.js";
-import authService from "../services/auth.js";
+import * as moderation from "../services/moderation.ts";
+import { keyFrom } from "../services/idempotency.ts";
+import sellerRequestService from "../services/sellerRequest.ts";
+import userService from "../services/user.ts";
+import authService from "../services/auth.ts";
 
 import { sendSellerRequestRejected, sendSellerRequestAccepted } from "../utils/email.ts";
 

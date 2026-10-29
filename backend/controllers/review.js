@@ -1,4 +1,4 @@
-import { reviewService } from "../services/review.js";
+import { reviewService } from "../services/review.ts";
 
 export const reviewController = {
   /**

@@ -6,8 +6,8 @@ let t, outbox, notif, seller, a, b, admin, tokens, categoryId;
 
 before(async () => {
   t = await startApp({ BID_RATE_LIMIT_MAX: "100000" });
-  outbox = await import("../../services/outbox.js");
-  notif = await import("../../services/notifications.js");
+  outbox = await import("../../services/outbox.ts");
+  notif = await import("../../services/notifications.ts");
   seller = await t.createUser("nseller", { role: "seller" });
   a = await t.createUser("nbuyerA");
   b = await t.createUser("nbuyerB");
@@ -133,7 +133,7 @@ test("order lifecycle notifications reach the right party: won/sold, gateway pay
   const id = await lot("Pocket chronometer");
   await bid(id, "a", 7000);
   await t.sql`UPDATE auctions SET end_time = now() - interval '1 second' WHERE auction_id = ${id}`;
-  await (await import("../../services/settlement.js")).settleDue();
+  await (await import("../../services/settlement.ts")).settleDue();
   await dispatch();
   assert.equal((await rows(a, "auction_won")).length, 2);
   assert.equal((await rows(seller, "auction_sold")).length, 2);

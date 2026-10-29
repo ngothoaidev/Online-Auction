@@ -8,7 +8,7 @@ const streams = new Set();
 
 before(async () => {
   t = await startApp({ BID_RATE_LIMIT_MAX: "100000", SSE_POLL_MS: "200", SSE_HEARTBEAT_MS: "300", SSE_REPLAY_LIMIT: "5", SSE_MAX_PER_IP: "6" });
-  realtime = await import("../../services/realtime.js");
+  realtime = await import("../../services/realtime.ts");
   seller = await t.createUser("rseller", { role: "seller" });
   [{ id: categoryId }] = await t.sql`INSERT INTO categories (name) VALUES ('rc') RETURNING category_id AS id`;
   bidders = []; tokens = [];
@@ -106,7 +106,7 @@ test("settlement by the worker is pushed too", async () => {
   const s = await subscribe(`/auction/${a}/events`); // no cursor: start from the current version
   await bid(a, 0, 5000);
   await t.sql`UPDATE auctions SET end_time = now() - interval '1 second' WHERE auction_id = ${a}`;
-  const { settleDue } = await import("../../services/settlement.js");
+  const { settleDue } = await import("../../services/settlement.ts");
   await settleDue();
   const ended = await s.waitFor((b) => b.data?.type === "auction.ended");
   assert.equal(ended.data.status, "ended");

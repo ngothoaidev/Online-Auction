@@ -6,7 +6,7 @@ let t, seller, buyer, other, admin, tokens, categoryId, orderSvc;
 
 before(async () => {
   t = await startApp({ BID_RATE_LIMIT_MAX: "100000" });
-  orderSvc = await import("../../services/orderCommands.js");
+  orderSvc = await import("../../services/orderCommands.ts");
   seller = await t.createUser("seller", { role: "seller" });
   buyer = await t.createUser("buyer");
   other = await t.createUser("other");
@@ -217,7 +217,7 @@ test("new orders carry a payment deadline (default 48h) for Buy Now and for sett
   assert.ok(Math.abs(Number(o.hours) - 48) < 0.01);
   assert.equal(o.payment_mode, "manual");
 
-  const settle = await import("../../services/settlement.js");
+  const settle = await import("../../services/settlement.ts");
   const [{ id: bId }] = await t.sql`INSERT INTO auctions (seller_id, category_id, title, description, starting_price, current_price, step_price, end_time)
     VALUES (${seller.id}, ${categoryId}, 'st', 'd', 1000, 1000, 100, now() + interval '1 day') RETURNING auction_id AS id`;
   assert.equal((await t.call("POST", `/auction/${bId}/bid`, { token: tokens.other, body: { amount: 2000 } })).status, 200);

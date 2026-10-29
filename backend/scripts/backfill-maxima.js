@@ -1,7 +1,7 @@
 // Usage: node scripts/backfill-maxima.js [--apply]   (default: dry run, prints a JSON report; never prints amounts of private maxima beyond the plan)
 import dotenv from "dotenv";
 import postgres from "postgres";
-import { planMaximaBackfill, applyMaximaBackfill } from "../services/legacyBackfill.js";
+import { planMaximaBackfill, applyMaximaBackfill } from "../services/legacyBackfill.ts";
 dotenv.config();
 
 const sql = postgres(process.env.DATABASE_URL, { max: 1 });

@@ -3,12 +3,12 @@ import { sanitizeRichText } from "../utils/sanitize.ts";
 import type { auctionImages, auctions, bids, comments, descriptionLogs, users } from "../db/schema.ts";
 
 type UserRow = typeof users.$inferSelect;
-type UserRef = Pick<UserRow, "id" | "username" | "fullName" | "avatarUrl">;
+type UserRef = Pick<UserRow, "username" | "fullName" | "avatarUrl"> & Partial<Pick<UserRow, "id">>;
 type ImageRef = Pick<typeof auctionImages.$inferSelect, "id" | "auctionId" | "imageUrl" | "isPrimary">;
 type BidRef = Pick<typeof bids.$inferSelect, "id" | "auctionId" | "bidderId" | "amount" | "bidTime" | "type" | "invalidatedAt">
   & { bidder?: UserRef | null };
 type CommentRef = Pick<typeof comments.$inferSelect, "commentId" | "auctionId" | "userId" | "parentId" | "content" | "createdAt">
-  & { user?: (UserRef & Pick<UserRow, "role">) | null };
+  & { user?: (UserRef & Partial<Pick<UserRow, "role">>) | null };
 /** An auction loaded with images, seller, category and the latest bid (with bidder). */
 export type CatalogAuctionRow = typeof auctions.$inferSelect & {
   seller?: Pick<UserRow, "username" | "ratingCount" | "positiveRatingCount"> | null;

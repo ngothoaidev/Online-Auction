@@ -2,13 +2,13 @@
 // (no Passport/OAuth needed). Safe to run several copies: every job claims work with row locks.
 import dotenv from "dotenv";
 dotenv.config();
-import * as settlement from "./jobs/settleDue.js";
-import * as paymentExpiry from "./jobs/expirePayments.js";
-import * as mediaCleanup from "./jobs/cleanupMedia.js";
-import * as outbox from "./jobs/dispatchOutbox.js";
-import * as paymentReconcile from "./jobs/reconcilePayments.js";
-import * as paymentReminders from "./jobs/paymentReminders.js";
-import { stats as outboxStats } from "./services/outbox.js";
+import * as settlement from "./jobs/settleDue.ts";
+import * as paymentExpiry from "./jobs/expirePayments.ts";
+import * as mediaCleanup from "./jobs/cleanupMedia.ts";
+import * as outbox from "./jobs/dispatchOutbox.ts";
+import * as paymentReconcile from "./jobs/reconcilePayments.ts";
+import * as paymentReminders from "./jobs/paymentReminders.ts";
+import { stats as outboxStats } from "./services/outbox.ts";
 import os from "node:os";
 import { sql } from "drizzle-orm";
 import db, { client } from "./db/index.ts";
