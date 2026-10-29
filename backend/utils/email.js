@@ -88,6 +88,8 @@ const sendEmailViaAPI = async (to, subject, htmlContent, { key } = {}) => {
       return { success: true, messageId: 'local' };
     }
     if (process.env.EMAIL_TRANSPORT === 'local-fail') throw new Error('Mail transport unavailable (EMAIL_TRANSPORT=local-fail)');
+    // RFC 2606 reserved domains (seeded demo accounts) can never receive mail; sending would only bounce
+    if (/\.(test|example|invalid)$/i.test(to.trim())) return { success: true, messageId: 'skipped-reserved-domain' };
 
     console.log(`Sending email to: ${to}, Subject: ${subject}`);
 
