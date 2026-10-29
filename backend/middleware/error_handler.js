@@ -1,5 +1,5 @@
-import { AppError } from "../utils/errors.js";
-import log from "../utils/log.js";
+import { AppError } from "../utils/errors.ts";
+import log from "../utils/log.ts";
 
 // Single error envelope: { code, message, requestId, details? }. Unexpected errors never leak internals.
 const errorHandler = (err, req, res, _next) => {

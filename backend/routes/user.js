@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { uploadAvatar } from "../config/cloudinary.js";
 import { z } from "zod";
-import { validate } from "../validation/index.js";
+import { validate } from "../validation/index.ts";
 import userController from "../controllers/user.js";
 import { requireAuth, requireAdmin } from "../middleware/auth.js";
 import { localImages, cloudinaryConfigured } from "../middleware/localUpload.js";

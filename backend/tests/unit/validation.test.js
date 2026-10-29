@@ -1,8 +1,8 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { createAuctionBody } from "../../validation/auction.js";
-import { moneyInput } from "../../validation/index.js";
-import { sanitizeRichText } from "../../utils/sanitize.js";
+import { createAuctionBody } from "../../validation/auction.ts";
+import { moneyInput } from "../../validation/index.ts";
+import { sanitizeRichText } from "../../utils/sanitize.ts";
 
 const future = new Date(Date.now() + 86400000).toISOString();
 const base = { title: "Lot", categoryId: "3", startingPrice: "1000", stepPrice: "100", endTime: future };

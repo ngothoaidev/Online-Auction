@@ -1,5 +1,5 @@
-import db from "../db/index.js";
-import { orders, orderMessages, users, auctions, auctionImages, reviews } from "../db/schema.js";
+import db from "../db/index.ts";
+import { orders, orderMessages, users, auctions, auctionImages, reviews } from "../db/schema.ts";
 import { eq, and, or, ne, desc } from "drizzle-orm";
 import { attachAsset } from "./media.js";
 

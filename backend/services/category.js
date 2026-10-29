@@ -1,5 +1,5 @@
-import db from "../db/index.js";
-import { categories, auctions } from "../db/schema.js";
+import db from "../db/index.ts";
+import { categories, auctions } from "../db/schema.ts";
 import { eq, isNull, count, sql } from "drizzle-orm";
 
 const service = {

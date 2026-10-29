@@ -1,6 +1,6 @@
-import db from "../db/index.js"
-import { catalogAuction } from "../serializers/index.js";
-import { auctions, categories, userFavorites, bids } from "../db/schema.js"
+import db from "../db/index.ts"
+import { catalogAuction } from "../serializers/index.ts";
+import { auctions, categories, userFavorites, bids } from "../db/schema.ts"
 import { sql, eq, or, and, desc, asc, count, inArray, gte, lte, isNull } from "drizzle-orm";
 
 const service = {

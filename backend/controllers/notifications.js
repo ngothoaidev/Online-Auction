@@ -1,5 +1,5 @@
 import * as notifications from "../services/notifications.js";
-import { AppError } from "../utils/errors.js";
+import { AppError } from "../utils/errors.ts";
 
 const handler = (fn) => async (req, res, next) => {
     try {

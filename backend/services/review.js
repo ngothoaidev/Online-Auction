@@ -1,5 +1,5 @@
-import db from "../db/index.js";
-import { reviews, users, auctions } from "../db/schema.js";
+import db from "../db/index.ts";
+import { reviews, users, auctions } from "../db/schema.ts";
 import { eq, desc, sql, and } from "drizzle-orm";
 
 export const reviewService = {

@@ -1,7 +1,7 @@
 import { test, before, after } from "node:test";
 import assert from "node:assert/strict";
 import { startApp } from "../helpers/app.js";
-import { recompute, rank } from "../../domain/bidding.js";
+import { recompute, rank } from "../../domain/bidding.ts";
 
 let t, seller, sellerToken, admin, adminToken, categoryId, users, tokens;
 

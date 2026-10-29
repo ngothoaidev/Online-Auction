@@ -3,8 +3,8 @@
 // Only `public_payload` ever leaves this module. Ids are `auctionId:version`; a version gap is legal (some changes do
 // not publish), clients simply refetch. Too far behind -> `reset`, the client refetches the snapshot.
 import { sql } from "drizzle-orm";
-import db from "../db/index.js";
-import { AppError } from "../utils/errors.js";
+import db from "../db/index.ts";
+import { AppError } from "../utils/errors.ts";
 
 const num = (name, fallback) => Number(process.env[name] || fallback);
 const perIp = new Map();

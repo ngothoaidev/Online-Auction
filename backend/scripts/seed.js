@@ -6,7 +6,7 @@ import bcrypt from "bcrypt";
 import postgres from "postgres";
 import { drizzle } from "drizzle-orm/postgres-js";
 import { eq } from "drizzle-orm";
-import * as s from "../db/schema.js";
+import * as s from "../db/schema.ts";
 dotenv.config();
 
 const url = process.env.DATABASE_URL;

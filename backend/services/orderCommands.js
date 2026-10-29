@@ -1,9 +1,9 @@
 // The ONLY place order state changes. Lock order: command key -> auction -> order (same as auction commands).
 import { eq, sql } from "drizzle-orm";
-import db from "../db/index.js";
-import { auctions, orders, orderTransitions } from "../db/schema.js";
-import { AppError } from "../utils/errors.js";
-import { planTransition } from "../domain/orderTransitions.js";
+import db from "../db/index.ts";
+import { auctions, orders, orderTransitions } from "../db/schema.ts";
+import { AppError } from "../utils/errors.ts";
+import { planTransition } from "../domain/orderTransitions.ts";
 import { runIdempotent } from "./idempotency.js";
 import { enqueue } from "./outbox.js";
 import { attachAsset } from "./media.js";

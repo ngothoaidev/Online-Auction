@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { decideBid, recompute, rank, competitivePrice, extendedEndTime, BidRejection, FIVE_MIN_MS, viewerPosition } from "../../domain/bidding.js";
-import { checkBidderEligibility, buyNowAvailable } from "../../domain/eligibility.js";
+import { decideBid, recompute, rank, competitivePrice, extendedEndTime, BidRejection, FIVE_MIN_MS, viewerPosition } from "../../domain/bidding.ts";
+import { checkBidderEligibility, buyNowAvailable } from "../../domain/eligibility.ts";
 
 const S = 1000n, I = 100n;
 const fresh = () => ({ startingPrice: S, step: I, currentPrice: S, maxima: [] });

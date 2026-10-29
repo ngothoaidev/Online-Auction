@@ -1,5 +1,5 @@
-import log from "../utils/log.js";
-import { inc, observe } from "../utils/metrics.js";
+import log from "../utils/log.ts";
+import { inc, observe } from "../utils/metrics.ts";
 
 // Access log (JSON, path without query string, no bodies) + HTTP metrics labelled by ROUTE PATTERN (bounded labels).
 const QUIET = new Set(["/health/live", "/health/ready", "/metrics"]);

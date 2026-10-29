@@ -1,8 +1,19 @@
 // Pure proxy-bidding engine. No I/O, no clock, no DB: money is BigInt, order is explicit.
-import { max as maxBig, min as minBig } from "./money.js";
+import { max as maxBig, min as minBig } from "./money.ts";
+
+export type Maximum = { bidderId: number; max: bigint; priority: number };
+export type BidEvent = { bidderId: number; amount: bigint; type: "bid" | "auto" };
+export type BidState = { startingPrice: bigint; step: bigint; currentPrice: bigint; maxima: Maximum[] };
+export type BidCommand = { bidderId: number; amount: bigint; sequence: number };
+export type BidDecision = {
+  outcome: "success" | "updated" | "outbid"; maxima: Maximum[]; leaderId: number; currentPrice: bigint; ownMax: bigint; events: BidEvent[];
+};
 
 export class BidRejection extends Error {
-  constructor(code, message, minimum) {
+  declare code: string;
+  declare minimum?: bigint;
+
+  constructor(code: string, message: string, minimum?: bigint) {
     super(message);
     this.code = code;
     if (minimum !== undefined) this.minimum = minimum;
@@ -10,28 +21,28 @@ export class BidRejection extends Error {
 }
 
 /** Highest ceiling first; equal ceilings go to whoever reached it first (lower prioritySequence). */
-export const rank = (maxima) => [...maxima].sort((a, b) => (a.max === b.max ? a.priority - b.priority : a.max > b.max ? -1 : 1));
+export const rank = (maxima: Maximum[]): Maximum[] => [...maxima].sort((a, b) => (a.max === b.max ? a.priority - b.priority : a.max > b.max ? -1 : 1));
 
 /** Price the leader pays: one step over the runner-up, capped by the leader's own ceiling, never below the starting price. */
-export function competitivePrice(startingPrice, step, ranked) {
+export function competitivePrice(startingPrice: bigint, step: bigint, ranked: Maximum[]): bigint | null {
   if (ranked.length === 0) return null;
   if (ranked.length === 1) return startingPrice;
   return maxBig(startingPrice, minBig(ranked[0].max, ranked[1].max + step));
 }
 
 /** Smallest acceptable new ceiling from a non-leader (first bid: the starting price). */
-export const minimumNextBid = ({ startingPrice, currentPrice, step }, hasLeader) => (hasLeader ? currentPrice + step : startingPrice);
+export const minimumNextBid = ({ startingPrice, currentPrice, step }: Omit<BidState, "maxima">, hasLeader: boolean): bigint => (hasLeader ? currentPrice + step : startingPrice);
 
 /**
  * One bidder's private position, for showing them (and only them) where they stand. Same `state` as decideBid and the
  * same rules: `minimumBid` is the smallest amount decideBid would accept from this bidder right now.
  */
-export function viewerPosition(state, bidderId) {
+export function viewerPosition(state: BidState, bidderId: number) {
   const leader = rank(state.maxima)[0];
   const own = state.maxima.find((m) => m.bidderId === bidderId);
   const isLeading = Boolean(leader) && leader.bidderId === bidderId;
   const minimumBid = !leader ? state.startingPrice
-    : isLeading ? own.max + 1n
+    : isLeading ? own!.max + 1n
     : maxBig(state.currentPrice + state.step, own ? own.max + 1n : 0n);
   return { yourMaximum: own?.max ?? null, isLeading, minimumBid };
 }
@@ -42,7 +53,7 @@ export function viewerPosition(state, bidderId) {
  * Returns { outcome: 'success'|'updated'|'outbid', maxima, leaderId, currentPrice, events: [{ bidderId, amount, type }], ownMax }
  * or throws BidRejection. `events` are the PUBLIC price/leader changes; a leader raising their own ceiling emits none.
  */
-export function decideBid(state, cmd) {
+export function decideBid(state: BidState, cmd: BidCommand): BidDecision {
   const { startingPrice: S, step: I, currentPrice: P } = state;
   const { bidderId, amount: M, sequence } = cmd;
   const ranked = rank(state.maxima);
@@ -52,7 +63,7 @@ export function decideBid(state, cmd) {
     throw new BidRejection("INVARIANT_VIOLATION", "Auction state is inconsistent (price above the leader's ceiling); it must be reconciled before further bids");
   }
 
-  const upsert = (priority) => [...state.maxima.filter((m) => m.bidderId !== bidderId), { bidderId, max: M, priority }];
+  const upsert = (priority: number): Maximum[] => [...state.maxima.filter((m) => m.bidderId !== bidderId), { bidderId, max: M, priority }];
 
   // 1. first bid
   if (!leader) {
@@ -64,7 +75,7 @@ export function decideBid(state, cmd) {
 
   // 2. the leader raises their own ceiling: price, count and deadline do not move
   if (leader.bidderId === bidderId) {
-    if (M <= own.max) throw new BidRejection("BID_NOT_HIGHER", "A new maximum must be higher than your current maximum", own.max + 1n);
+    if (M <= own!.max) throw new BidRejection("BID_NOT_HIGHER", "A new maximum must be higher than your current maximum", own!.max + 1n);
     return { outcome: "updated", maxima: upsert(sequence), leaderId: bidderId, currentPrice: P, ownMax: M, events: [] };
   }
 
@@ -76,8 +87,8 @@ export function decideBid(state, cmd) {
   const maxima = upsert(sequence);
   const nextRanked = rank(maxima);
   const nextLeader = nextRanked[0];
-  const price = maxBig(P, competitivePrice(S, I, nextRanked)); // normal bidding never lowers the price
-  const events = [];
+  const price = maxBig(P, competitivePrice(S, I, nextRanked)!); // normal bidding never lowers the price
+  const events: BidEvent[] = [];
   if (price !== P || nextLeader.bidderId !== leader.bidderId) {
     events.push({ bidderId: nextLeader.bidderId, amount: price, type: nextLeader.bidderId === bidderId ? "bid" : "auto" });
   }
@@ -88,16 +99,18 @@ export function decideBid(state, cmd) {
  * Recompute leader/price from eligible maxima after a moderation action or settlement (no new bid).
  * May lower the price: it is an audited correction, not a bid. No eligible bidder -> leader null, price = starting price.
  */
-export function recompute({ startingPrice: S, step: I, maxima }) {
+export function recompute({ startingPrice: S, step: I, maxima }: Omit<BidState, "currentPrice">): { leaderId: number | null; currentPrice: bigint } {
   const ranked = rank(maxima);
   return ranked.length === 0
     ? { leaderId: null, currentPrice: S }
-    : { leaderId: ranked[0].bidderId, currentPrice: competitivePrice(S, I, ranked) };
+    : { leaderId: ranked[0].bidderId, currentPrice: competitivePrice(S, I, ranked)! };
 }
 
 /** Anti-sniping: a public bid inside the final 5 minutes extends the ORIGINAL deadline by 5 minutes. */
 export const FIVE_MIN_MS = 5 * 60 * 1000;
-export function extendedEndTime({ endTime, autoExtend, now, producedPublicEvent }) {
+export function extendedEndTime({ endTime, autoExtend, now, producedPublicEvent }: {
+  endTime: Date | string; autoExtend: boolean | null; now: Date | string; producedPublicEvent: boolean;
+}): Date {
   const end = new Date(endTime);
   if (autoExtend && producedPublicEvent && end.getTime() - new Date(now).getTime() < FIVE_MIN_MS) return new Date(end.getTime() + FIVE_MIN_MS);
   return end;

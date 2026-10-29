@@ -16,9 +16,9 @@ export async function startApp(env = {}) {
   });
   const sql = connect();
   await resetDatabase(sql);
-  const dbModule = await import("../../db/index.js");
+  const dbModule = await import("../../db/index.ts");
   const { default: app } = await import("../../app.js");
-  const email = await import("../../utils/email.js");
+  const email = await import("../../utils/email.ts");
   const authService = (await import("../../services/auth.js")).default;
   const server = await new Promise((r) => { const s = app.listen(0, () => r(s)); });
   const base = `http://127.0.0.1:${server.address().port}`;

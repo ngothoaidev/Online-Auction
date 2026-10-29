@@ -2,9 +2,9 @@ import { Router } from "express";
 import { requireAuth, requireSeller, requireVerified } from "../middleware/auth.js";
 import auctionController from "../controllers/auction.js"
 import moderationController from "../controllers/moderation.js";
-import { validate, idParam } from "../validation/index.js";
-import { createAuctionBody, updateAuctionBody, descriptionBody, commentBody, bidBody, bidHistoryQuery } from "../validation/auction.js";
-import { topQuery, profileQuery, rejectQuery } from "../validation/search.js";
+import { validate, idParam } from "../validation/index.ts";
+import { createAuctionBody, updateAuctionBody, descriptionBody, commentBody, bidBody, bidHistoryQuery } from "../validation/auction.ts";
+import { topQuery, profileQuery, rejectQuery } from "../validation/search.ts";
 import { actionLimiter } from "../middleware/rateLimit.js";
 import { uploadProductImage } from "../config/cloudinary.js";
 

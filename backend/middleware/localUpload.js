@@ -6,7 +6,7 @@ import crypto from "node:crypto";
 import { fileURLToPath } from "node:url";
 import multer from "multer";
 import express from "express";
-import { AppError } from "../utils/errors.js";
+import { AppError } from "../utils/errors.ts";
 import { MAX_BYTES, detectImageType } from "../services/media.js";
 
 export const publicMediaDir = () => process.env.PUBLIC_MEDIA_DIR || path.join(path.dirname(fileURLToPath(import.meta.url)), "../storage/public");

@@ -6,10 +6,10 @@
 //   paid) or with the wrong amount becomes an `exception` for a human: the order is never reopened.
 // - Reconciliation polls the provider for attempts still open, so a lost webhook or a crash is recovered.
 import { and, desc, eq, sql } from "drizzle-orm";
-import db from "../db/index.js";
-import { auctions, orders, paymentAttempts, paymentEvents } from "../db/schema.js";
-import { AppError } from "../utils/errors.js";
-import { need } from "../domain/orderTransitions.js";
+import db from "../db/index.ts";
+import { auctions, orders, paymentAttempts, paymentEvents } from "../db/schema.ts";
+import { AppError } from "../utils/errors.ts";
+import { need } from "../domain/orderTransitions.ts";
 import * as mock from "../adapters/payments/mock.js";
 import { applyTransition } from "./orderCommands.js";
 import { runIdempotent } from "./idempotency.js";

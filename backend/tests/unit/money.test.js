@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { parseMoney, fromDb, toStr, formatVnd, MoneyError, MAX_MONEY } from "../../domain/money.js";
+import { parseMoney, fromDb, toStr, formatVnd, MoneyError, MAX_MONEY } from "../../domain/money.ts";
 import { hashPayload, validKey } from "../../services/idempotency.js";
 
 test("parseMoney accepts positive whole amounts up to 15 digits", () => {

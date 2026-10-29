@@ -1,11 +1,11 @@
-import db from "../db/index.js"
-import { categories, auctions, auctionImages, users, userFavorites, bids, bidderMaxima, descriptionLogs, comments } from "../db/schema.js"
-import { catalogAuction, publicBid, publicComment, descriptionLog } from "../serializers/index.js";
-import { fromDb, toStr } from "../domain/money.js";
-import { minimumNextBid, viewerPosition } from "../domain/bidding.js";
-import { checkBidderEligibility, buyNowAvailable } from "../domain/eligibility.js";
-import { AppError } from "../utils/errors.js";
-import { sanitizeRichText } from "../utils/sanitize.js";
+import db from "../db/index.ts"
+import { categories, auctions, auctionImages, users, userFavorites, bids, bidderMaxima, descriptionLogs, comments } from "../db/schema.ts"
+import { catalogAuction, publicBid, publicComment, descriptionLog } from "../serializers/index.ts";
+import { fromDb, toStr } from "../domain/money.ts";
+import { minimumNextBid, viewerPosition } from "../domain/bidding.ts";
+import { checkBidderEligibility, buyNowAvailable } from "../domain/eligibility.ts";
+import { AppError } from "../utils/errors.ts";
+import { sanitizeRichText } from "../utils/sanitize.ts";
 import { sql, and, eq, gte, asc, desc, inArray, isNull, isNotNull } from "drizzle-orm";
 
 // "Won" = the lot is closed and settled with this user as winner. While a lot is active `winnerId` is only the

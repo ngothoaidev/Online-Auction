@@ -1,18 +1,18 @@
 // Auction write commands. Every command: (optional) idempotency claim -> lock the auction row -> decide on the DB clock
 // -> write state/history/audit/outbox -> commit. Nothing external is called inside the transaction.
 import { and, eq, sql } from "drizzle-orm";
-import db from "../db/index.js";
-import { auctions, bids, bidderMaxima, orders, users, auctionCommandAudit, descriptionLogs } from "../db/schema.js";
-import { AppError } from "../utils/errors.js";
-import { fromDb, toStr, formatVnd, parseMoney, MoneyError } from "../domain/money.js";
-import { decideBid, recompute, BidRejection, minimumNextBid, extendedEndTime } from "../domain/bidding.js";
-import { checkBidderEligibility, buyNowAvailable } from "../domain/eligibility.js";
+import db from "../db/index.ts";
+import { auctions, bids, bidderMaxima, orders, users, auctionCommandAudit, descriptionLogs } from "../db/schema.ts";
+import { AppError } from "../utils/errors.ts";
+import { fromDb, toStr, formatVnd, parseMoney, MoneyError } from "../domain/money.ts";
+import { decideBid, recompute, BidRejection, minimumNextBid, extendedEndTime } from "../domain/bidding.ts";
+import { checkBidderEligibility, buyNowAvailable } from "../domain/eligibility.ts";
 import { runIdempotent } from "./idempotency.js";
 import { enqueue } from "./outbox.js";
 import { recordAdminAction } from "./adminAudit.js";
-import { observe } from "../utils/metrics.js";
-import { paymentDueAt, need } from "../domain/orderTransitions.js";
-import { sanitizeRichText } from "../utils/sanitize.js";
+import { observe } from "../utils/metrics.ts";
+import { paymentDueAt, need } from "../domain/orderTransitions.ts";
+import { sanitizeRichText } from "../utils/sanitize.ts";
 
 // Decision time comes from the DB clock AFTER the lock was acquired. "ended" is evaluated in SQL on the same instant,
 // so sub-millisecond precision is never lost to JS Date rounding.

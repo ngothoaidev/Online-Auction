@@ -6,13 +6,13 @@
 //   (the provider has no idempotent send). In-app rows are exactly once per logical notification.
 // - Content is built from public data plus the recipient's own role: never a bidder's maximum, never a proof URL.
 import { and, desc, eq, inArray, isNull, sql } from "drizzle-orm";
-import db from "../db/index.js";
-import { auctions, notifications, orders, users } from "../db/schema.js";
-import { formatVnd } from "../domain/money.js";
-import { sendEmail } from "../utils/email.js";
+import db from "../db/index.ts";
+import { auctions, notifications, orders, users } from "../db/schema.ts";
+import { formatVnd } from "../domain/money.ts";
+import { sendEmail } from "../utils/email.ts";
 import { enqueue } from "./outbox.js";
-import { faultPoint } from "../utils/fault.js";
-import { AppError } from "../utils/errors.js";
+import { faultPoint } from "../utils/fault.ts";
+import { AppError } from "../utils/errors.ts";
 
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 const vnd = (v) => `${formatVnd(v)} ₫`;

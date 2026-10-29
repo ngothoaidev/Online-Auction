@@ -1,8 +1,8 @@
 import crypto from "node:crypto";
 import { and, eq, lt, sql } from "drizzle-orm";
-import db from "../db/index.js";
-import { mediaAssets } from "../db/schema.js";
-import { AppError } from "../utils/errors.js";
+import db from "../db/index.ts";
+import { mediaAssets } from "../db/schema.ts";
+import { AppError } from "../utils/errors.ts";
 import { localMedia } from "../adapters/media/local.js";
 
 // Only the local private adapter exists. Real deployments need an object-store adapter with private ACLs and

@@ -4,8 +4,8 @@ export const MAX_MONEY = 999_999_999_999_999n;
 export class MoneyError extends Error {}
 
 /** number | digit-string | bigint -> BigInt, or throws MoneyError. Rejects 0, negatives, fractions, NaN/Infinity, exponents, >15 digits. */
-export function parseMoney(input) {
-  let s;
+export function parseMoney(input: unknown): bigint {
+  let s: string;
   if (typeof input === "bigint") s = input.toString();
   else if (typeof input === "number") {
     if (!Number.isSafeInteger(input)) throw new MoneyError("Amount must be a whole number");
@@ -17,12 +17,20 @@ export function parseMoney(input) {
 }
 
 /** DB numeric(15,0) / API string -> BigInt (0 allowed here: DB values are already validated; null stays null). */
-export const fromDb = (v) => (v === null || v === undefined ? null : BigInt(String(v).split(".")[0]));
+export function fromDb(v: string | number | bigint): bigint;
+export function fromDb(v: string | number | bigint | null | undefined): bigint | null;
+export function fromDb(v: string | number | bigint | null | undefined): bigint | null {
+  return v === null || v === undefined ? null : BigInt(String(v).split(".")[0]);
+}
 /** BigInt -> the digit string used in API JSON and DB parameters. */
-export const toStr = (b) => (b === null || b === undefined ? null : b.toString());
+export function toStr(b: bigint): string;
+export function toStr(b: bigint | null | undefined): string | null;
+export function toStr(b: bigint | null | undefined): string | null {
+  return b === null || b === undefined ? null : b.toString();
+}
 
-export const max = (a, b) => (a > b ? a : b);
-export const min = (a, b) => (a < b ? a : b);
+export const max = (a: bigint, b: bigint): bigint => (a > b ? a : b);
+export const min = (a: bigint, b: bigint): bigint => (a < b ? a : b);
 
 /** vi-VN style grouping on the exact digits (no float rounding), for messages only. */
-export const formatVnd = (b) => BigInt(b).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+export const formatVnd = (b: bigint | string | number): string => BigInt(b).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");

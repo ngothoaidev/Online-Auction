@@ -1,6 +1,6 @@
 import crypto from "node:crypto";
 import { and, eq, isNull, sql } from "drizzle-orm";
-import { authChallenges } from "../db/schema.js";
+import { authChallenges } from "../db/schema.ts";
 import { hmac } from "./auth.js";
 
 export const PURPOSES = Object.freeze({

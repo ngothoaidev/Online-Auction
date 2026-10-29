@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { redact } from "../../utils/log.js";
+import { redact } from "../../utils/log.ts";
 
 test("redaction hides secrets and personal data at any depth, keeps the rest", () => {
   const out = redact({
@@ -22,7 +22,7 @@ test("errors keep name/message/code and a short stack", () => {
 });
 
 test("metrics: label values are escaped per the Prometheus text format, histograms are cumulative", async () => {
-  const { inc, observe, render } = await import("../../utils/metrics.js");
+  const { inc, observe, render } = await import("../../utils/metrics.ts");
   inc("t_total", { route: '/a"b\\c\nd' }); // quote, backslash, newline
   observe("t_ms", { route: "/x/:id" }, 30);
   const text = render([{ name: "g", help: "h", value: 1, labels: { s: "pending" } }, { name: "g", value: 2, labels: { s: "failed" } }]);

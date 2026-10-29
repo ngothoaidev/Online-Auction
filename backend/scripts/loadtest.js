@@ -10,7 +10,7 @@ import os from "node:os";
 import fs from "node:fs";
 import bcrypt from "bcrypt";
 import { sql } from "drizzle-orm";
-import db, { client } from "../db/index.js";
+import db, { client } from "../db/index.ts";
 import authService from "../services/auth.js";
 
 const API = process.env.LOAD_API || "http://localhost:3002";

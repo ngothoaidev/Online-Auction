@@ -7,10 +7,10 @@
 import { Router } from "express";
 import fs from "node:fs";
 import { sql } from "drizzle-orm";
-import db from "../db/index.js";
+import db from "../db/index.ts";
 import { stats as outboxStats } from "../services/outbox.js";
 import { connectionCount } from "../services/realtime.js";
-import { render } from "../utils/metrics.js";
+import { render } from "../utils/metrics.ts";
 
 const route = new Router();
 const expectedMigrations = JSON.parse(fs.readFileSync(new URL("../drizzle/meta/_journal.json", import.meta.url), "utf8")).entries.length;

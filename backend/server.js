@@ -1,8 +1,8 @@
 import dotenv from "dotenv";
 dotenv.config();
 import app from "./app.js";
-import { client } from "./db/index.js";
-import log from "./utils/log.js";
+import { client } from "./db/index.ts";
+import log from "./utils/log.ts";
 
 const port = Number(process.env.PORT || 3000);
 const server = app.listen(port, () => log.info("api listening", { port, node: process.version, env: process.env.NODE_ENV || "development" }));
