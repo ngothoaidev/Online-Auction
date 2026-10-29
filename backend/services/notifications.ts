@@ -110,7 +110,7 @@ const emailHtml = (item: { title: string; body: string; link: string | null }) =
   + (item.link ? `<p><a href="${esc(FRONTEND_URL() + item.link)}">Open it on the site</a></p>` : "");
 
 /** Outbox consumer: write in-app + email rows idempotently, then send the emails still owed for this event. */
-export async function handle(event: OutboxEvent): Promise<void> {
+export async function handle(event: Pick<OutboxEvent, "eventId" | "eventType" | "aggregateType" | "aggregateId" | "publicPayload" | "privatePayload">): Promise<void> {
   const items = await plan(event);
   if (items.length === 0) return;
   const rows = items.flatMap((it) => {

@@ -16,5 +16,5 @@
     "skipLibCheck": true
   },
   "include": ["**/*.ts", "**/*.js"],
-  "exclude": ["node_modules", "drizzle", "storage"]
+  "exclude": ["node_modules", "drizzle", "storage", "tests"]
 }

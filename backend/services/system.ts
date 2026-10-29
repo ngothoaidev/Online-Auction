@@ -2,7 +2,7 @@ import db from "../db/index.ts"
 
 import { users, auctions, bids } from "../db/schema.ts"
 
-import { eq, and, sql, count } from "drizzle-orm";
+import { eq, and, sql } from "drizzle-orm";
 
 import dotenv from 'dotenv'
 

@@ -1,0 +1,7 @@
+{
+  // Tests: same checks as the source except implicit any, since they mostly poke at JSON response bodies.
+  "extends": "./tsconfig.json",
+  "compilerOptions": { "noImplicitAny": false },
+  "include": ["tests/**/*.ts", "types/**/*.d.ts"],
+  "exclude": ["node_modules"]
+}

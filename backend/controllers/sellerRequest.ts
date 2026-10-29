@@ -3,7 +3,6 @@ import * as moderation from "../services/moderation.ts";
 import { keyFrom } from "../services/idempotency.ts";
 import sellerRequestService from "../services/sellerRequest.ts";
 import userService from "../services/user.ts";
-import authService from "../services/auth.ts";
 
 import { sendSellerRequestRejected, sendSellerRequestAccepted } from "../utils/email.ts";
 
@@ -74,7 +73,7 @@ const controller = {
             const request = await sellerRequestService.getByUserId(user.id);
 
             // Add additional status info
-            let statusInfo = null;
+            let statusInfo: Record<string, unknown> | null = null;
             if (request) {
                 if (request.status === 'approved' && request.sellerExpiryDate) {
                     const expiryDate = new Date(request.sellerExpiryDate);
