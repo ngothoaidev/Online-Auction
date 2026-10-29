@@ -1,4 +1,5 @@
-import { useState, useRef } from 'react';
+import { useState } from 'react';
+import { Field } from '../../components/ui';
 import { useNav } from '../../hooks/useNavigate';
 import { useAuth } from '../../contexts/AuthContext';
 import { ShieldCheck, Mail, ArrowRight } from 'lucide-react';
@@ -11,11 +12,8 @@ export default function VerifyAccount() {
     const nav = useNav();
     const { user, logout } = useAuth();
     
-    // OTP input refs
-    const inputRefs = useRef([]);
-    
     // Form State
-    const [otp, setOtp] = useState(['', '', '', '', '', '']);
+    const [otp, setOtp] = useState(''); // one field, digits only
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const [successMessage, setSuccessMessage] = useState('');
@@ -23,45 +21,12 @@ export default function VerifyAccount() {
     
     const email = user?.email || localStorage.getItem('userEmail') || '';
 
-    const handleOtpChange = (index, value) => {
-        // Only allow numbers
-        if (value && !/^\d$/.test(value)) return;
-        
-        const newOtp = [...otp];
-        newOtp[index] = value;
-        setOtp(newOtp);
-        
-        // Auto-focus next input
-        if (value && index < 5) {
-            inputRefs.current[index + 1]?.focus();
-        }
-    };
-
-    const handleKeyDown = (index, e) => {
-        // Handle backspace
-        if (e.key === 'Backspace' && !otp[index] && index > 0) {
-            inputRefs.current[index - 1]?.focus();
-        }
-    };
-
-    const handlePaste = (e) => {
-        e.preventDefault();
-        const pastedData = e.clipboardData.getData('text').slice(0, 6);
-        if (/^\d+$/.test(pastedData)) {
-            const newOtp = pastedData.split('').concat(Array(6).fill('')).slice(0, 6);
-            setOtp(newOtp);
-            // Focus last filled input or the next empty one
-            const lastIndex = Math.min(pastedData.length - 1, 5);
-            inputRefs.current[lastIndex]?.focus();
-        }
-    };
-
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
         setSuccessMessage('');
         
-        const code = otp.join('');
+        const code = otp;
         
         // Zod Validation
         const validation = validateForm(verificationCodeSchema, { code });
@@ -129,7 +94,7 @@ export default function VerifyAccount() {
             }
 
             setSuccessMessage('A new verification code has been sent to your email.');
-            setOtp(['', '', '', '', '', '']);
+            setOtp('');
         } catch (err) {
             setError(err.message || 'Failed to resend verification code.');
         } finally {
@@ -147,7 +112,7 @@ export default function VerifyAccount() {
                 </div>
             </div>
 
-            <h2 className="text-3xl font-bold text-[var(--text)] text-center mb-2">Verify Your Account</h2>
+            <h1 className="text-3xl font-bold text-[var(--text)] text-center mb-2">Verify Your Account</h1>
             <p className="text-[var(--text-muted)] text-center mb-8">
                 Enter the 6-digit code sent to your email
             </p>
@@ -159,40 +124,32 @@ export default function VerifyAccount() {
             </div>
 
             {successMessage && (
-                <div className="mb-4 p-3 rounded bg-[var(--success-soft)] border border-[var(--success)] text-[var(--success)] text-sm">
+                <div role="status" className="mb-4 p-3 rounded bg-[var(--success-soft)] border border-[var(--success)] text-[var(--success)] text-sm">
                     {successMessage}
                 </div>
             )}
 
             {error && (
-                <div className="mb-4 p-3 rounded bg-[var(--danger-soft)] border border-[var(--danger)] text-[var(--danger)] text-sm">
+                <div role="alert" className="mb-4 p-3 rounded bg-[var(--danger-soft)] border border-[var(--danger)] text-[var(--danger)] text-sm">
                     {error}
                 </div>
             )}
 
             <form className="space-y-6" onSubmit={handleSubmit}>
-                {/* OTP Input */}
-                <div className="flex justify-center gap-3">
-                    {otp.map((digit, index) => (
-                        <input
-                            key={index}
-                            ref={(el) => (inputRefs.current[index] = el)}
-                            type="text"
-                            inputMode="numeric"
-                            maxLength={1}
-                            value={digit}
-                            onChange={(e) => handleOtpChange(index, e.target.value)}
-                            onKeyDown={(e) => handleKeyDown(index, e)}
-                            onPaste={handlePaste}
-                            className="w-12 h-14 text-center text-2xl font-bold rounded-lg border-2 border-[var(--input-border)] bg-[var(--input-bg)] text-[var(--text)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent transition-all"
-                        />
-                    ))}
-                </div>
+                <Field label="Verification code" hint="6 digits. You can paste the whole code.">
+                    <input
+                        value={otp}
+                        onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                        inputMode="numeric"
+                        autoComplete="one-time-code"
+                        className="h-14 text-center text-2xl font-lot tracking-[0.5em]"
+                    />
+                </Field>
 
                 <button 
                     type="submit" 
-                    disabled={loading || otp.join('').length !== 6}
-                    className="w-full py-3 rounded-full bg-[var(--accent)] text-white font-semibold hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    disabled={loading || otp.length !== 6}
+                    className="w-full py-3 rounded-full bg-(--ink) text-(--on-ink) font-semibold hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
                     {loading ? (
                         'Verifying...'

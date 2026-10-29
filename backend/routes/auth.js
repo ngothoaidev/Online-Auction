@@ -1,8 +1,15 @@
 import { Router } from "express";
 import { requireAuth } from "../middleware/auth.js";
+import { authLimiter } from "../middleware/rateLimit.js";
 import authController from "../controllers/auth.js"
 
 const route = new Router();
+
+// Brute-force / abuse protection on every credential or code endpoint (OAuth redirects excluded).
+const limit = authLimiter();
+for (const path of ['/login', '/register', '/validate', '/resend-verification', '/forgot-password', '/verify-reset-otp', '/reset-password', '/change-password/request-otp', '/change-password/verify']) {
+    route.use(path, limit);
+}
 
 // GET: get current user
 route.get('/me', requireAuth, authController.verifyUser);

@@ -1,101 +1,59 @@
 import { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import auctionService from '../../services/auctionService';
+import { Button, IconButton, Skeleton } from '../../components/ui';
 
-export default function ImageGallery({ productId }) {
+export default function ImageGallery({ productId, title = 'Lot' }) {
   const [images, setImages] = useState([]);
-  const [selectedImage, setSelectedImage] = useState(0);
+  const [selected, setSelected] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [failed, setFailed] = useState(false);
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
-    const fetchImages = async () => {
-      try {
-        const data = await auctionService.getImages(productId);
-        setImages(data || []);
-        setSelectedImage(0); // reset when product changes
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    };
+    let cancelled = false;
+    setLoading(true);
+    setFailed(false);
+    auctionService.getImages(productId)
+      .then((data) => { if (!cancelled) { setImages(Array.isArray(data) ? data : []); setSelected(0); } })
+      .catch(() => { if (!cancelled) setFailed(true); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [productId, attempt]);
 
-    if (productId) fetchImages();
-  }, [productId]);
+  if (loading) return <div className="space-y-3"><Skeleton className="aspect-square w-full" /><Skeleton className="h-[72px] w-64" /></div>; // same height as the loaded gallery
+  if (failed) return (
+    <div className="flex aspect-square flex-col items-center justify-center gap-3 rounded-(--radius-card) border border-(--line) bg-(--surface-sunken) text-(--muted)">
+      <p>Photos could not be loaded</p>
+      <Button variant="secondary" onClick={() => setAttempt((n) => n + 1)}>Try again</Button>
+    </div>
+  );
+  if (!images.length) return <div className="flex aspect-square items-center justify-center rounded-(--radius-card) border border-(--line) bg-(--surface-sunken) text-(--muted)">No images</div>;
 
-  const nextImage = () =>
-    setSelectedImage(prev =>
-      images.length ? (prev + 1) % images.length : 0
-    );
-
-  const prevImage = () =>
-    setSelectedImage(prev =>
-      images.length ? (prev - 1 + images.length) % images.length : 0
-    );
-
-  if (loading) {
-    return <div className="h-96 bg-gray-100 animate-pulse rounded-xl"></div>;
-  }
-
-  if (!images.length) {
-    return (
-      <div className="h-96 bg-gray-200 rounded-xl flex items-center justify-center">
-        No Images
-      </div>
-    );
-  }
-
-  const getImgUrl = (img) => img?.imageUrl;
+  const step = (d) => setSelected((i) => (i + d + images.length) % images.length);
 
   return (
-    <div className="space-y-2">
-      {/* Main Image */}
-      <div className="relative aspect-square overflow-hidden rounded-xl border bg-white dark:bg-black/20">
-        <img
-          src={getImgUrl(images[selectedImage])}
-          alt="Product"
-          className="w-full h-full object-contain"
-        />
-
+    <div className="space-y-3" role="group" aria-roledescription="gallery" aria-label={`${title} photos`}>
+      <div className="relative aspect-square overflow-hidden rounded-(--radius-card) border border-(--line) bg-(--surface)">
+        <img src={images[selected].imageUrl} alt={`${title}, photo ${selected + 1} of ${images.length}`} className="h-full w-full object-contain" />
         {images.length > 1 && (
           <>
-            <button
-              onClick={prevImage}
-              className="absolute left-4 top-1/2 -translate-y-1/2 p-3 rounded-full bg-black/60 text-white hover:bg-black/80 shadow-lg"
-            >
-              <ChevronLeft size={24} />
-            </button>
-            <button
-              onClick={nextImage}
-              className="absolute right-4 top-1/2 -translate-y-1/2 p-3 rounded-full bg-black/60 text-white hover:bg-black/80 shadow-lg"
-            >
-              <ChevronRight size={24} />
-            </button>
+            <IconButton label="Previous photo" onClick={() => step(-1)} className="absolute left-3 top-1/2 -translate-y-1/2 bg-(--surface)/90 shadow"><ChevronLeft size={22} /></IconButton>
+            <IconButton label="Next photo" onClick={() => step(1)} className="absolute right-3 top-1/2 -translate-y-1/2 bg-(--surface)/90 shadow"><ChevronRight size={22} /></IconButton>
           </>
         )}
       </div>
-
-      {/* Thumbnails */}
       {images.length > 1 && (
-        <div className="flex gap-4 overflow-x-auto p-2 custom-scrollbar">
+        <ul className="flex gap-3 overflow-x-auto p-1">
           {images.map((img, idx) => (
-            <button
-              key={idx}
-              onClick={() => setSelectedImage(idx)}
-              className={`shrink-0 w-20 h-20 rounded-xl overflow-hidden border-2 transition-all ${
-                selectedImage === idx
-                  ? 'border-[var(--accent)] ring-2 ring-[var(--accent)] scale-105'
-                  : 'border-transparent opacity-60 hover:opacity-100'
-              }`}
-            >
-              <img
-                src={getImgUrl(img)}
-                alt="Thumbnail"
-                className="w-full h-full object-cover"
-              />
-            </button>
+            <li key={img.id ?? idx} className="shrink-0">
+              <button type="button" aria-label={`Show photo ${idx + 1}`} aria-pressed={selected === idx} onClick={() => setSelected(idx)}
+                className={`h-16 w-16 overflow-hidden rounded-(--radius-control) border-2 ${selected === idx ? 'border-(--ink)' : 'border-transparent opacity-70 hover:opacity-100'}`}>
+                <img src={img.imageUrl} alt="" className="h-full w-full object-cover" />
+              </button>
+            </li>
           ))}
-        </div>
+        </ul>
       )}
     </div>
   );

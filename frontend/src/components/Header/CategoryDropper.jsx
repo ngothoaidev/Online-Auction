@@ -1,25 +1,32 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronDown, ChevronRight, LayoutGrid } from 'lucide-react';
+import { searchUrl } from '../../utils/searchUrl.js';
 
 export default function CategoryDropper({ categories }) {
   const [isOpen, setIsOpen] = useState(false);
   const [activeSub, setActiveSub] = useState(null); // Track active sub-category by ID
   const containerRef = useRef(null);
   const timeoutRef = useRef(null); // To handle smooth close delays
+  const openedByHover = useRef(false);
 
   // --- HANDLERS ---
 
-  // Toggle Main Dropdown
-  const toggleOpen = () => setIsOpen((prev) => !prev);
+  // Click/Enter toggles. A mouse user hovers first (which opens it), so that first click confirms instead of closing.
+  const toggleOpen = () => {
+    if (openedByHover.current) { openedByHover.current = false; return; }
+    setIsOpen((prev) => !prev);
+  };
 
   // Hover Handlers (Desktop) with delay to prevent flickering
   const handleMouseEnter = () => {
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    if (!isOpen) openedByHover.current = true;
     setIsOpen(true);
   };
 
   const handleMouseLeave = () => {
+    openedByHover.current = false;
     timeoutRef.current = setTimeout(() => {
       setIsOpen(false);
       setActiveSub(null); // Reset sub-menus on close
@@ -61,10 +68,13 @@ export default function CategoryDropper({ categories }) {
       className="relative h-full hidden lg:flex items-center"
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
+      onKeyDown={(e) => { if (e.key === 'Escape' && isOpen) { setIsOpen(false); setActiveSub(null); } }}
     >
       {/* TRIGGER BUTTON */}
       <button 
         onClick={toggleOpen}
+        aria-expanded={isOpen}
+        aria-controls="category-panel"
         className={`flex items-center gap-2 py-2 px-3 rounded-lg font-medium text-sm tracking-wide transition-all duration-200 
         ${isOpen ? 'bg-(--header-hover) text-(--text)' : 'text-(--header-text) hover:bg-(--header-hover) hover:text-(--text)'}`}
       >
@@ -84,12 +94,11 @@ export default function CategoryDropper({ categories }) {
 
       {/* DROPDOWN PANEL */}
       <div 
+        id="category-panel"
         className={`absolute top-[calc(100%+0.75rem)] left-0 w-64 rounded-xl shadow-2xl border flex flex-col py-2 backdrop-blur-xl z-50 overflow-visible
         bg-(--card-bg) border-(--border) shadow-(--card-shadow) transition-all duration-200 origin-top-left
         ${isOpen ? 'opacity-100 visible translate-y-0' : 'opacity-0 invisible translate-y-2 pointer-events-none'}`}
       >
-        {/* Decorative Arrow */}
-        <div className="absolute -top-1.5 left-8 w-3 h-3 rotate-45 border-l border-t bg-(--card-bg) border-(--border)"></div>
 
         {categories.map((cat) => {
            const isSubOpen = activeSub === cat.id;
@@ -104,7 +113,7 @@ export default function CategoryDropper({ categories }) {
               {/* MAIN CATEGORY ITEM */}
               <div className="flex items-center justify-between group/item">
                   <Link 
-                    to={`/search?category=${cat.name}`}
+                    to={searchUrl({ category: cat.name })}
                     onClick={() => setIsOpen(false)} // Close menu on navigation
                     className={`grow flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200
                     ${isSubOpen ? 'bg-(--accent-soft) text-(--accent-strong)' : 'text-(--text) hover:bg-(--accent-soft) hover:text-(--accent-strong)'}`}
@@ -116,6 +125,8 @@ export default function CategoryDropper({ categories }) {
                   {cat.subcategories?.length > 0 && (
                     <button
                         onClick={(e) => toggleSub(e, cat.id)}
+                        aria-label={`${cat.name} subcategories`}
+                        aria-expanded={isSubOpen}
                         className={`p-2 ml-1 rounded-md transition-all hover:bg-(--bg-hover)
                         ${isSubOpen ? 'text-(--accent) opacity-100' : 'opacity-40 hover:opacity-100'}`}
                     >
@@ -143,7 +154,7 @@ export default function CategoryDropper({ categories }) {
                     {cat.subcategories.map((sub, sIdx) => (
                       <Link 
                         key={sIdx} 
-                        to={`/search?category=${cat.name}&subcategory=${sub.name}`}
+                        to={searchUrl({ category: sub.name })}
                         onClick={() => setIsOpen(false)}
                         className="block px-4 py-2.5 rounded-lg text-sm transition-all duration-100
                         text-(--text-muted)

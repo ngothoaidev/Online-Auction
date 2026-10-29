@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { reviewService } from '../../services/reviewService';
 import Pagination from '../../components/Pagination';
+import { Button, EmptyState } from '../../components/ui';
 import './Reviews.css';
 
 const Reviews = () => {
@@ -9,7 +10,7 @@ const Reviews = () => {
     totalReviews: 0,
     positiveReviews: 0,
     negativeReviews: 0,
-    positivePercentage: 0,
+    positivePercentage: null,
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -115,7 +116,7 @@ const Reviews = () => {
           <div className="stat-label">Đánh Giá Tiêu Cực</div>
         </div>
         <div className="stat-card percentage">
-          <div className="stat-value">{stats.positivePercentage}%</div>
+          <div className="stat-value">{stats.positivePercentage == null ? '—' : `${stats.positivePercentage}%`}</div>
           <div className="stat-label">Tỷ Lệ Tích Cực</div>
         </div>
       </div>
@@ -152,11 +153,11 @@ const Reviews = () => {
       </div>
 
       {/* Error Message */}
-      {error && <div className="error-message">{error}</div>}
+      {error && <EmptyState title={error} action={<Button onClick={fetchReviews}>Thử lại</Button>} />}
 
       {/* Reviews List */}
       <div className="reviews-list">
-        {reviews.length === 0 ? (
+        {error ? null : reviews.length === 0 ? (
           <div className="no-reviews">
             <p>Không có đánh giá nào.</p>
           </div>
@@ -165,14 +166,10 @@ const Reviews = () => {
             <div key={review.id} className={`review-card ${review.isGoodRating ? 'positive' : 'negative'}`}>
               <div className="review-header">
                 <div className="reviewer-info">
-                  <img
-                    src={review.revieweravatarurl || '/default-avatar.png'}
-                    alt={review.reviewerusername}
-                    className="reviewer-avatar"
-                  />
+                  {review.reviewerAvatarUrl && <img src={review.reviewerAvatarUrl} alt="" className="reviewer-avatar" />}
                   <div className="reviewer-details">
-                    <h4>{review.reviewerfullname || review.reviewerusername}</h4>
-                    <p className="username">@{review.reviewerusername}</p>
+                    <h4>{review.reviewerFullName || review.reviewerUsername}</h4>
+                    <p className="username">@{review.reviewerUsername}</p>
                   </div>
                 </div>
                 <div className="rating-badge">
@@ -190,12 +187,12 @@ const Reviews = () => {
                 <div className="review-meta">
                   <div className="meta-item">
                     <strong>Đánh giá cho:</strong>
-                    <span>{review.targetfullname || review.targetusername}</span>
+                    <span>{review.targetFullName || review.targetUsername}</span>
                   </div>
-                  {review.auctiontitle && (
+                  {review.auctionTitle && (
                     <div className="meta-item">
                       <strong>Đấu giá:</strong>
-                      <span>{review.auctiontitle}</span>
+                      <span>{review.auctionTitle}</span>
                     </div>
                   )}
                   <div className="meta-item">

@@ -1,4 +1,5 @@
-import { Routes, Route } from 'react-router-dom';
+import { lazy } from 'react';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import ProtectedRoute from './components/ProtectedRoute';
 import AuthLayout from './layouts/AuthLayout';
 import MainLayout from './layouts/MainLayout';
@@ -8,17 +9,27 @@ import ProductDetail from './pages/ProductDetail';
 import SearchPage from './pages/SearchPage';
 import Login from './pages/Auth/Login';
 import Register from './pages/Auth/Register';
-import VerifyAccount from './pages/Auth/VerifyAccount';
-import AuthCallback from './pages/Auth/AuthCallback';
-import Profile from './pages/Profile';
-import CreateAuction from './pages/CreateAuction';
-import AdminDashboard from './pages/AdminDashboard';
 import NotFound from './pages/NotFound';
-import ForgetPassword from './pages/Auth/ForgetPassword';
-import BecomeSeller from './pages/BecomeSeller';
-import OrderCompletion from './pages/OrderCompletion';
-import Reviews from './pages/Reviews';
-import UserReviews from './pages/UserReviews';
+
+// Loaded on demand (route-level code splitting). Home, search, lot detail and auth stay in the main bundle.
+const VerifyAccount = lazy(() => import('./pages/Auth/VerifyAccount'));
+const AuthCallback = lazy(() => import('./pages/Auth/AuthCallback'));
+const Profile = lazy(() => import('./pages/Profile'));
+const CreateAuction = lazy(() => import('./pages/CreateAuction'));
+const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
+const CategoryList = lazy(() => import('./pages/AdminDashboard/CategoryList.jsx'));
+const ProductList = lazy(() => import('./pages/AdminDashboard/ProductList.jsx'));
+const UserList = lazy(() => import('./pages/AdminDashboard/UserList.jsx'));
+const UpgradeRequests = lazy(() => import('./pages/AdminDashboard/UpgradeRequests.jsx'));
+const Reports = lazy(() => import('./pages/AdminDashboard/Reports'));
+const AuditLog = lazy(() => import('./pages/AdminDashboard/AuditLog'));
+const ForgetPassword = lazy(() => import('./pages/Auth/ForgetPassword'));
+const BecomeSeller = lazy(() => import('./pages/BecomeSeller'));
+const OrderCompletion = lazy(() => import('./pages/OrderCompletion'));
+const Notifications = lazy(() => import('./pages/Notifications'));
+const Reviews = lazy(() => import('./pages/Reviews'));
+const UserReviews = lazy(() => import('./pages/UserReviews'));
+const Privacy = lazy(() => import('./pages/Privacy'));
 
 function App() {
   return (
@@ -42,11 +53,13 @@ function App() {
           <Route path="/profile/:username" element={<Profile />} />
           <Route path="/profile/:username/reviews" element={<UserReviews />} />
           <Route path="/reviews" element={<Reviews />} />
+          <Route path="/privacy" element={<Privacy />} />
 
           {/* --- STANDARD USERS --- */}
           <Route element={<ProtectedRoute />}>
             <Route path="/verify-account" element={<VerifyAccount />} />
             <Route path="/order/:auctionId" element={<OrderCompletion />} />
+            <Route path="/notifications" element={<Notifications />} />
           </Route>
 
           {/* --- BUYER ONLY --- */}
@@ -67,7 +80,15 @@ function App() {
         {/* --- ADMIN ONLY --- */}
         <Route element={<AdminLayout />}>
           <Route element={<ProtectedRoute requiredRole="admin" />}>
-            <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/admin" element={<AdminDashboard />}>
+              <Route index element={<Navigate to="categories" replace />} />
+              <Route path="categories" element={<CategoryList />} />
+              <Route path="products" element={<ProductList />} />
+              <Route path="users" element={<UserList />} />
+              <Route path="upgrades" element={<UpgradeRequests />} />
+              <Route path="reports" element={<Reports />} />
+              <Route path="audit" element={<AuditLog />} />
+            </Route>
           </Route>
         </Route>
 

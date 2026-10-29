@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { X, Lock, Mail, Eye, EyeOff, CheckCircle } from 'lucide-react';
+import { Mail, Eye, EyeOff, CheckCircle } from 'lucide-react';
+import { Dialog } from './ui';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
@@ -114,6 +115,8 @@ export default function ChangePasswordModal({ isOpen, onClose }) {
         throw new Error(data.message || 'Failed to change password');
       }
 
+      // Changing the password revokes older tokens; the server returns a fresh one.
+      if (data.token) localStorage.setItem('authToken', data.token);
       setSuccess('Password changed successfully!');
       setTimeout(() => {
         handleClose();
@@ -125,29 +128,8 @@ export default function ChangePasswordModal({ isOpen, onClose }) {
     }
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-      <div className="relative w-full max-w-md bg-(--card-bg) rounded-2xl shadow-2xl border border-(--border) animate-in fade-in slide-in-from-bottom-4 duration-300">
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-(--border)">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-(--accent)/10">
-              <Lock size={24} className="text-(--accent)" />
-            </div>
-            <h2 className="text-xl font-bold text-(--text)">Change Password</h2>
-          </div>
-          <button
-            onClick={handleClose}
-            className="p-2 rounded-lg hover:bg-(--bg-hover) transition-colors text-(--text-muted) hover:text-(--text)"
-          >
-            <X size={20} />
-          </button>
-        </div>
-
-        {/* Content */}
-        <div className="p-6">
+    <Dialog open={isOpen} onClose={handleClose} title="Change password" pending={loading}>
           {step === 1 ? (
             // Step 1: Request OTP
             <div className="space-y-4">
@@ -167,13 +149,13 @@ export default function ChangePasswordModal({ isOpen, onClose }) {
               </div>
 
               {error && (
-                <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 text-sm">
+                <div role="alert" className="p-3 rounded-lg bg-(--danger-soft) border border-(--danger) text-(--danger) text-sm">
                   {error}
                 </div>
               )}
 
               {success && (
-                <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/20 text-green-600 dark:text-green-400 text-sm flex items-center gap-2">
+                <div role="status" className="p-3 rounded-lg bg-(--success-soft) border border-(--success) text-(--success) text-sm flex items-center gap-2">
                   <CheckCircle size={16} />
                   {success}
                 </div>
@@ -182,7 +164,7 @@ export default function ChangePasswordModal({ isOpen, onClose }) {
               <button
                 onClick={handleRequestOTP}
                 disabled={loading}
-                className="w-full py-3 rounded-lg font-bold bg-(--accent) text-[#1a1205] hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                className="w-full py-3 rounded-lg font-bold bg-(--accent) text-(--on-ink) hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
               >
                 {loading ? 'Sending...' : 'Send Verification Code'}
               </button>
@@ -190,16 +172,19 @@ export default function ChangePasswordModal({ isOpen, onClose }) {
           ) : (
             // Step 2: Verify OTP & Change Password
             <form onSubmit={handleChangePassword} className="space-y-4">
-              <div className="p-3 rounded-lg bg-blue-500/10 border border-blue-500/20 text-sm text-(--text-muted)">
+              <div className="p-3 rounded-lg bg-(--info-soft) border border-(--info) text-sm text-(--text-muted)">
                 Check your email for the 6-digit verification code
               </div>
 
               {/* OTP Input */}
               <div>
-                <label className="block text-sm font-bold text-(--text) mb-2">
+                <label htmlFor="cp-otp" className="block text-sm font-bold text-(--text) mb-2">
                   Verification Code
                 </label>
                 <input
+                  id="cp-otp"
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
                   type="text"
                   value={otp}
                   onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
@@ -213,11 +198,13 @@ export default function ChangePasswordModal({ isOpen, onClose }) {
 
               {/* New Password */}
               <div>
-                <label className="block text-sm font-bold text-(--text) mb-2">
+                <label htmlFor="cp-new" className="block text-sm font-bold text-(--text) mb-2">
                   New Password
                 </label>
                 <div className="relative">
                   <input
+                    id="cp-new"
+                    autoComplete="new-password"
                     type={showPassword ? 'text' : 'password'}
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
@@ -229,6 +216,8 @@ export default function ChangePasswordModal({ isOpen, onClose }) {
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
+                    aria-label={showPassword ? 'Hide passwords' : 'Show passwords'}
+                    aria-pressed={showPassword}
                     className="absolute right-3 top-1/2 -translate-y-1/2 p-2 text-(--text-muted) hover:text-(--text)"
                   >
                     {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -238,10 +227,12 @@ export default function ChangePasswordModal({ isOpen, onClose }) {
 
               {/* Confirm Password */}
               <div>
-                <label className="block text-sm font-bold text-(--text) mb-2">
+                <label htmlFor="cp-confirm" className="block text-sm font-bold text-(--text) mb-2">
                   Confirm Password
                 </label>
                 <input
+                  id="cp-confirm"
+                  autoComplete="new-password"
                   type={showPassword ? 'text' : 'password'}
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
@@ -253,13 +244,13 @@ export default function ChangePasswordModal({ isOpen, onClose }) {
               </div>
 
               {error && (
-                <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 text-sm">
+                <div role="alert" className="p-3 rounded-lg bg-(--danger-soft) border border-(--danger) text-(--danger) text-sm">
                   {error}
                 </div>
               )}
 
               {success && (
-                <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/20 text-green-600 dark:text-green-400 text-sm flex items-center gap-2">
+                <div role="status" className="p-3 rounded-lg bg-(--success-soft) border border-(--success) text-(--success) text-sm flex items-center gap-2">
                   <CheckCircle size={16} />
                   {success}
                 </div>
@@ -277,15 +268,13 @@ export default function ChangePasswordModal({ isOpen, onClose }) {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="flex-1 py-3 rounded-lg font-bold bg-(--accent) text-[#1a1205] hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                  className="flex-1 py-3 rounded-lg font-bold bg-(--accent) text-(--on-ink) hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                 >
                   {loading ? 'Changing...' : 'Change Password'}
                 </button>
               </div>
             </form>
           )}
-        </div>
-      </div>
-    </div>
+    </Dialog>
   );
 }

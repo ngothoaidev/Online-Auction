@@ -4,6 +4,7 @@ export default function ProductGrid({
   items = [], 
   emptyState, 
   columns = "grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4",
+  cardVariant,
 }) {
 
   if (!items || items.length === 0) {
@@ -22,7 +23,7 @@ export default function ProductGrid({
     <div className={`grid gap-6 ${columns}`}>
       {items.map((item) => (
         <div key={item.id} className="flex justify-center w-full">
-            <AuctionCard product={item} />
+            <AuctionCard product={item} variant={cardVariant} />
         </div>
       ))}
     </div>

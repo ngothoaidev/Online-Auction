@@ -99,15 +99,15 @@ export default function Profile() {
 
   // --- TAB CONFIGURATION ---
   const tabs = [
-    { id: 'active-bids', label: 'Active Bids', count: getCount('activeBids'), variant: 'bidding' },
-    { id: 'won-auctions', label: 'Wins', count: getCount('wonAuctions'), variant: 'won' },
-    { id: 'favorites', label: 'Saved', count: getCount('favorites'), variant: 'favorite' },
+    { id: 'active-bids', label: 'Active Bids', count: getCount('totalActiveBids'), variant: 'bidding' },
+    { id: 'won-auctions', label: 'Wins', count: getCount('totalWonAuctions'), variant: 'won' },
+    { id: 'favorites', label: 'Saved', count: getCount('totalFavoriteProducts'), variant: 'favorite' },
   ];
 
   if (userData?.role === 'seller') {
       tabs.unshift(
-          { id: 'my-listings', label: 'My Listings', count: getCount('activeListings'), variant: 'default' },
-          { id: 'sold-items', label: 'Sold', count: getCount('soldItems'), variant: 'won' }
+          { id: 'my-listings', label: 'My Listings', count: getCount('totalActiveListings'), variant: 'default' },
+          { id: 'sold-items', label: 'Sold', count: getCount('totalSoldItems'), variant: 'won' }
       );
   }
 
@@ -115,7 +115,7 @@ export default function Profile() {
 
   if (!loadingProfile && !userData) {
       return (
-        <div className="max-w-7xl mx-auto px-4 mt-8 text-red-500">
+        <div className="max-w-7xl mx-auto px-4 mt-8 text-(--danger)">
           User not found.
         </div>
       );

@@ -3,9 +3,8 @@ import { urlSchema, phoneSchema } from './common.schemas';
 
 // Payment submission schema
 export const paymentFormSchema = z.object({
-  paymentProofUrl: z.string()
-    .min(1, 'Payment proof is required')
-    .url('Invalid payment proof URL'),
+  paymentProofAssetId: z.string()
+    .uuid('Payment proof is required: upload an image first'),
   shippingAddress: z.string()
     .min(20, 'Shipping address must be at least 20 characters')
     .max(500, 'Shipping address must not exceed 500 characters'),
@@ -17,9 +16,8 @@ export const paymentFormSchema = z.object({
 
 // Confirm payment schema (seller)
 export const confirmPaymentSchema = z.object({
-  shippingProofUrl: z.string()
-    .min(1, 'Shipping invoice is required')
-    .url('Invalid shipping invoice URL'),
+  shippingProofAssetId: z.string()
+    .uuid('Shipping invoice is required: upload an image first'),
   trackingNumber: z.string()
     .min(5, 'Tracking number must be at least 5 characters')
     .max(50, 'Tracking number must not exceed 50 characters')
@@ -31,9 +29,8 @@ export const confirmPaymentSchema = z.object({
 
 // Review submission schema
 export const reviewFormSchema = z.object({
-  rating: z.enum([1, -1], {
-    errorMap: () => ({ message: 'Please select a rating' }),
-  }),
+  // z.enum only takes strings: with numbers it accepted nothing, so every review was refused client-side
+  rating: z.union([z.literal(1), z.literal(-1)], { message: 'Please select a rating' }),
   comment: z.string()
     .max(1000, 'Comment must not exceed 1000 characters')
     .optional(),
@@ -44,17 +41,7 @@ export const cancelOrderSchema = z.object({
   reason: z.string()
     .min(10, 'Cancellation reason must be at least 10 characters')
     .max(500, 'Cancellation reason must not exceed 500 characters'),
-  giveNegativeReview: z.boolean(),
-  reviewComment: z.string()
-    .max(500, 'Review comment must not exceed 500 characters')
-    .optional(),
-}).refine(
-  (data) => !data.giveNegativeReview || (data.reviewComment && data.reviewComment.length >= 10),
-  {
-    message: 'Review comment is required when giving negative review (min 10 characters)',
-    path: ['reviewComment'],
-  }
-);
+});
 
 // Chat message schema
 export const chatMessageSchema = z.object({

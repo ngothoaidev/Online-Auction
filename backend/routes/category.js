@@ -1,5 +1,5 @@
 import { Router } from "express";
-import requireAuth, { requireAdmin } from "../middleware/auth.js";
+import { requireAuth, requireAdmin } from "../middleware/auth.js";
 import categoryController from "../controllers/category.js"
 
 const route = new Router();

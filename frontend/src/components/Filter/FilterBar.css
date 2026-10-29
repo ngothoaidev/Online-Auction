@@ -1,15 +1,8 @@
-/* --- FILTER BAR THEME (Glassmorphism) --- */
+/* Every rule here is scoped to the filter bar: this file loads with the profile route but must not restyle other pages. */
 .filter-bar-glass {
-  background-color: rgba(245, 245, 245, 0.8);
+  background-color: color-mix(in srgb, var(--surface) 92%, transparent);
   backdrop-filter: blur(15px);
-  border: 1px solid var(--border);
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-}
-
-.dark .filter-bar-glass {
-  background-color: rgba(20, 20, 60, 0.8); 
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  border: 1px solid var(--line);
 }
 
 /* --- DROPDOWN PANEL DESIGN --- */
@@ -58,12 +51,11 @@
 .filter-btn-active {
   background-color: var(--accent);
   border: 1px solid var(--accent);
-  color: #1A1205; /* Force dark text on the gold button */
-  box-shadow: 0 4px 12px rgba(234, 179, 8, 0.2);
+  color: var(--on-ink);
 }
 
-input[type=number]::-webkit-inner-spin-button, 
-input[type=number]::-webkit-outer-spin-button { 
+.filter-bar-glass input[type=number]::-webkit-inner-spin-button,
+.filter-bar-glass input[type=number]::-webkit-outer-spin-button { 
   -webkit-appearance: none; 
   margin: 0; 
 }
@@ -72,46 +64,23 @@ input[type=number]::-webkit-outer-spin-button {
     letter-spacing: 0.5px;
 }
 
-/* Select dropdown styling */
-
-select {
-    /* background-color: var(--card-bg); */
-    color: var(--text);
-    border: 1px solid var(--border);
-    border-radius: 6px;
+/* Select dropdown styling (focus ring comes from the global :focus-visible rule) */
+.filter-bar-glass select {
+    color: var(--ink);
+    border: 1px solid var(--input-border);
+    border-radius: var(--radius-control);
     padding: 6px 32px 6px 12px;
     font-size: 0.875rem;
     font-weight: 500;
     cursor: pointer;
-    outline: none;
     appearance: none;
 }
 
-select:hover {
-    border-color: var(--primary);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+.filter-bar-glass select:hover {
+    border-color: var(--brand);
 }
 
-select:focus {
-    border-color: var(--primary);
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-}
-
-/* Option styling */
-option {
-    background-color: var(--card-bg);
-    color: var(--text);
-    padding: 8px 12px;
-    font-size: 0.875rem;
-}
-
-option:hover,
-option:checked {
-    background-color: var(--primary);
-    color: var(--accent-fg);
-}
-
-option:disabled {
-    color: var(--text-muted);
-    font-style: italic;
+.filter-bar-glass option {
+    background-color: var(--surface);
+    color: var(--ink);
 }

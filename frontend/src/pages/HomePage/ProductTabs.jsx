@@ -1,91 +1,78 @@
 import { useState, useEffect } from 'react';
-import { Clock, Gavel, Star, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { ArrowRight } from 'lucide-react';
 import AuctionCard from '../../components/AuctionCard';
+import { EmptyState, Skeleton, Button } from '../../components/ui';
 import auctionService from '../../services/auctionService';
+import { searchUrl, TAB_SEARCH_SORT } from '../../utils/searchUrl.js';
 
+const TABS = [
+  { id: 'endingSoon', label: 'Ending soon' },
+  { id: 'mostBids', label: 'Most active' },
+  { id: 'highestPrice', label: 'Highest price' },
+];
+
+/** The three buttons filter the SAME list (aria-pressed), so they are toggle buttons rather than a tablist. */
 export default function ProductTabs() {
   const [activeTab, setActiveTab] = useState('endingSoon');
-  const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  const tabs = [
-    { id: 'endingSoon', label: 'Ending Soon', icon: Clock, color: 'var(--danger)' },
-    { id: 'mostBids', label: 'Most Active', icon: Gavel, color: 'var(--theme-secondary)' },
-    { id: 'highestPrice', label: 'Premium', icon: Star, color: 'var(--accent)' },
-  ];
-
-  const activeTabData = tabs.find(t => t.id === activeTab);
+  const [state, setState] = useState({ status: 'loading', items: [] });
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
-    const fetchTabContent = async () => {
-        setLoading(true);
-        try {
-            const data = await auctionService.getTopAuctions({ 
-                sortBy: activeTab, 
-                limit: 5
-            });
-            console.log('HOMEPAGE: ', data);
-            setProducts(data);
-        } catch (error) {
-            console.error("Failed to load tab data", error);
-        } finally {
-            setLoading(false);
-        }
-    };
+    let cancelled = false;
+    setState((s) => ({ ...s, status: 'loading' }));
+    auctionService.getTopAuctions({ sortBy: activeTab, limit: 5 })
+      .then((items) => { if (!cancelled) setState({ status: 'ready', items: Array.isArray(items) ? items : [] }); })
+      .catch(() => { if (!cancelled) setState({ status: 'error', items: [] }); });
+    return () => { cancelled = true; };
+  }, [activeTab, attempt]);
 
-    fetchTabContent();
-  }, [activeTab]);
+  const label = TABS.find((t) => t.id === activeTab).label;
 
   return (
-    <section className="container mx-auto px-10">
-      {/* Tab Navigation */}
-      <div className="flex flex-wrap justify-center gap-4 mb-10">
-        {tabs.map((tab) => {
-          const isActive = activeTab === tab.id;
-          const Icon = tab.icon;
-          return (
+    <section aria-labelledby="featured-lots" className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-10">
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <h2 id="featured-lots" className="tracking-tight text-3xl font-semibold text-(--ink)">Lots to watch</h2>
+        <div role="group" aria-label="Sort lots" className="flex flex-wrap gap-2">
+          {TABS.map((tab) => (
             <button
               key={tab.id}
+              type="button"
+              aria-pressed={activeTab === tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 px-6 py-3 rounded-full font-bold text-sm uppercase tracking-wide transition-all duration-300 transform hover:scale-105 ${isActive ? 'shadow-lg scale-105' : 'hover:opacity-80'}`}
-              style={{ 
-                backgroundColor: isActive ? tab.color : 'var(--card-bg)',
-                color: isActive ? '#fff' : 'var(--text-muted)',
-                border: isActive ? 'none' : '1px solid var(--border)'
-              }}
+              className={`min-h-11 rounded-full border px-4 text-sm font-semibold ${activeTab === tab.id ? 'border-(--ink) bg-(--ink) text-(--on-ink)' : 'border-(--input-border) bg-(--surface) text-(--ink) hover:bg-(--surface-hover)'}`}
             >
-              <Icon className="w-4 h-4" />
               {tab.label}
             </button>
-          );
-        })}
+          ))}
+        </div>
       </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-5 animate-fade-in">
-        {products.length > 0 ? (
-          products.map((item) => (
-            <div key={item.id} className='flex justify-center'>
-              <AuctionCard product={item} />
-            </div>
-          ))
-        ) : (
-          <div className="col-span-full text-center py-10" style={{ color: 'var(--text-muted)' }}>
-            No products found
+
+      <div className="mt-6" aria-live="polite" aria-busy={state.status === 'loading'}>
+        {state.status === 'loading' && (
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+            {Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-80" />)}
+            <span className="sr-only">Loading lots</span>
           </div>
+        )}
+        {state.status === 'error' && (
+          <EmptyState title="Lots could not be loaded" action={<Button onClick={() => setAttempt((n) => n + 1)}>Try again</Button>}>Check your connection and try again.</EmptyState>
+        )}
+        {state.status === 'ready' && state.items.length === 0 && (
+          <EmptyState title="No lots yet" action={<Link className="font-semibold text-(--brand) underline" to="/search">Browse all lots</Link>}>Nothing is open for bidding right now.</EmptyState>
+        )}
+        {state.status === 'ready' && state.items.length > 0 && (
+          <ul className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+            {state.items.map((item) => <li key={item.id} className="flex"><AuctionCard product={item} /></li>)}
+          </ul>
         )}
       </div>
 
-      <div className="mt-12 text-center">
-        <Link 
-          to={`/search?category=${activeTabData.label}`}
-          onClick={() => setIsOpen(false)}
-          className={`inline-flex items-center gap-2 font-bold uppercase tracking-widest text-md border-b-2 border-transparent hover:border-current pb-1 transition-all`}
-          style={{ color: activeTabData.color }}
-        >
-          View All {activeTabData.label} <ArrowRight className="w-4 h-4" />
+      <div className="mt-8">
+        <Link to={searchUrl({ sortBy: TAB_SEARCH_SORT[activeTab] })} className="inline-flex min-h-11 items-center gap-2 font-semibold text-(--brand) hover:underline">
+          View all lots · {label} <ArrowRight size={16} aria-hidden="true" />
         </Link>
       </div>
     </section>
   );
-};
+}

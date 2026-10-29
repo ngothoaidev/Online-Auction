@@ -1,347 +1,157 @@
-import { useState, useEffect } from "react";
-import { ArrowLeft, Upload, X, Plus, Info, Loader2, AlertCircle } from "lucide-react";
-import { useNav } from "../hooks/useNavigate";
-import { useAuth } from "../contexts/AuthContext";
+import { useState, useEffect } from 'react';
+import { Upload, X } from 'lucide-react';
+import { useNav } from '../hooks/useNavigate';
 import ImageUploadModal from '../components/ImageUploadModal';
-import RichTextEditor from "../components/RichTextEditor";
-import auctionService from "../services/auctionService";
-import { createAuctionSchema } from "../schemas/auction.schemas";
-import { validateForm } from "../utils/validation";
+import RichTextEditor from '../components/RichTextEditor';
+import auctionService from '../services/auctionService';
+import { validateListing } from '../utils/listing.js';
+import { formatVnd } from '../utils/money.js';
+import { Button, Field, IconButton } from '../components/ui';
+
+const Section = ({ title, hint, children }) => (
+  <fieldset className="rounded-(--radius-card) border border-(--line) bg-(--surface) p-5">
+    <legend className="px-1 text-lg font-semibold text-(--ink)">{title}</legend>
+    {hint && <p className="mb-4 text-sm text-(--muted)">{hint}</p>}
+    <div className="space-y-4">{children}</div>
+  </fieldset>
+);
 
 export default function CreateAuction() {
   const nav = useNav();
-  const { user } = useAuth();
-  
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
-  
-  // Dữ liệu danh mục lấy từ API
   const [categories, setCategories] = useState([]);
-  
-  // Form State
-  const [formData, setFormData] = useState({ 
-    title: "", 
-    description: "",
-    startingPrice: "", 
-    stepPrice: "",
-    buyNowPrice: "",
-    categoryId: "", 
-    endTime: "",
-    autoExtend: true,
-    allowNewbies: true,
-    images: [],
-  });
+  const [uploadOpen, setUploadOpen] = useState(false);
+  const [errors, setErrors] = useState({});
+  const [formError, setFormError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [form, setForm] = useState({ title: '', description: '', categoryId: '', startingPrice: '', stepPrice: '', buyNowPrice: '', endTime: '', autoExtend: true, allowNewbies: true, images: [] });
+  const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.type === 'checkbox' ? e.target.checked : e.target.value }));
 
-  // 1. Load danh mục khi vào trang
   useEffect(() => {
-    const loadCategories = async () => {
-      try {
-        const data = await auctionService.getCategories();
-        setCategories(data);
-      } catch (err) {
-        console.error("Error loading categories", err);
-        setError("Failed to load categories. Please refresh.");
-      }
-    };
-    loadCategories();
+    auctionService.getCategories().then((d) => setCategories(Array.isArray(d) ? d : [])).catch(() => setFormError('Categories could not be loaded. Refresh the page.'));
   }, []);
 
-  const handleUploadImage = (file) => {
-    const preview = URL.createObjectURL(file);
-    console.log(file, preview);
-    setFormData(prev => ({ 
-      ...prev, 
-      images: [...prev.images, { file, preview }] 
-    }));
-  };
+  const addImage = (file) => setForm((f) => ({ ...f, images: [...f.images, { file, preview: URL.createObjectURL(file) }] }));
+  const removeImage = (i) => setForm((f) => ({ ...f, images: f.images.filter((_, idx) => idx !== i) }));
 
-  const handleRemoveImage = (indexToRemove) => {
-    setFormData(prev => ({
-        ...prev,
-        images: prev.images.filter((_, idx) => idx !== indexToRemove)
-    }));
-  };
-
-  // 3. Submit Form
-  const handleSubmit = async (e) => {
+  const submit = async (e) => {
     e.preventDefault();
-    setError(null);
-
-    // Convert string prices to numbers for validation
-    const validationData = {
-      ...formData,
-      startingPrice: Number(formData.startingPrice),
-      stepPrice: Number(formData.stepPrice),
-      buyNowPrice: formData.buyNowPrice ? Number(formData.buyNowPrice) : null,
-    };
-
-    // Zod Validation
-    const validation = validateForm(createAuctionSchema, validationData);
-    if (!validation.success) {
-      setError(validation.message);
-      window.scrollTo(0, 0);
+    setFormError('');
+    const check = validateListing(form);
+    setErrors(check.errors);
+    if (!check.ok) {
+      document.getElementById('listing-errors')?.focus();
       return;
     }
-
     setLoading(true);
-
     try {
-        const payload = new FormData();
-        payload.append('title', formData.title);
-        payload.append('description', formData.description);
-        payload.append('categoryId', formData.categoryId);
-        payload.append('startingPrice', formData.startingPrice);
-        payload.append('stepPrice', formData.stepPrice);
-        payload.append('buyNowPrice', formData.buyNowPrice || "");
-        payload.append('endTime', formData.endTime);
-        payload.append('autoExtend', formData.autoExtend);
-
-        formData.images.forEach((image) => {
-            payload.append('images', image.file);
-        });
-
-        await auctionService.create(payload);
-
-        nav.home();
-        
+      const payload = new FormData();
+      payload.append('title', check.value.title);
+      payload.append('description', form.description);
+      payload.append('categoryId', form.categoryId);
+      payload.append('startingPrice', check.value.startingPrice);
+      payload.append('stepPrice', check.value.stepPrice);
+      payload.append('buyNowPrice', check.value.buyNowPrice ?? '');
+      payload.append('endTime', check.value.endTime);
+      payload.append('autoExtend', String(form.autoExtend));
+      payload.append('allowNewbies', String(form.allowNewbies));
+      form.images.forEach((img) => payload.append('images', img.file));
+      await auctionService.create(payload);
+      nav.home();
     } catch (err) {
-        console.error(err);
-        setError(err.message || "Failed to create auction");
-        window.scrollTo(0,0);
+      setFormError(err.message || 'The listing could not be created.');
+      document.getElementById('listing-errors')?.focus();
     } finally {
-        setLoading(false);
+      setLoading(false);
     }
   };
 
+  const errorList = Object.values(errors);
+  const summary = [
+    ['Starting price', form.startingPrice ? formatVnd(form.startingPrice.replace(/\D/g, '')) : '—'],
+    ['Bid step', form.stepPrice ? formatVnd(form.stepPrice.replace(/\D/g, '')) : '—'],
+    ['Buy Now', form.buyNowPrice ? formatVnd(form.buyNowPrice.replace(/\D/g, '')) : 'Not offered'],
+    ['Ends', form.endTime ? new Date(form.endTime).toLocaleString() : '—'],
+    ['Photos', `${form.images.length} of 3–10`],
+  ];
+
   return (
-    <div className="min-h-screen pt-24 pb-12 px-4 bg-(--bg) text-(--text) transition-colors duration-300">
-      <div className="max-w-4xl mx-auto">
-        {/* Header */}
-        <div className="flex items-center gap-4 mb-8">
-          <button onClick={() => nav.back()} className="p-2 rounded-full hover:bg-(--bg-hover)">
-            <ArrowLeft size={24} />
-          </button>
-          <div>
-            <h1 className="text-3xl font-bold">Create New Auction</h1>
-            <p className="text-(--text-muted)">List your item for thousands of bidders</p>
+    <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6">
+      <h1 className="tracking-tight text-3xl font-semibold text-(--ink)">Create a listing</h1>
+      <p className="mt-1 text-(--muted)">Prices are whole amounts in ₫. Bids and the deadline cannot be changed after the first bid.</p>
+
+      <div id="listing-errors" tabIndex={-1} role="alert" className="outline-none">
+        {(formError || errorList.length > 0) && (
+          <div className="mt-4 rounded-(--radius-control) bg-(--danger-soft) p-4 text-sm text-(--danger)">
+            {formError && <p>{formError}</p>}
+            {errorList.length > 0 && <><p className="font-semibold">Please fix {errorList.length} {errorList.length === 1 ? 'field' : 'fields'}:</p><ul className="ml-5 list-disc">{errorList.map((m) => <li key={m}>{m}</li>)}</ul></>}
           </div>
-        </div>
-
-        {error && (
-            <div className="mb-6 p-4 rounded-lg bg-red-500/10 border border-red-500/20 text-red-500 flex items-center gap-3">
-                <AlertCircle size={20} />
-                {error}
-            </div>
         )}
-
-        <form onSubmit={handleSubmit} className="space-y-8">
-            
-            {/* 1. SECTION: IMAGES (Yêu cầu đồ án: Nhiều ảnh) */}
-            <div className="p-6 rounded-2xl border border-(--border) bg-(--bg-soft)">
-                <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-xl font-bold">Product Images</h3>
-                    <span className={`text-xs px-2 py-1 rounded ${formData.images.length >= 3 ? 'bg-green-100 text-green-700' : 'bg-(--bg-subtle) text-(--text-muted)'}`}>
-                        {formData.images.length}/3 Required
-                    </span>
-                </div>
-                
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    {/* Danh sách ảnh đã upload */}
-                    {formData.images.map((image, idx) => (
-                        <div key={idx} className="relative aspect-square rounded-xl overflow-hidden group border border-(--border)">
-                            <img src={image.preview} alt={`Upload ${idx}`} className="w-full h-full object-cover" />
-                            <button 
-                                type="button"
-                                onClick={() => handleRemoveImage(idx)}
-                                className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                            >
-                                <X size={14} />
-                            </button>
-                            {idx === 0 && (
-                                <div className="absolute bottom-0 w-full bg-black/60 text-white text-[10px] text-center py-1">
-                                    Main Image
-                                </div>
-                            )}
-                        </div>
-                    ))}
-
-                    {/* Nút Upload */}
-                    <button
-                        type="button"
-                        onClick={() => setIsUploadModalOpen(true)}
-                        className="aspect-square rounded-xl border-2 border-dashed border-(--border) flex flex-col items-center justify-center gap-2 hover:border-(--accent) hover:text-(--accent) transition-colors"
-                    >
-                        <Upload size={24} />
-                        <span className="text-sm font-medium">Add Photo</span>
-                    </button>
-                </div>
-            </div>
-
-            {/* 2. SECTION: BASIC INFO */}
-            <div className="p-6 rounded-2xl border border-(--border) bg-(--bg-soft) space-y-6">
-                <h3 className="text-xl font-bold">Item Details</h3>
-                
-                {/* Title */}
-                <div>
-                    <label className="block text-sm font-medium mb-2">Item Title</label>
-                    <input 
-                        type="text" 
-                        required
-                        className="w-full px-4 py-3 rounded-lg bg-(--input-bg) border border-(--border) focus:ring-2 focus:ring-(--accent) outline-none"
-                        placeholder="e.g. Vintage Rolex Submariner 1980"
-                        value={formData.title}
-                        onChange={e => setFormData({...formData, title: e.target.value})}
-                    />
-                </div>
-
-                {/* Category Selection */}
-                <div>
-                    <label className="block text-sm font-medium mb-2">Category</label>
-                    <select 
-                        required
-                        className="w-full px-4 py-3 rounded-lg bg-(--input-bg) border border-(--border) focus:ring-2 focus:ring-(--accent) outline-none"
-                        value={formData.categoryId}
-                        onChange={(e) => setFormData({...formData, categoryId: e.target.value})}
-                    >
-                        <option value="">Select Category</option>
-                        {categories.map(cat => (
-                            <optgroup key={cat.id} label={cat.name}>
-                                {/* Nếu có subcategories thì map, nếu không thì render chính nó */}
-                                {cat.subcategories && cat.subcategories.length > 0 ? (
-                                    cat.subcategories.map(sub => (
-                                        <option key={sub.id} value={sub.id}>{sub.name}</option>
-                                    ))
-                                ) : (
-                                    <option value={cat.id}>{cat.name}</option>
-                                )}
-                            </optgroup>
-                        ))}
-                    </select>
-                </div>
-
-                {/* Description - WYSIWYG EDITOR (Requirement) */}
-                <div>
-                    <label className="block text-sm font-medium mb-2">Description</label>
-                    <div className="min-h-[200px]">
-                        <RichTextEditor 
-                            value={formData.description} 
-                            onChange={(html) => setFormData({...formData, description: html})} 
-                        />
-                    </div>
-                </div>
-            </div>
-
-            {/* 3. SECTION: PRICING & TIMING */}
-            <div className="p-6 rounded-2xl border border-(--border) bg-(--bg-soft) space-y-6">
-                <h3 className="text-xl font-bold">Settings</h3>
-                
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div>
-                        <label className="block text-sm font-medium mb-2">Starting Price (VND)</label>
-                        <input 
-                            type="number" required min="0"
-                            className="w-full px-4 py-3 rounded-lg bg-(--input-bg) border border-(--border)"
-                            value={formData.startingPrice}
-                            onChange={e => setFormData({...formData, startingPrice: e.target.value})}
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium mb-2">Step Price (VND)</label>
-                        <input 
-                            type="number" required min="1"
-                            className="w-full px-4 py-3 rounded-lg bg-(--input-bg) border border-(--border)"
-                            value={formData.stepPrice}
-                            onChange={e => setFormData({...formData, stepPrice: e.target.value})}
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium mb-2">Buy Now Price (Optional)</label>
-                        <input 
-                            type="number" min="0"
-                            className="w-full px-4 py-3 rounded-lg bg-(--input-bg border border-(--border)"
-                            value={formData.buyNowPrice}
-                            onChange={e => setFormData({...formData, buyNowPrice: e.target.value})}
-                        />
-                    </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-end">
-                    <div>
-                        <label className="block text-sm font-medium mb-2">End Date & Time</label>
-                        <input 
-                            type="datetime-local" required
-                            className="w-full px-4 py-3 rounded-lg bg-(--input-bg) border border-(--border) scheme-dark"
-                            value={formData.endTime}
-                            onChange={e => setFormData({...formData, endTime: e.target.value})}
-                        />
-                    </div>
-                    
-                    {/* Auto Extend Toggle*/}
-                    <div className="flex items-center gap-3 p-3 rounded-lg border border-(--border) bg-(--bg)">
-                        <input 
-                            type="checkbox" 
-                            id="autoExtend"
-                            className="w-5 h-5 accent-(--accent)"
-                            checked={formData.autoExtend}
-                            onChange={e => setFormData({...formData, autoExtend: e.target.checked})}
-                        />
-                        <label htmlFor="autoExtend" className="text-sm font-medium cursor-pointer select-none">
-                            Enable Auto-Extend
-                            <span className="block text-xs text-(--text-muted) font-normal">
-                                Extends 5 mins if bid placed in last 5 mins
-                            </span>
-                        </label>
-                    </div>
-
-                    {/* Option: Allow Newbies */}
-                    <div className="bg-[var(--bg-subtle)] p-4 rounded-xl border border-[var(--border)] flex items-start gap-3 mt-4">
-                        <input 
-                            type="checkbox" 
-                            id="allowNewbies"
-                            checked={formData.allowNewbies}
-                            onChange={(e) => setFormData({...formData, allowNewbies: e.target.checked})}
-                            className="mt-1 w-5 h-5 rounded border-gray-300 text-[var(--accent)] focus:ring-[var(--accent)]"
-                        />
-                        <label htmlFor="allowNewbies" className="cursor-pointer">
-                            <span className="block font-bold text-[var(--text)]">Allow New Bidders</span>
-                            <span className="text-sm text-[var(--text-muted)]">
-                                If unchecked, users with 0 ratings cannot bid on this item.
-                            </span>
-                        </label>
-                    </div>
-                </div>
-            </div>
-
-            {/* ACTION BUTTONS */}
-            <div className="flex gap-4 pt-4">
-                <button 
-                    type="submit" 
-                    disabled={loading}
-                    className="flex-1 bg-(--accent) text-[#1a1205] py-4 rounded-xl font-bold text-lg hover:brightness-110 shadow-lg disabled:opacity-50 flex items-center justify-center gap-2 transition-all hover:scale-[1.01]"
-                >
-                    {loading ? <Loader2 className="animate-spin" /> : <Plus size={20} />}
-                    {loading ? "Creating Listing..." : "Create Auction"}
-                </button>
-                <button 
-                    type="button" 
-                    onClick={() => nav.back()} 
-                    disabled={loading}
-                    className="flex-1 border border-(--border) rounded-xl text-(--text) font-semibold py-4 transition hover:bg-(--bg-hover)"
-                >
-                    Cancel
-                </button>
-            </div>
-        </form>
       </div>
 
-      {/* Image Upload Modal Integration */}
-      <ImageUploadModal 
-        isOpen={isUploadModalOpen} 
-        onClose={() => setIsUploadModalOpen(false)} 
-        onUpload={handleUploadImage}
-        title="Upload Product Image"
-      />
+      <form onSubmit={submit} noValidate className="mt-6 space-y-6">
+        <Section title="Photos" hint="3 to 10 photos. The first one is the cover.">
+          <ul className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {form.images.map((img, i) => (
+              <li key={img.preview} className="relative aspect-square overflow-hidden rounded-(--radius-control) border border-(--line)">
+                <img src={img.preview} alt={`Photo ${i + 1}${i === 0 ? ' (cover)' : ''}`} className="h-full w-full object-cover" />
+                <IconButton label={`Remove photo ${i + 1}`} onClick={() => removeImage(i)} className="absolute right-1 top-1 h-11 w-11 bg-(--surface)/90"><X size={16} /></IconButton>
+              </li>
+            ))}
+            {form.images.length < 10 && (
+              <li>
+                <button type="button" onClick={() => setUploadOpen(true)} className="flex aspect-square w-full flex-col items-center justify-center gap-2 rounded-(--radius-control) border-2 border-dashed border-(--input-border) text-(--ink) hover:bg-(--surface-hover)">
+                  <Upload size={22} aria-hidden="true" /><span className="text-sm font-medium">Add photo</span>
+                </button>
+              </li>
+            )}
+          </ul>
+          {errors.images && <p className="text-sm font-medium text-(--danger)">{errors.images}</p>}
+        </Section>
+
+        <Section title="Item details">
+          <Field label="Title" error={errors.title}><input type="text" maxLength={255} value={form.title} onChange={set('title')} /></Field>
+          <Field label="Category" error={errors.categoryId}>
+            <select value={form.categoryId} onChange={set('categoryId')}>
+              <option value="">Choose a category</option>
+              {categories.map((c) => (c.subcategories?.length
+                ? <optgroup key={c.id} label={c.name}><option value={c.id}>{c.name} (general)</option>{c.subcategories.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}</optgroup>
+                : <option key={c.id} value={c.id}>{c.name}</option>))}
+            </select>
+          </Field>
+          <div>
+            <p id="desc-label" className="mb-1.5 text-sm font-medium text-(--ink)">Description</p>
+            <RichTextEditor labelledBy="desc-label" value={form.description} onChange={(html) => setForm((f) => ({ ...f, description: html }))} />
+          </div>
+        </Section>
+
+        <Section title="Pricing" hint="Whole amounts in ₫. Bidders must beat the current price by at least the bid step.">
+          <div className="grid gap-4 sm:grid-cols-3">
+            <Field label="Starting price (₫)" error={errors.startingPrice}><input inputMode="numeric" value={form.startingPrice} onChange={set('startingPrice')} /></Field>
+            <Field label="Bid step (₫)" error={errors.stepPrice}><input inputMode="numeric" value={form.stepPrice} onChange={set('stepPrice')} /></Field>
+            <Field label="Buy Now price (₫), optional" error={errors.buyNowPrice}><input inputMode="numeric" value={form.buyNowPrice} onChange={set('buyNowPrice')} /></Field>
+          </div>
+        </Section>
+
+        <Section title="Timing and rules">
+          <Field label="Ends at" hint="Your local time. At least 1 hour from now." error={errors.endTime}><input type="datetime-local" value={form.endTime} onChange={set('endTime')} /></Field>
+          <label className="flex min-h-11 items-start gap-3 text-sm text-(--ink)"><input type="checkbox" className="mt-1 h-5 w-5" checked={form.autoExtend} onChange={set('autoExtend')} /><span><strong>Extend the deadline by 5 minutes</strong> when a bid arrives in the last 5 minutes.</span></label>
+          <label className="flex min-h-11 items-start gap-3 text-sm text-(--ink)"><input type="checkbox" className="mt-1 h-5 w-5" checked={form.allowNewbies} onChange={set('allowNewbies')} /><span><strong>Allow bidders without reviews.</strong> Bidders with a rating below 80% are always excluded.</span></label>
+        </Section>
+
+        <section aria-labelledby="review-title" className="rounded-(--radius-card) border border-(--line) bg-(--surface-sunken) p-5">
+          <h2 id="review-title" className="text-lg font-semibold text-(--ink)">Review before publishing</h2>
+          <dl className="mt-3 grid gap-2 sm:grid-cols-2">
+            {summary.map(([k, v]) => <div key={k} className="flex justify-between gap-3 text-sm"><dt className="text-(--muted)">{k}</dt><dd className="font-lot font-semibold text-(--ink)">{v}</dd></div>)}
+          </dl>
+        </section>
+
+        <div className="flex justify-end gap-3">
+          <Button variant="secondary" onClick={() => nav.back()} disabled={loading}>Cancel</Button>
+          <Button type="submit" size="lg" loading={loading}>{loading ? 'Publishing…' : 'Publish listing'}</Button>
+        </div>
+      </form>
+
+      <ImageUploadModal isOpen={uploadOpen} onClose={() => setUploadOpen(false)} onUpload={addImage} title="Add a photo" />
     </div>
   );
 }

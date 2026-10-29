@@ -1,118 +1,110 @@
-import { useState, useEffect } from "react";
-import { useSearchParams } from "react-router-dom";
-import { House } from "lucide-react";
-import FilterBar from "../../components/Filter/FilterBar.jsx";
-import ProductGrid from "../../components/ProductGrid.jsx";
-import Pagination from "../../components/Pagination.jsx";
-import './SearchPage.css'
-import { useNav } from "../../hooks/useNavigate.js";
+import { useState, useEffect, useCallback } from 'react';
+import { useSearchParams, Link } from 'react-router-dom';
+import { SlidersHorizontal } from 'lucide-react';
+import AuctionCard from '../../components/AuctionCard';
+import Pagination from '../../components/Pagination.jsx';
+import FilterPanel from './FilterPanel.jsx';
+import { Button, Dialog, EmptyState, Skeleton } from '../../components/ui';
+import { apiFetch, isAbort } from '../../services/apiClient.js';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-
+const FILTER_KEYS = ['category', 'minPrice', 'maxPrice', 'sortBy'];
 
 export default function SearchPage() {
-    const nav = useNav();
-    const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [categories, setCategories] = useState([]);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [state, setState] = useState({ status: 'loading', items: [], totalPages: 1, totalItems: 0 });
+  const [attempt, setAttempt] = useState(0);
 
-    const query = searchParams.get("q") || "";
-    const category = searchParams.get("category") || "All Categories";
-    const currentPage = parseInt(searchParams.get("page") || "1");
+  const query = searchParams.get('q') || '';
+  const category = searchParams.get('category') || '';
+  const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10) || 1);
+  const paramString = searchParams.toString();
 
-    const [products, setProducts] = useState([]);
-    const [totalPages, setTotalPages] = useState(1);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
+  useEffect(() => {
+    apiFetch('/categories', { auth: 'none' }).then((d) => setCategories(Array.isArray(d) ? d : [])).catch(() => {});
+  }, []);
 
-    // --- 1. FETCH DATA ---
-    useEffect(() => {
-        const fetchAuctions = async () => {
-            setLoading(true);
-            setError(null);
-            
-            try {
-                // Construct URL with standard browser API
-                const apiUrl = new URL(`${API_URL}/search`);
-                
-                // Append all existing params from the URL (q, category, page, etc.)
-                searchParams.forEach((value, key) => {
-                    apiUrl.searchParams.append(key, value);
-                });
-                
-                // Ensure page is set if missing
-                if (!apiUrl.searchParams.has("page")) {
-                    apiUrl.searchParams.append("page", "1");
-                }
+  // One request per URL state; an older response can never overwrite a newer one (AbortController).
+  useEffect(() => {
+    const controller = new AbortController();
+    setState((s) => ({ ...s, status: 'loading' }));
+    apiFetch(`/search?${paramString}`, { signal: controller.signal })
+      .then((res) => { if (!controller.signal.aborted) setState({ status: 'ready', items: res.data ?? [], totalPages: res.metadata?.totalPages ?? 1, totalItems: res.metadata?.totalItems ?? 0 }); })
+      .catch((error) => { if (!controller.signal.aborted && !isAbort(error)) setState({ status: 'error', items: [], totalPages: 1, totalItems: 0, message: error.message }); });
+    return () => controller.abort();
+  }, [paramString, attempt]);
 
-                const response = await fetch(apiUrl.toString());
-                if (!response.ok) throw new Error('Failed to fetch auctions');
-                
-                const responseData = await response.json();
-                
-                setProducts(responseData.data || []);
-                setTotalPages(responseData.metadata.totalPages || 1);
-            } catch (err) {
-                console.error("Error fetching auctions:", err);
-                setError(err.message);
-            } finally {
-                setLoading(false);
-            }
-        };
+  const apply = useCallback((draft) => {
+    const next = new URLSearchParams(searchParams);
+    FILTER_KEYS.forEach((k) => { if (draft[k]) next.set(k, draft[k]); else next.delete(k); });
+    next.delete('page'); // a new filter always starts at page 1
+    setSearchParams(next);
+    setFiltersOpen(false);
+  }, [searchParams, setSearchParams]);
 
-        fetchAuctions();
+  const reset = useCallback(() => {
+    const next = new URLSearchParams();
+    if (query) next.set('q', query);
+    setSearchParams(next);
+    setFiltersOpen(false);
+  }, [query, setSearchParams]);
 
-        window.scrollTo({
-            top: 0,
-            left: 0,
-            behavior: 'smooth'
-        });
-    }, [searchParams]);
+  const goToPage = (p) => {
+    const next = new URLSearchParams(searchParams);
+    next.set('page', String(p));
+    setSearchParams(next);
+    window.scrollTo({ top: 0 });
+  };
 
-    const handlePageChange = (newPage) => {
-        setSearchParams(prev => {
-            prev.set("page", newPage);
-            return prev;
-        });
-    };
+  const heading = query ? `Results for “${query}”` : category || 'All lots';
 
-    return (
-        <div className="px-4 sm:px-6 lg:px-8 py-8 max-w-7xl mx-auto w-full min-h-screen">
-            {/* Breadcrumbs */}
-            <div className="mb-8">
-                <ul className="flex items-center gap-2 text-sm">
-                    <li onClick={() => nav.home()} className="flex items-center gap-2 text-(--text-muted) transition-colors cursor-pointer hover:underline">
-                        <House size={16} />
-                        <span>Home</span>
-                    </li>
-                    <li style={{ color: 'var(--border-strong)' }}>/</li>
-                    <li className="font-semibold text-(--accent)">
-                        Search Results
-                    </li>
-                </ul>
-                <h1 className="mt-2 text-3xl text-(--text) font-bold tracking-tight">
-                    {/* {subcategory.charAt(0).toUpperCase() + subcategory.slice(1)} */}
-                    {query ? `Results for "${query}"` : category}
-                </h1>
+  return (
+    <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-10">
+      <nav aria-label="Breadcrumb" className="text-sm text-(--muted)">
+        <Link to="/" className="hover:underline">Home</Link> <span aria-hidden="true">/</span> <span aria-current="page" className="text-(--ink)">Search</span>
+      </nav>
+      <div className="mt-2 flex flex-wrap items-end justify-between gap-3">
+        <h1 className="tracking-tight text-3xl font-semibold text-(--ink)">{heading}</h1>
+        <Button variant="secondary" className="lg:hidden" onClick={() => setFiltersOpen(true)}><SlidersHorizontal size={16} aria-hidden="true" /> Filters</Button>
+      </div>
+
+      <div className="mt-6 grid gap-8 lg:grid-cols-[280px_1fr]">
+        <aside className="hidden lg:block" aria-label="Filters">
+          <div className="sticky top-24 rounded-(--radius-card) border border-(--line) bg-(--surface) p-4">
+            <FilterPanel params={searchParams} categories={categories} onApply={apply} onReset={reset} idPrefix="side" />
+          </div>
+        </aside>
+
+        <section aria-live="polite" aria-busy={state.status === 'loading'}>
+          {state.status === 'loading' && (
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
+              {Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-80" />)}
+              <span className="sr-only">Loading lots</span>
             </div>
+          )}
+          {state.status === 'error' && (
+            <EmptyState title="Search failed" action={<Button onClick={() => setAttempt((n) => n + 1)}>Try again</Button>}>{state.message || 'Please try again.'}</EmptyState>
+          )}
+          {state.status === 'ready' && state.items.length === 0 && (
+            <EmptyState title="No lots match" action={<Button variant="secondary" onClick={reset}>Clear filters</Button>}>Try a broader search or remove a filter.</EmptyState>
+          )}
+          {state.status === 'ready' && state.items.length > 0 && (
+            <>
+              <p className="mb-4 text-sm text-(--muted)">{state.totalItems} {state.totalItems === 1 ? 'lot' : 'lots'}</p>
+              <h2 className="sr-only">Results</h2>{/* cards are h3: keep the heading outline h1 -> h2 -> h3 */}
+              <ul className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
+                {state.items.map((item) => <li key={item.id} className="flex"><AuctionCard product={item} /></li>)}
+              </ul>
+              <Pagination currentPage={page} totalPages={state.totalPages} onPageChange={goToPage} />
+            </>
+          )}
+        </section>
+      </div>
 
-            <FilterBar setSearchParams={setSearchParams} />
-
-            <section className="transition-colors duration-100">
-                {loading ? (<div className="min-h-screen flex items-center justify-center">Loading auctions...</div>) :
-                error ? (<div className="min-h-screen flex items-center justify-center text-red-500">Error: {error}</div>) :
-                (<>
-                    <ProductGrid 
-                        items={products} 
-                        cardVariant="default"
-                        columns="grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4"
-                    />
-                    <Pagination 
-                        currentPage={currentPage}
-                        totalPages={totalPages}
-                        onPageChange={handlePageChange}
-                    />
-                </>
-                )}
-            </section>
-        </div>
-    );
+      <Dialog open={filtersOpen} onClose={() => setFiltersOpen(false)} title="Filters" variant="drawer">
+        <FilterPanel params={searchParams} categories={categories} onApply={apply} onReset={reset} idPrefix="dlg" />
+      </Dialog>
+    </div>
+  );
 }

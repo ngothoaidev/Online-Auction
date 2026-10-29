@@ -1,0 +1,538 @@
+{
+ "checked": 18,
+ "failed": 0,
+ "results": [
+  {
+   "viewport": "reflow-320",
+   "page": "home",
+   "ok": true,
+   "overflow": 0,
+   "offenders": [],
+   "h1": "Collectibles, bid by bid.",
+   "focus": [
+    {
+     "el": "Skip to main content",
+     "visible": true
+    },
+    {
+     "el": "Aurum Auctions home",
+     "visible": true
+    },
+    {
+     "el": "Open menu",
+     "visible": true
+    },
+    {
+     "el": "Browse all lots",
+     "visible": true
+    },
+    {
+     "el": "Create an account",
+     "visible": true
+    }
+   ]
+  },
+  {
+   "viewport": "reflow-320",
+   "page": "search",
+   "ok": true,
+   "overflow": 0,
+   "offenders": [],
+   "h1": "All lots",
+   "focus": [
+    {
+     "el": "Skip to main content",
+     "visible": true
+    },
+    {
+     "el": "Aurum Auctions home",
+     "visible": true
+    },
+    {
+     "el": "Open menu",
+     "visible": true
+    },
+    {
+     "el": "Home",
+     "visible": true
+    },
+    {
+     "el": "Filters",
+     "visible": true
+    }
+   ]
+  },
+  {
+   "viewport": "reflow-320",
+   "page": "detail",
+   "ok": true,
+   "overflow": 0,
+   "offenders": [],
+   "h1": "Watercolour, harbour at first light",
+   "focus": [
+    {
+     "el": "Skip to main content",
+     "visible": true
+    },
+    {
+     "el": "Aurum Auctions home",
+     "visible": true
+    },
+    {
+     "el": "Open menu",
+     "visible": true
+    },
+    {
+     "el": "Lots",
+     "visible": true
+    },
+    {
+     "el": "Previous photo",
+     "visible": true
+    }
+   ]
+  },
+  {
+   "viewport": "reflow-320",
+   "page": "login",
+   "ok": true,
+   "overflow": 0,
+   "offenders": [],
+   "h1": "Sign in",
+   "focus": [
+    {
+     "el": "Skip to form",
+     "visible": true
+    },
+    {
+     "el": "AURUM Auctions",
+     "visible": true
+    },
+    {
+     "el": "Continue with Google",
+     "visible": true
+    },
+    {
+     "el": "Continue with Facebook",
+     "visible": true
+    },
+    {
+     "el": "INPUT",
+     "visible": true
+    }
+   ]
+  },
+  {
+   "viewport": "reflow-320",
+   "page": "register",
+   "ok": true,
+   "overflow": 0,
+   "offenders": [],
+   "h1": "Create your account",
+   "focus": [
+    {
+     "el": "Skip to form",
+     "visible": true
+    },
+    {
+     "el": "AURUM Auctions",
+     "visible": true
+    },
+    {
+     "el": "Continue with Google",
+     "visible": true
+    },
+    {
+     "el": "Continue with Facebook",
+     "visible": true
+    },
+    {
+     "el": "INPUT",
+     "visible": true
+    }
+   ]
+  },
+  {
+   "viewport": "reflow-320",
+   "page": "notifications",
+   "ok": true,
+   "overflow": 0,
+   "offenders": [],
+   "h1": "Notifications",
+   "focus": [
+    {
+     "el": "Skip to main content",
+     "visible": true
+    },
+    {
+     "el": "Aurum Auctions home",
+     "visible": true
+    },
+    {
+     "el": "Notifications, 25 unread",
+     "visible": true
+    },
+    {
+     "el": "Open menu",
+     "visible": true
+    },
+    {
+     "el": "Mark all as read",
+     "visible": true
+    }
+   ]
+  },
+  {
+   "viewport": "reflow-320",
+   "page": "create",
+   "ok": true,
+   "overflow": 0,
+   "offenders": [],
+   "h1": "Create a listing",
+   "focus": [
+    {
+     "el": "Skip to main content",
+     "visible": true
+    },
+    {
+     "el": "Aurum Auctions home",
+     "visible": true
+    },
+    {
+     "el": "Notifications, 43 unread",
+     "visible": true
+    },
+    {
+     "el": "Open menu",
+     "visible": true
+    },
+    {
+     "el": "Add photo",
+     "visible": true
+    }
+   ]
+  },
+  {
+   "viewport": "reflow-320",
+   "page": "reports",
+   "ok": true,
+   "overflow": 0,
+   "offenders": [],
+   "h1": "Listing reports",
+   "focus": [
+    {
+     "el": "Skip to content",
+     "visible": true
+    },
+    {
+     "el": "Open admin menu",
+     "visible": true
+    },
+    {
+     "el": "Open",
+     "visible": true
+    },
+    {
+     "el": "Actioned",
+     "visible": true
+    },
+    {
+     "el": "Dismissed",
+     "visible": true
+    }
+   ]
+  },
+  {
+   "viewport": "reflow-320",
+   "page": "audit",
+   "ok": true,
+   "overflow": 0,
+   "offenders": [],
+   "h1": "Audit log",
+   "focus": [
+    {
+     "el": "Skip to content",
+     "visible": true
+    },
+    {
+     "el": "Open admin menu",
+     "visible": true
+    },
+    {
+     "el": "All targetsUsersSeller request",
+     "visible": true
+    },
+    {
+     "el": "Admin actions, newest firstWhe",
+     "visible": true
+    }
+   ]
+  },
+  {
+   "viewport": "zoom-200",
+   "page": "home",
+   "ok": true,
+   "overflow": 0,
+   "offenders": [],
+   "h1": "Collectibles, bid by bid.",
+   "focus": [
+    {
+     "el": "Skip to main content",
+     "visible": true
+    },
+    {
+     "el": "Aurum Auctions home",
+     "visible": true
+    },
+    {
+     "el": "Search",
+     "visible": true
+    },
+    {
+     "el": "Switch to dark theme",
+     "visible": true
+    },
+    {
+     "el": "Log in",
+     "visible": true
+    }
+   ]
+  },
+  {
+   "viewport": "zoom-200",
+   "page": "search",
+   "ok": true,
+   "overflow": 0,
+   "offenders": [],
+   "h1": "All lots",
+   "focus": [
+    {
+     "el": "Skip to main content",
+     "visible": true
+    },
+    {
+     "el": "Aurum Auctions home",
+     "visible": true
+    },
+    {
+     "el": "Search",
+     "visible": true
+    },
+    {
+     "el": "Switch to dark theme",
+     "visible": true
+    },
+    {
+     "el": "Log in",
+     "visible": true
+    }
+   ]
+  },
+  {
+   "viewport": "zoom-200",
+   "page": "detail",
+   "ok": true,
+   "overflow": 0,
+   "offenders": [],
+   "h1": "Watercolour, harbour at first light",
+   "focus": [
+    {
+     "el": "Skip to main content",
+     "visible": true
+    },
+    {
+     "el": "Aurum Auctions home",
+     "visible": true
+    },
+    {
+     "el": "Search",
+     "visible": true
+    },
+    {
+     "el": "Switch to dark theme",
+     "visible": true
+    },
+    {
+     "el": "Log in",
+     "visible": true
+    }
+   ]
+  },
+  {
+   "viewport": "zoom-200",
+   "page": "login",
+   "ok": true,
+   "overflow": 0,
+   "offenders": [],
+   "h1": "Sign in",
+   "focus": [
+    {
+     "el": "Skip to form",
+     "visible": true
+    },
+    {
+     "el": "AURUM Auctions",
+     "visible": true
+    },
+    {
+     "el": "Continue with Google",
+     "visible": true
+    },
+    {
+     "el": "Continue with Facebook",
+     "visible": true
+    },
+    {
+     "el": "INPUT",
+     "visible": true
+    }
+   ]
+  },
+  {
+   "viewport": "zoom-200",
+   "page": "register",
+   "ok": true,
+   "overflow": 0,
+   "offenders": [],
+   "h1": "Create your account",
+   "focus": [
+    {
+     "el": "Skip to form",
+     "visible": true
+    },
+    {
+     "el": "AURUM Auctions",
+     "visible": true
+    },
+    {
+     "el": "Continue with Google",
+     "visible": true
+    },
+    {
+     "el": "Continue with Facebook",
+     "visible": true
+    },
+    {
+     "el": "INPUT",
+     "visible": true
+    }
+   ]
+  },
+  {
+   "viewport": "zoom-200",
+   "page": "notifications",
+   "ok": true,
+   "overflow": 0,
+   "offenders": [],
+   "h1": "Notifications",
+   "focus": [
+    {
+     "el": "Skip to main content",
+     "visible": true
+    },
+    {
+     "el": "Aurum Auctions home",
+     "visible": true
+    },
+    {
+     "el": "Search",
+     "visible": true
+    },
+    {
+     "el": "Switch to dark theme",
+     "visible": true
+    },
+    {
+     "el": "Start selling",
+     "visible": true
+    }
+   ]
+  },
+  {
+   "viewport": "zoom-200",
+   "page": "create",
+   "ok": true,
+   "overflow": 0,
+   "offenders": [],
+   "h1": "Create a listing",
+   "focus": [
+    {
+     "el": "Skip to main content",
+     "visible": true
+    },
+    {
+     "el": "Aurum Auctions home",
+     "visible": true
+    },
+    {
+     "el": "Search",
+     "visible": true
+    },
+    {
+     "el": "Switch to dark theme",
+     "visible": true
+    },
+    {
+     "el": "Create listing",
+     "visible": true
+    }
+   ]
+  },
+  {
+   "viewport": "zoom-200",
+   "page": "reports",
+   "ok": true,
+   "overflow": 0,
+   "offenders": [],
+   "h1": "Listing reports",
+   "focus": [
+    {
+     "el": "Skip to content",
+     "visible": true
+    },
+    {
+     "el": "Open admin menu",
+     "visible": true
+    },
+    {
+     "el": "Open",
+     "visible": true
+    },
+    {
+     "el": "Actioned",
+     "visible": true
+    },
+    {
+     "el": "Dismissed",
+     "visible": true
+    }
+   ]
+  },
+  {
+   "viewport": "zoom-200",
+   "page": "audit",
+   "ok": true,
+   "overflow": 0,
+   "offenders": [],
+   "h1": "Audit log",
+   "focus": [
+    {
+     "el": "Skip to content",
+     "visible": true
+    },
+    {
+     "el": "Open admin menu",
+     "visible": true
+    },
+    {
+     "el": "All targetsUsersSeller request",
+     "visible": true
+    },
+    {
+     "el": "Admin actions, newest firstWhe",
+     "visible": true
+    }
+   ]
+  }
+ ]
+}

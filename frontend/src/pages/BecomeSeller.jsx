@@ -68,7 +68,7 @@ export default function BecomeSeller() {
         try {
             const token = localStorage.getItem('authToken');
             if (!token) {
-                nav.go('/login', { state: { from: { pathname: '/become-seller' } } });
+                nav.go('/login', { state: { from: '/become-seller' } });
                 return;
             }
 
@@ -177,7 +177,7 @@ export default function BecomeSeller() {
                     </p>
                     <Link
                         to="/create-auction"
-                        className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-(--accent) text-white font-semibold hover:opacity-90 transition-all"
+                        className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-(--ink) text-(--on-ink) font-semibold hover:opacity-90 transition-all"
                     >
                         <Store size={20} />
                         Create Your First Auction
@@ -271,7 +271,7 @@ export default function BecomeSeller() {
                             {existingRequest.status === 'approved' && !displayInfo.effectiveDate && (
                                 <Link
                                     to="/create-auction"
-                                    className="inline-flex items-center gap-2 px-6 py-3 mt-6 rounded-full bg-(--accent) text-white font-semibold hover:opacity-90 transition-all"
+                                    className="inline-flex items-center gap-2 px-6 py-3 mt-6 rounded-full bg-(--ink) text-(--on-ink) font-semibold hover:opacity-90 transition-all"
                                 >
                                     <Store size={20} />
                                     Start Selling Now
@@ -367,10 +367,11 @@ export default function BecomeSeller() {
 
                 <form onSubmit={handleSubmit} className="space-y-6">
                     <div>
-                        <label className="block text-sm font-medium text-(--text-muted) mb-2">
+                        <label htmlFor="seller-reason" className="block text-sm font-medium text-(--text-muted) mb-2">
                             Why do you want to become a seller? (Optional)
                         </label>
                         <textarea
+                            id="seller-reason"
                             value={reason}
                             onChange={(e) => setReason(e.target.value)}
                             rows={4}
@@ -387,16 +388,14 @@ export default function BecomeSeller() {
                             className="mt-1 w-4 h-4 rounded border-(--input-border) text-(--accent) focus:ring-(--accent)"
                         />
                         <label htmlFor="terms" className="text-sm text-(--text-muted)">
-                            I agree to the{' '}
-                            <a href="#" className="text-(--accent) hover:underline">seller terms and conditions</a>
-                            {' '}and understand that my application will be reviewed by the admin team.
+                            I understand that my application will be reviewed by the admin team.
                         </label>
                     </div>
 
                     <button
                         type="submit"
                         disabled={loading}
-                        className="w-full py-3 rounded-full bg-(--accent) text-white font-semibold hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                        className="w-full py-3 rounded-full bg-(--ink) text-(--on-ink) font-semibold hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                     >
                         {loading ? (
                             <>

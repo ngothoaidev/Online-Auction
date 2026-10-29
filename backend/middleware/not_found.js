@@ -1,7 +1,5 @@
-const notFound = (req, res, next) => {
-  const error = new Error(`Not Found - ${req.originalUrl}`);
-  res.status(404);
-  next(error); // Passes error to the next middleware (the errorHandler)
-};
+import { AppError } from "../utils/errors.js";
+
+const notFound = (req, res, next) => next(new AppError(404, "NOT_FOUND", `Not Found - ${req.originalUrl}`));
 
 export default notFound;

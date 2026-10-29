@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useFeedback } from '../../components/ui/Feedback.jsx';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNav } from '../../hooks/useNavigate';
 
@@ -14,6 +15,7 @@ import { formatDate } from '../../utils/format';
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 export default function ProfileSidebar({ userData, isOwnProfile }) {
+  const { notify } = useFeedback();
     const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
     const [isChangePasswordModalOpen, setIsChangePasswordModalOpen] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
@@ -43,17 +45,17 @@ export default function ProfileSidebar({ userData, isOwnProfile }) {
                 body: formData
             });
 
-            if (!response.ok) throw new Error('Upload failed');
-
-            const data = await response.json();
-            console.log("Uploaded Image URL:", data.url);
+            if (!response.ok) {
+                const data = await response.json().catch(() => ({}));
+                throw new Error(data.message || data.error || 'Failed to upload image');
+            }
 
             setIsUploadModalOpen(false);
             window.location.reload();
 
         } catch (error) {
             console.error("Upload error:", error);
-            alert("Failed to upload image");
+            notify(error.message, 'error');
         }
     };
 
@@ -99,7 +101,7 @@ export default function ProfileSidebar({ userData, isOwnProfile }) {
 
         } catch (error) {
             console.error("Profile update error:", error);
-            alert(error.message || "Failed to save profile changes.");
+            notify(error.message || "Failed to save profile changes.", 'error');
         }
     };
 
@@ -114,17 +116,24 @@ export default function ProfileSidebar({ userData, isOwnProfile }) {
                     <div className="relative group">
                         {/* Avatar Image */}
                         <div className="w-40 h-40 rounded-full border-[6px] border-(--bg-hover) shadow-md overflow-hidden bg-white">
-                            <img 
-                                src={userData.avatar} 
-                                alt={userData.name} 
-                                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" 
-                            />
+                            {userData.avatar ? (
+                                <img
+                                    src={userData.avatar}
+                                    alt={userData.name || userData.username}
+                                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                                />
+                            ) : (
+                                <span aria-hidden="true" className="flex h-full w-full items-center justify-center bg-(--surface-sunken) text-5xl font-bold text-(--muted)">
+                                    {userData.username?.[0]?.toUpperCase()}
+                                </span>
+                            )}
                         </div>
 
                         {/* AVATAR BUTTON */}
                         {isOwnProfile && (
                             <button 
                                 onClick={() => setIsUploadModalOpen(true)}
+                                aria-label="Change profile picture"
                                 className="absolute bottom-2 right-2 p-2 rounded-full bg-(--card-bg) text-(--text) shadow-lg hover:scale-110 transition-transform border-4 border-(--bg-hover)"
                             >
                                 <Camera size={20} />
@@ -179,7 +188,7 @@ export default function ProfileSidebar({ userData, isOwnProfile }) {
                         <div className="flex gap-2 pt-2">
                             <button 
                                 onClick={handleSave}
-                                className="flex-1 py-2 rounded-lg font-bold bg-(--accent) text-[#1a1205] shadow-md hover:brightness-110 transition-all flex items-center justify-center gap-2"
+                                className="flex-1 py-2 rounded-lg font-bold bg-(--accent) text-(--on-ink) shadow-md hover:brightness-110 transition-all flex items-center justify-center gap-2"
                             >
                                 <Save size={18} /> Save
                             </button>
@@ -196,7 +205,7 @@ export default function ProfileSidebar({ userData, isOwnProfile }) {
                     <>
                         {/* Identity Info */}
                         <div className="mb-5">
-                            <h2 className="text-2xl font-bold text-(--text) leading-tight">{userData.name}</h2>
+                            <h2 className="text-2xl font-bold text-(--text) leading-tight">{userData.name || userData.username}</h2>
                             <div className="flex items-center justify-center gap-2 mt-2">
                                 <span className="text-sm font-medium text-(--accent)">@{userData.username}</span>
                                 <span className="h-1 w-1 rounded-full bg-(--text-muted) opacity-30"></span>
@@ -245,7 +254,7 @@ export default function ProfileSidebar({ userData, isOwnProfile }) {
                                 {/* Reviews Received */}
                                 <div className="flex items-center justify-between text-sm">
                                     <div className="flex items-center gap-2 text-(--text-muted)">
-                                        <ThumbsUp size={14} className="text-green-500" />
+                                        <ThumbsUp size={14} className="text-(--success)" />
                                         <span>Received</span>
                                     </div>
                                     <div className="flex items-center gap-2">
@@ -258,7 +267,7 @@ export default function ProfileSidebar({ userData, isOwnProfile }) {
                                 {/* Reviews Given */}
                                 <div className="flex items-center justify-between text-sm">
                                     <div className="flex items-center gap-2 text-(--text-muted)">
-                                        <Star size={14} className="text-blue-500" />
+                                        <Star size={14} className="text-(--info)" />
                                         <span>Given</span>
                                     </div>
                                     <div className="flex items-center gap-2">
@@ -268,18 +277,24 @@ export default function ProfileSidebar({ userData, isOwnProfile }) {
                                     </div>
                                 </div>
 
-                                {/* Positive Rate */}
+                                {/* Positive Rate: "no reviews yet" is not 0% */}
                                 <div className="pt-2 border-t border-(--border)">
-                                    <div className="flex items-center justify-between text-sm">
-                                        <span className="text-(--text-muted)">Positive Rate</span>
-                                        <span className="text-(--success) font-bold text-base">{userData.counts?.reviewsReceived?.positiveRate || 0}%</span>
-                                    </div>
-                                    <div className="mt-2 h-2 bg-(--border) rounded-full overflow-hidden">
-                                        <div 
-                                            className="h-full bg-gradient-to-r from-green-500 to-green-400 transition-all duration-500"
-                                            style={{ width: `${userData.counts?.reviewsReceived?.positiveRate || 0}%` }}
-                                        />
-                                    </div>
+                                    {userData.counts?.reviewsReceived?.positiveRate == null ? (
+                                        <p className="text-sm text-(--text-muted)">No reviews yet</p>
+                                    ) : (
+                                        <>
+                                            <div className="flex items-center justify-between text-sm">
+                                                <span className="text-(--text-muted)">Positive Rate</span>
+                                                <span className="text-(--success) font-bold text-base">{userData.counts.reviewsReceived.positiveRate}%</span>
+                                            </div>
+                                            <div className="mt-2 h-2 bg-(--border) rounded-full overflow-hidden">
+                                                <div
+                                                    className="h-full bg-(--success) transition-all duration-500"
+                                                    style={{ width: `${userData.counts.reviewsReceived.positiveRate}%` }}
+                                                />
+                                            </div>
+                                        </>
+                                    )}
                                 </div>
                             </div>
                         </div>
@@ -322,7 +337,7 @@ export default function ProfileSidebar({ userData, isOwnProfile }) {
                                         <button 
                                             onClick={handleLogout}
                                             title="Log Out"
-                                            className="p-3 rounded-xl border border-(--border) hover:bg-red-50 dark:hover:bg-red-900/10 text-(--text) hover:text-red-600 hover:border-red-200 transition-colors"
+                                            className="p-3 rounded-xl border border-(--border) hover:bg-(--danger-soft) text-(--text) hover:text-(--danger) hover:border-(--danger) transition-colors"
                                         >
                                             <LogOut size={20} />
                                         </button>

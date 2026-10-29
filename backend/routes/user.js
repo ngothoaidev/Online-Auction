@@ -1,9 +1,13 @@
 import { Router } from "express";
 import { uploadAvatar } from "../config/cloudinary.js";
+import { z } from "zod";
+import { validate } from "../validation/index.js";
 import userController from "../controllers/user.js";
-import requireAuth, { requireAdmin } from "../middleware/auth.js";
+import { requireAuth, requireAdmin } from "../middleware/auth.js";
+import { localImages, cloudinaryConfigured } from "../middleware/localUpload.js";
 
 const route = new Router();
+const avatarImage = (req, res, next) => (cloudinaryConfigured() ? uploadAvatar.single('avatar') : localImages('avatar', 1))(req, res, next);
 
 // GET: Get user profile by username
 route.get('/profile', userController.getUserProfile);
@@ -13,14 +17,20 @@ route.get('/profile', userController.getUserProfile);
 
 route.use(requireAuth);
 
-// POST: Toggle favorite auction
+// GET: ids of my saved lots
+route.get('/favorites', userController.listFavoriteIds);
+
+// PUT: set favorite state (idempotent)
+route.put('/favorites/:auctionId', validate({ params: z.object({ auctionId: z.coerce.number().int().positive() }), body: z.object({ favorited: z.boolean() }) }), userController.setFavorite);
+
+// POST: Toggle favorite auction (legacy)
 route.post('/favorites/:auctionId', userController.toggleFavorite);
 
 // PUT: update current user information
 route.put('/info', userController.updateUserInfo);
 
 // PUT: update current user avatar
-route.put('/avatar', uploadAvatar.single('avatar'), userController.updateUserAvatar);
+route.put('/avatar', avatarImage, userController.updateUserAvatar);
 
 route.use(requireAdmin);
 

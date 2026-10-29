@@ -1,37 +1,39 @@
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+
+/** Windowed page list (first, last, current ±1) so 200 pages do not render 200 buttons. */
+function pageItems(current, total) {
+  const set = new Set([1, total, current - 1, current, current + 1]);
+  const pages = [...set].filter((p) => p >= 1 && p <= total).sort((a, b) => a - b);
+  const out = [];
+  pages.forEach((p, i) => { if (i > 0 && p - pages[i - 1] > 1) out.push('gap-' + p); out.push(p); });
+  return out;
+}
 
 export default function Pagination({ currentPage, totalPages, onPageChange }) {
   if (totalPages <= 1) return null;
-
+  const btn = 'inline-flex h-11 min-w-11 items-center justify-center rounded-(--radius-control) border px-2 text-sm font-semibold';
   return (
-    <div className="flex justify-center mt-12 gap-2">
-      <button 
-        onClick={() => onPageChange(Math.max(1, currentPage - 1))}
-        disabled={currentPage === 1}
-        className="pagination-btn p-2 rounded-lg"
-      >
-        <ChevronLeft size={20} />
+    <nav aria-label="Pagination" className="mt-10 flex flex-wrap items-center justify-center gap-2">
+      <button type="button" aria-label="Previous page" disabled={currentPage === 1} onClick={() => onPageChange(currentPage - 1)} className={`${btn} border-(--input-border) bg-(--surface) disabled:opacity-40`}>
+        <ChevronLeft size={18} aria-hidden="true" />
       </button>
-      
-      {Array.from({ length: totalPages }).map((_, i) => (
-        <button
-          key={i}
-          onClick={() => onPageChange(i + 1)}
-          className={`w-10 h-10 rounded-lg text-sm transition-all ${
-            currentPage === i + 1 ? 'pagination-btn-active' : 'pagination-btn'
-          }`}
-        >
-          {i + 1}
-        </button>
-      ))}
-      
-      <button 
-        onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
-        disabled={currentPage === totalPages}
-        className="pagination-btn p-2 rounded-lg"
-      >
-        <ChevronRight size={20} />
+      {pageItems(currentPage, totalPages).map((p) => (typeof p === 'string'
+        ? <span key={p} aria-hidden="true" className="px-1 text-(--muted)">…</span>
+        : (
+          <button
+            key={p}
+            type="button"
+            aria-label={`Page ${p}`}
+            aria-current={p === currentPage ? 'page' : undefined}
+            onClick={() => onPageChange(p)}
+            className={`${btn} ${p === currentPage ? 'border-(--ink) bg-(--ink) text-(--on-ink)' : 'border-(--input-border) bg-(--surface) text-(--ink) hover:bg-(--surface-hover)'}`}
+          >
+            {p}
+          </button>
+        )))}
+      <button type="button" aria-label="Next page" disabled={currentPage === totalPages} onClick={() => onPageChange(currentPage + 1)} className={`${btn} border-(--input-border) bg-(--surface) disabled:opacity-40`}>
+        <ChevronRight size={18} aria-hidden="true" />
       </button>
-    </div>
+    </nav>
   );
 }

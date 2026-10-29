@@ -39,6 +39,12 @@ export const AuthProvider = ({ children }) => {
     initAuth();
   }, []);
 
+  useEffect(() => {
+    const onSessionEnded = () => setUser(null);
+    window.addEventListener('auth:session-ended', onSessionEnded);
+    return () => window.removeEventListener('auth:session-ended', onSessionEnded);
+  }, []);
+
   const login = async (identifier, password) => {
     const response = await fetch(`${API_URL}/auth/login`, {
       method: 'POST',

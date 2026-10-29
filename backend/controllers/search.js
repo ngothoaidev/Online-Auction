@@ -7,11 +7,9 @@ const controller = {
         try {
             const userId = req.user?.id;
             const { q, category, minPrice, maxPrice, sortBy, page, status } = req.query;
-            console.log(req.query);
-            const pageNum = parseInt(page) || 1;
+            const pageNum = Math.min(Math.max(parseInt(page) || 1, 1), 10000);
             const limit = 12;
             const offset = (pageNum - 1) * limit;
-            console.log({ userId, q, category, minPrice, maxPrice, sortBy, pageNum, limit, offset });
             
             const result = await searchService.findAuctions({
                 userId,
@@ -43,11 +41,9 @@ const controller = {
     searchFavorites: async function(req, res, next) {
         try {
             const { q, category, minPrice, maxPrice, sortBy, page, status } = req.query;
-            console.log(req.query);
             const pageNum = parseInt(page) || 1;
             const limit = 12;
             const offset = (pageNum - 1) * limit;
-            console.log({ q, category, minPrice, maxPrice, sortBy, pageNum, limit, offset });
             
             const result = await searchService.findFavorites({
                 q,

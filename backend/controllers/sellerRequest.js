@@ -1,3 +1,5 @@
+import * as moderation from "../services/moderation.js";
+import { keyFrom } from "../services/idempotency.js";
 import sellerRequestService from "../services/sellerRequest.js";
 import userService from "../services/user.js";
 import authService from "../services/auth.js";
@@ -122,88 +124,30 @@ const controller = {
     },
 
     // Approve a request (admin only)
-    approveRequest: async function(req, res) {
+    approveRequest: async function(req, res, next) {
         try {
-            const { id } = req.params;
-            // const { adminNote } = req.body;
-
-            const request = await sellerRequestService.getById(parseInt(id));
-            
-            if (!request) {
-                return res.status(404).json({ message: 'Request not found' });
+            const result = await moderation.approveSellerRequest({ actor: req.user, key: keyFrom(req), requestId: Number(req.params.id), note: req.body?.note });
+            res.status(200).json(result);
+            if (!result.replayed) {
+                const user = await userService.getById(result.request.userId);
+                if (user?.email) sendSellerRequestAccepted({ email: user.email, username: user.username }).catch((e) => console.error('seller approval email failed:', e.message));
             }
-
-            if (request.status !== 'pending') {
-                return res.status(400).json({ message: 'This request has already been processed' });
-            }
-
-            // Send acceptance email
-            const user = await userService.getById(request.userId);
-            console.log('User for acceptance email:', user);
-            if (user && user.email) {
-                await sendSellerRequestAccepted({ email: user.email, username: user.username });
-            } else {
-                console.warn('Could not send acceptance email - user or email not found:', { userId: request.userId, user });
-            }
-
-            // Update request status - this will set sellerExpiryDate to 7 days from now
-            // and immediately change user role to seller
-            const updatedRequest = await sellerRequestService.updateStatus(
-                parseInt(id), 
-                'approved', 
-                null,  // adminNote
-                request.userId  // Pass userId to update role immediately
-            );
-
-            res.status(200).json({ 
-                message: 'Request approved successfully. User is now a seller for 7 days.',
-                request: {
-                    id: parseInt(id),
-                    status: 'approved',
-                    sellerExpiryDate: updatedRequest.sellerExpiryDate
-                }
-            });
         } catch (error) {
-            console.error('Approve request error:', error);
-            res.status(500).json({ message: 'An error occurred. Please try again.' });
+            next(error);
         }
     },
 
     // Reject a request (admin only)
-    rejectRequest: async function(req, res) {
+    rejectRequest: async function(req, res, next) {
         try {
-            const { id } = req.params;
-
-            const request = await sellerRequestService.getById(parseInt(id));
-            if (!request) {
-                return res.status(404).json({ message: 'Request not found' });
+            const result = await moderation.rejectSellerRequest({ actor: req.user, key: keyFrom(req), requestId: Number(req.params.id), reason: req.body?.reason });
+            res.status(200).json(result);
+            if (!result.replayed) {
+                const user = await userService.getById(result.request.userId);
+                if (user?.email) sendSellerRequestRejected({ email: user.email, username: user.username }).catch((e) => console.error('seller rejection email failed:', e.message));
             }
-
-            if (request.status !== 'pending') {
-                return res.status(400).json({ message: 'This request has already been processed' });
-            }
-            // Send rejection email
-            const user = await userService.getById(request.userId);
-            console.log('User for rejection email:', user);
-            if (user && user.email) {
-                await sendSellerRequestRejected({ email: user.email, username: user.username });
-            } else {
-                console.warn('Could not send rejection email - user or email not found:', { userId: request.userId, user });
-            }
-
-            // Delete request
-            await sellerRequestService.delete(parseInt(id));
-
-            res.status(200).json({ 
-                message: 'Request rejected.',
-                request: {
-                    id: parseInt(id),
-                    status: 'rejected'
-                }
-            });
         } catch (error) {
-            console.error('Reject request error:', error);
-            res.status(500).json({ message: 'An error occurred. Please try again.' });
+            next(error);
         }
     },
 };

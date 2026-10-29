@@ -1,3 +1,5 @@
+import * as moderation from "../services/moderation.js";
+import { keyFrom } from "../services/idempotency.js";
 import categoryService from "../services/category.js";
 import authService from "../services/auth.js";
 
@@ -26,25 +28,9 @@ const controller = {
     // POST /categories - Create a new category
     createCategory: async function(req, res, next) {
         try {
-            const { name, parentId, description } = req.body;
-
-            if (!name || name.trim() === '') {
-                return res.status(400).json({ message: 'Category name is required' });
-            }
-
-            // If parentId is provided, verify it exists
-            if (parentId) {
-                const parentCategory = await categoryService.getById(parentId);
-                if (!parentCategory) {
-                    return res.status(404).json({ message: 'Parent category not found' });
-                }
-            }
-
-            const category = await categoryService.create(name.trim(), parentId || null, description || null);
-            res.status(201).json({
-                message: parentId ? 'Subcategory created successfully' : 'Category created successfully',
-                category,
-            });
+            const { name, parentId, description } = req.body ?? {};
+            const result = await moderation.createCategory({ actor: req.user, key: keyFrom(req), name, parentId: parentId ? Number(parentId) : null, description });
+            res.status(201).json(result);
         } catch (error) {
             next(error);
         }
@@ -53,23 +39,8 @@ const controller = {
     // PUT /categories/:id - Update a category
     updateCategory: async function(req, res, next) {
         try {
-            const { id } = req.params;
-            const { name, description } = req.body;
-
-            const category = await categoryService.getById(parseInt(id));
-            if (!category) {
-                return res.status(404).json({ message: 'Category not found' });
-            }
-
-            const updateData = {};
-            if (name) updateData.name = name.trim();
-            if (description !== undefined) updateData.description = description;
-
-            const updated = await categoryService.update(parseInt(id), updateData);
-            res.json({
-                message: 'Category updated successfully',
-                category: updated,
-            });
+            const result = await moderation.updateCategory({ actor: req.user, key: keyFrom(req), categoryId: Number(req.params.id), name: req.body?.name, description: req.body?.description });
+            res.status(200).json(result);
         } catch (error) {
             next(error);
         }
@@ -78,54 +49,8 @@ const controller = {
     // DELETE /categories/:id - Delete a category
     deleteCategory: async function(req, res, next) {
         try {
-            const { id } = req.params;
-            const categoryId = parseInt(id);
-
-            const category = await categoryService.getById(categoryId);
-            if (!category) {
-                return res.status(404).json({ message: 'Category not found' });
-            }
-
-            // Check if this is a main category (no parentId)
-            if (!category.parentId) {
-                // This is a main category - check if it has subcategories
-                const hasSubcategories = await categoryService.hasSubcategories(categoryId);
-                if (hasSubcategories) {
-                    // Get all subcategories and check if any have products
-                    const subcategories = await categoryService.getSubcategories(categoryId);
-                    for (const subcat of subcategories) {
-                        const hasProducts = await categoryService.hasProducts(subcat.id);
-                        if (hasProducts) {
-                            return res.status(400).json({ 
-                                message: 'Cannot delete category. Some subcategories have products associated with them.' 
-                            });
-                        }
-                    }
-                    // Delete all subcategories first
-                    for (const subcat of subcategories) {
-                        await categoryService.delete(subcat.id);
-                    }
-                }
-
-                // Check if main category has direct products
-                const hasProducts = await categoryService.hasProducts(categoryId);
-                if (hasProducts) {
-                    return res.status(400).json({ 
-                        message: 'Cannot delete category. It has products associated with it.' 
-                    });
-                }
-            } else {
-                // This is a subcategory - check if it has products
-                const hasProducts = await categoryService.hasProducts(categoryId);
-                if (hasProducts) {
-                    return res.status(400).json({ 
-                        message: 'Cannot delete subcategory. It has products associated with it.' 
-                    });
-                }
-            }
-
-            await categoryService.delete(categoryId);
-            res.json({ message: 'Category deleted successfully' });
+            const result = await moderation.deleteCategory({ actor: req.user, key: keyFrom(req), categoryId: Number(req.params.id) });
+            res.status(200).json(result);
         } catch (error) {
             next(error);
         }

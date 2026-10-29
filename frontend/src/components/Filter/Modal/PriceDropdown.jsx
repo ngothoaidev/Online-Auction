@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from "react";
+import { useFeedback } from '../../ui/Feedback.jsx';
 import FilterButton from "../FilterButton";
 import { Minus, Plus } from "lucide-react";
 
 export default function PriceDropdown({ priceRange, setPriceRange, activeDropdown, toggleDropdown, setActiveDropdown }){
+  const { notify } = useFeedback();
     const isActive = activeDropdown === 'price';
     
     // Local state for deferred updates (Only apply on button click)
@@ -23,10 +25,10 @@ export default function PriceDropdown({ priceRange, setPriceRange, activeDropdow
     const SLIDER_STEP = 50000;
     
     const handleApply = () => {
-        if (localMin && Number(localMin) < 0) return alert("Price cannot be negative.");
-        if (localMax && Number(localMax) < 0) return alert("Price cannot be negative.");
+        if (localMin && Number(localMin) < 0) return notify("Price cannot be negative.", 'error');
+        if (localMax && Number(localMax) < 0) return notify("Price cannot be negative.", 'error');
         if (localMin && localMax && Number(localMin) > Number(localMax)) {
-            return alert("Minimum price cannot be greater than maximum price.");
+            return notify("Minimum price cannot be greater than maximum price.", 'error');
         }
         
         // Update Parent State
@@ -144,7 +146,7 @@ export default function PriceDropdown({ priceRange, setPriceRange, activeDropdow
                     </button>
                     <button onClick={() => { if (handleApply()) setActiveDropdown(null); }}
                         className="flex-1 py-2 text-xs font-bold rounded-lg hover:brightness-110 transition-colors shadow-md"
-                        style={{ backgroundColor: 'var(--accent)', color: '#1A1205' }}>
+                        style={{ backgroundColor: 'var(--accent)', color: 'var(--on-ink)' }}>
                         Apply
                     </button>
                 </div>

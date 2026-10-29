@@ -1,186 +1,124 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useNav } from '../../hooks/useNavigate.js';
-import { 
-  Search, Menu, ArrowRight, Plus, LayoutDashboard 
-} from 'lucide-react';
+import { Search, Menu, ArrowRight, Plus, LayoutDashboard } from 'lucide-react';
 
 import CategoryDropper from './CategoryDropper.jsx';
 import ProfileDropper from './ProfileDropper.jsx';
+import NotificationsLink from './NotificationsLink.jsx';
 import MobileMenu from './MobileMenu.jsx';
 import ThemeToggle from '../ThemeToggle.jsx';
+import { IconButton } from '../ui';
 import { useAuth } from '../../contexts/AuthContext.jsx';
-import './Header.css'
+import './Header.css';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
+const primaryAction = (role) => {
+  if (role === 'admin') return { to: '/admin', label: 'Dashboard', Icon: LayoutDashboard };
+  if (role === 'seller') return { to: '/create-auction', label: 'Create listing', Icon: Plus };
+  if (role === 'buyer') return { to: '/become-seller', label: 'Start selling', Icon: ArrowRight };
+  return { to: '/verify-account', label: 'Verify account', Icon: ArrowRight };
+};
+
 export default function Header() {
-  const mobileSearchRef = useRef(null);
   const nav = useNav();
-  const { user, logout } = useAuth(); // Assuming logout function exists
+  const { user, logout } = useAuth();
   const [searchParams] = useSearchParams();
   const [categories, setCategories] = useState([]);
-
-  const [searchQuery, setSearchQuery] = useState(searchParams.get("q") || "");
+  const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '');
+  const [menu, setMenu] = useState({ open: false, focusSearch: false });
 
   useEffect(() => {
-    // Fetch categories from backend
-    const fetchCategories = async () => {
-      try {
-        const response = await fetch(`${API_URL}/categories`);
-        if (response.ok) {
-          const data = await response.json();
-          setCategories(data);
-        } else {
-          console.error('Failed to fetch categories');
-        }
-      } catch (error) {
-        console.error('Error fetching categories:', error);
-      }
-    };
-
-    fetchCategories();
+    let cancelled = false;
+    fetch(`${API_URL}/categories`)
+      .then((r) => (r.ok ? r.json() : []))
+      .then((data) => { if (!cancelled) setCategories(Array.isArray(data) ? data : []); })
+      .catch(() => {});
+    return () => { cancelled = true; };
   }, []);
 
-  useEffect(() => {
-     setSearchQuery(searchParams.get("q") || "");
-  }, [searchParams]);
+  useEffect(() => { setSearchQuery(searchParams.get('q') || ''); }, [searchParams]);
 
-  const handleSearch = () => {
+  const onSearch = (e) => {
+    e.preventDefault();
     const trimmed = searchQuery.trim();
-    if (trimmed) {
-      nav.search(trimmed);
-    }
+    if (trimmed) nav.search(trimmed);
   };
 
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-
-  useEffect(() => {
-    document.body.style.overflow = isMobileMenuOpen ? 'hidden' : 'unset';
-  }, [isMobileMenuOpen]);
+  const action = user ? primaryAction(user.role) : null;
 
   return (
     <>
-      {/* --- MAIN HEADER --- */}
-      <header 
-        className="sticky top-0 z-50 w-full backdrop-blur-md transition-colors duration-300 border-b"
-        style={{ 
-          backgroundColor: 'var(--header-bg)', 
-          borderColor: 'var(--header-border)' 
-        }}
-      >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-20">
-            
-            {/* LEFT: Logo & Categories */}
-            <div className="flex items-center gap-8">
-              {/* Logo */}
-              <div className="shrink-0 cursor-pointer group">
-                <Link to="/" className="text-2xl font-bold tracking-tight flex items-center gap-2" style={{ color: 'var(--header-text)' }}>
-                  <span style={{ color: 'var(--theme-secondary)' }}>AURUM</span> AUCTIONS
+      <header className="sticky top-0 z-50 w-full border-b backdrop-blur" style={{ backgroundColor: 'var(--header-bg)', borderColor: 'var(--header-border)', height: 'var(--header-h)' }}>
+        <div className="mx-auto flex h-full max-w-7xl items-center gap-4 px-4 sm:px-6 lg:px-10">
+          <Link to="/" className="font-display shrink-0 text-xl font-semibold tracking-tight text-(--ink) sm:text-2xl" aria-label="Aurum Auctions home">
+            <span className="text-(--brand)">AURUM</span><span className="max-sm:hidden"> Auctions</span>
+          </Link>
+
+          <nav aria-label="Main" className="hidden lg:block">
+            <CategoryDropper categories={categories} />
+          </nav>
+
+          <form role="search" onSubmit={onSearch} className="mx-auto hidden max-w-xl flex-1 md:block">
+            <label htmlFor="header-search" className="sr-only">Search lots</label>
+            <div className="flex min-h-11 items-center rounded-(--radius-control) border bg-(--header-input-bg) pl-3 focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-(--focus)" style={{ borderColor: 'var(--header-input-border)' }}>
+              <input
+                id="header-search"
+                type="search"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search lots, artists, brands"
+                className="w-full bg-transparent text-sm text-(--ink) outline-none placeholder:text-(--muted)"
+              />
+              <button type="submit" aria-label="Search" className="inline-flex h-11 w-11 shrink-0 items-center justify-center text-(--muted) hover:text-(--ink)">
+                <Search size={18} aria-hidden="true" />
+              </button>
+            </div>
+          </form>
+
+          <div className="ml-auto flex items-center gap-1 sm:gap-2 md:ml-0">
+            {/* below 768px search is one tap away (opens the menu with the field focused); theme lives in the menu below 640px */}
+            <IconButton label="Search" className="md:hidden" onClick={() => setMenu({ open: true, focusSearch: true })}>
+              <Search size={22} />
+            </IconButton>
+
+            <ThemeToggle className="max-sm:hidden" />
+
+            {user ? (
+              <>
+                <Link
+                  to={action.to}
+                  className="hidden min-h-11 items-center gap-2 rounded-(--radius-control) bg-(--ink) px-4 text-sm font-semibold text-(--on-ink) hover:opacity-90 sm:inline-flex"
+                >
+                  <action.Icon size={18} aria-hidden="true" />
+                  {action.label}
                 </Link>
-                {/* Animated Underline */}
-                <div className="h-0.5 w-0 group-hover:w-full transition-all duration-300 ease-out" style={{ backgroundColor: 'var(--theme-secondary)' }}></div>
+                <NotificationsLink />
+                <ProfileDropper user={user} logout={logout} />
+              </>
+            ) : (
+              <div className="hidden items-center gap-2 sm:flex">
+                <button type="button" onClick={() => nav.login()} className="min-h-11 rounded-(--radius-control) px-4 text-sm font-semibold text-(--ink) hover:bg-(--surface-hover)">Log in</button>
+                <button type="button" onClick={() => nav.register()} className="min-h-11 rounded-(--radius-control) bg-(--ink) px-5 text-sm font-semibold text-(--on-ink) hover:opacity-90">Register</button>
               </div>
+            )}
 
-              {/* Desktop Categories */}
-              <CategoryDropper categories={categories} />
-            </div>
-
-            {/* CENTER: Search Bar */}
-            <div className="max-w-2xl hidden md:flex flex-1 mx-8">
-              <div 
-                className="group relative w-full border rounded-full py-2.5 px-5 md:flex justify-center items-center gap-4 transition-all duration-300 focus-within:ring-2 focus-within:ring-offset-1 focus-within:ring-offset-transparent"
-                style={{ 
-                    backgroundColor: 'var(--header-input-bg)',
-                    borderColor: 'var(--header-input-border)',
-                    '--tw-ring-color': 'var(--header-input-focus)'
-                }}
-              >
-                <input 
-                  type="text" 
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)} 
-                  onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                  placeholder="Search for items, artists, or brands..." 
-                  className="w-full bg-transparent outline-none text-sm transition-colors"
-                  style={{ 
-                    color: 'var(--header-text)',
-                    '::placeholder': { color: 'var(--header-text-muted)' }
-                  }}
-                />
-                <button 
-                  onClick={handleSearch} 
-                  className="p-1.5 rounded-full transition-transform group-focus-within:scale-110">
-                    <Search size={18} style={{ color: 'var(--header-text-muted)' }} />
-                </button>
-              </div>
-            </div>
-
-            {/* RIGHT: Actions */}
-            <div className="flex items-center gap-4">
-              <button 
-                onClick={() => {
-                  setIsMobileMenuOpen(true);
-                  // Focus search input after menu opens
-                  setTimeout(() => mobileSearchRef.current?.focus(), 100);
-                }} 
-                className="md:hidden p-2 hover:bg-(--header-hover) rounded-full transition-colors" 
-                style={{ color: 'var(--header-text)' }}
-              >
-                <Search size={24} />
-              </button>
-
-              <ThemeToggle />
-
-              {user ? (
-                <div className="flex items-center gap-4">
-                  
-                  {/* DYNAMIC ACTION BUTTONS */}
-                  <Link
-                    to={user.role === 'admin' ? "/admin" : (user.role === 'seller') ? "/create-auction" : (user.role === 'buyer') ? "/become-seller" : "/verify-account"}
-                    className="hidden sm:flex items-center gap-2 font-bold py-2 px-4 rounded-lg transition text-sm shadow-lg hover:shadow-xl hover:scale-105"
-                    style={{ 
-                      backgroundColor: user.role === 'admin' ? 'var(--text)' : (user.role === 'seller') ? 'var(--theme-secondary)' : 'var(--accent)', 
-                      color: user.role === 'admin' ? 'var(--bg)' : (user.role === 'seller') ? '#fff' : '#1A1205'
-                    }}
-                  >
-                    {user.role === 'admin' ? <LayoutDashboard size={18} /> : (user.role === 'seller') ? <Plus size={18} /> : <ArrowRight size={18} />}
-                    <span className="hidden md:inline">
-                      {user.role === 'admin' ? "Dashboard" : (user.role === 'seller') ? "Create" : (user.role === 'buyer') ? "Start Selling" : "Verify Account"}
-                    </span>
-                  </Link>
-
-                  <ProfileDropper user={user} logout={logout} />
-                </div>
-              ) : (
-                <div className="hidden sm:flex items-center gap-3">
-                  <button 
-                    onClick={() => nav.login()} 
-                    className="font-medium text-sm text-(--header-text) transition-colors px-4 py-2 rounded-lg hover:bg-(--header-hover)"
-                  >
-                    Log In
-                  </button>
-                  <button 
-                    onClick={() => nav.register()} 
-                    className="bg-(--accent) font-bold text-sm text-[#1A1205] px-6 py-2.5 rounded-full shadow-lg transition-all transform hover:-translate-y-0.5 hover:brightness-110"
-                  >
-                    Register
-                  </button>
-                </div>
-              )}
-
-              {/* Mobile Menu Trigger */}
-              <button onClick={() => setIsMobileMenuOpen(true)} className="lg:hidden p-2 rounded-lg hover:bg-(--header-hover) transition-colors text-(--header-text)">
-                <Menu size={24} />
-              </button>
-            </div>
+            <IconButton label="Open menu" className="lg:hidden" onClick={() => setMenu({ open: true, focusSearch: false })}>
+              <Menu size={24} />
+            </IconButton>
           </div>
         </div>
       </header>
 
-      {/* --- MOBILE MENU OVERLAY --- */}
-      {isMobileMenuOpen && <MobileMenu categories={categories} searchInputRef={mobileSearchRef} user={user} setIsMobileMenuOpen={setIsMobileMenuOpen} logout={logout} />}
+      <MobileMenu
+        open={menu.open}
+        focusSearch={menu.focusSearch}
+        categories={categories}
+        user={user}
+        logout={logout}
+        onClose={() => setMenu({ open: false, focusSearch: false })}
+      />
     </>
   );
 }

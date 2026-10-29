@@ -1,22 +1,9 @@
 import db from "../db/index.js";
-import { orders, orderMessages, users, auctions, reviews } from "../db/schema.js";
-import { eq, and, or, desc } from "drizzle-orm";
+import { orders, orderMessages, users, auctions, auctionImages, reviews } from "../db/schema.js";
+import { eq, and, or, ne, desc } from "drizzle-orm";
+import { attachAsset } from "./media.js";
 
 const service = {
-    // Create order when auction ends with a winner
-    create: async function(auctionId, buyerId, sellerId, finalPrice) {
-        const result = await db.insert(orders).values({
-            auctionId,
-            buyerId,
-            sellerId,
-            finalPrice,
-            status: 'pending_payment',
-            createdAt: new Date(),
-            updatedAt: new Date(),
-        }).returning();
-        return result[0];
-    },
-
     // Get order by ID
     getById: async function(orderId) {
         const result = await db.select().from(orders).where(eq(orders.id, orderId));
@@ -72,109 +59,31 @@ const service = {
         .from(users)
         .where(eq(users.id, result[0].order.sellerId));
 
+        // The order page shows the item: primary photo (else the first one). The auctions row itself has no image column.
+        const [photo] = await db.select({ imageUrl: auctionImages.imageUrl }).from(auctionImages)
+            .where(eq(auctionImages.auctionId, result[0].order.auctionId))
+            .orderBy(desc(auctionImages.isPrimary), auctionImages.id).limit(1);
+
         return {
             ...result[0],
+            auction: { ...result[0].auction, image: photo?.imageUrl ?? null },
             seller: sellerResult[0],
         };
     },
 
-    // Step 1: Buyer submits payment info
-    submitPayment: async function(orderId, paymentData) {
-        const result = await db.update(orders)
-            .set({
-                paymentProofUrl: paymentData.paymentProofUrl,
-                shippingAddress: paymentData.shippingAddress,
-                buyerPhone: paymentData.buyerPhone,
-                paymentSubmittedAt: new Date(),
-                status: 'pending_confirmation',
-                updatedAt: new Date(),
-            })
-            .where(eq(orders.id, orderId))
-            .returning();
-        return result[0];
-    },
-
-    // Step 2: Seller confirms payment and provides shipping info
-    confirmPayment: async function(orderId, shippingData) {
-        const result = await db.update(orders)
-            .set({
-                paymentConfirmedAt: new Date(),
-                shippingProofUrl: shippingData.shippingProofUrl,
-                trackingNumber: shippingData.trackingNumber,
-                shippingSubmittedAt: new Date(),
-                status: 'pending_receipt',
-                updatedAt: new Date(),
-            })
-            .where(eq(orders.id, orderId))
-            .returning();
-        return result[0];
-    },
-
-    // Step 3: Buyer confirms receipt
-    confirmReceipt: async function(orderId) {
-        const result = await db.update(orders)
-            .set({
-                receiptConfirmedAt: new Date(),
-                status: 'pending_review',
-                updatedAt: new Date(),
-            })
-            .where(eq(orders.id, orderId))
-            .returning();
-        return result[0];
-    },
-
-    // Step 4: Complete order (after reviews)
-    completeOrder: async function(orderId) {
-        const result = await db.update(orders)
-            .set({
-                status: 'completed',
-                updatedAt: new Date(),
-            })
-            .where(eq(orders.id, orderId))
-            .returning();
-        return result[0];
-    },
-
-    // Cancel order (by seller)
-    cancelOrder: async function(orderId, cancelledBy, reason) {
-        const result = await db.update(orders)
-            .set({
-                status: 'cancelled',
-                cancelledAt: new Date(),
-                cancelledBy: cancelledBy,
-                cancelReason: reason,
-                updatedAt: new Date(),
-            })
-            .where(eq(orders.id, orderId))
-            .returning();
-        return result[0];
-    },
-
-    // Update order status
-    updateStatus: async function(orderId, status) {
-        const result = await db.update(orders)
-            .set({
-                status,
-                updatedAt: new Date(),
-            })
-            .where(eq(orders.id, orderId))
-            .returning();
-        return result[0];
-    },
+    // All order state changes live in services/orderCommands.js (state machine, locking, audit).
 
     // ============ MESSAGES ============
 
-    // Send message
-    sendMessage: async function(orderId, senderId, message, imageUrl = null) {
-        const result = await db.insert(orderMessages).values({
-            orderId,
-            senderId,
-            message,
-            imageUrl,
-            isRead: false,
-            createdAt: new Date(),
-        }).returning();
-        return result[0];
+    // Send message (an optional image must be a pending upload of the sender, attached in the same transaction)
+    sendMessage: async function(orderId, senderId, message, imageAssetId = null) {
+        return db.transaction(async (tx) => {
+            const imageUrl = imageAssetId ? await attachAsset(tx, { assetId: imageAssetId, orderId, ownerId: senderId, purpose: 'message' }) : null;
+            const result = await tx.insert(orderMessages).values({
+                orderId, senderId, message, imageUrl, isRead: false, createdAt: new Date(),
+            }).returning();
+            return result[0];
+        });
     },
 
     // Get messages for an order
@@ -193,26 +102,22 @@ const service = {
         .orderBy(orderMessages.createdAt);
     },
 
-    // Mark messages as read
-    markMessagesAsRead: async function(orderId, userId) {
+    // Mark the OTHER party's messages as read for this reader
+    markMessagesAsRead: async function(orderId, readerId) {
         await db.update(orderMessages)
             .set({ isRead: true })
             .where(and(
                 eq(orderMessages.orderId, orderId),
-                eq(orderMessages.senderId, userId)
+                ne(orderMessages.senderId, readerId),
+                eq(orderMessages.isRead, false)
             ));
     },
 
-    // Get unread message count
+    // Unread messages sent by the other party
     getUnreadCount: async function(orderId, userId) {
-        const result = await db.select()
-            .from(orderMessages)
-            .where(and(
-                eq(orderMessages.orderId, orderId),
-                eq(orderMessages.isRead, false),
-                // Messages NOT from this user (i.e., from the other party)
-            ));
-        return result.filter(m => m.senderId !== userId).length;
+        const result = await db.select().from(orderMessages)
+            .where(and(eq(orderMessages.orderId, orderId), eq(orderMessages.isRead, false), ne(orderMessages.senderId, userId)));
+        return result.length;
     },
 
     // ============ REVIEWS ============
@@ -243,84 +148,6 @@ const service = {
         return result.length > 0;
     },
 
-    // Create or update review
-    submitReview: async function(reviewerId, targetId, auctionId, isGoodRating, comment) {
-        // Check if review exists
-        const existing = await db.select()
-            .from(reviews)
-            .where(and(
-                eq(reviews.auctionId, auctionId),
-                eq(reviews.reviewerId, reviewerId)
-            ));
-
-        if (existing.length > 0) {
-            // Update existing review
-            const result = await db.update(reviews)
-                .set({
-                    isGoodRating,
-                    comment,
-                })
-                .where(eq(reviews.id, existing[0].id))
-                .returning();
-            return { review: result[0], isNew: false };
-        } else {
-            // Create new review
-            const result = await db.insert(reviews).values({
-                reviewerId,
-                targetId,
-                auctionId,
-                isGoodRating,
-                comment,
-                createdAt: new Date(),
-            }).returning();
-
-            // Update target user's rating count
-            const targetUser = await db.select().from(users).where(eq(users.id, targetId));
-            if (targetUser.length > 0) {
-                await db.update(users)
-                    .set({
-                        ratingCount: (targetUser[0].ratingCount || 0) + 1,
-                        positiveRatingCount: isGoodRating 
-                            ? (targetUser[0].positiveRatingCount || 0) + 1 
-                            : targetUser[0].positiveRatingCount || 0,
-                    })
-                    .where(eq(users.id, targetId));
-            }
-
-            return { review: result[0], isNew: true };
-        }
-    },
-
-    // Update review (change rating)
-    updateReview: async function(reviewId, isGoodRating, comment) {
-        // Get old review first
-        const oldReview = await db.select().from(reviews).where(eq(reviews.id, reviewId));
-        if (oldReview.length === 0) return null;
-
-        const wasPositive = oldReview[0].isGoodRating;
-        
-        // Update review
-        const result = await db.update(reviews)
-            .set({ isGoodRating, comment })
-            .where(eq(reviews.id, reviewId))
-            .returning();
-
-        // Update user rating if changed
-        if (wasPositive !== isGoodRating) {
-            const targetUser = await db.select().from(users).where(eq(users.id, oldReview[0].targetId));
-            if (targetUser.length > 0) {
-                await db.update(users)
-                    .set({
-                        positiveRatingCount: isGoodRating 
-                            ? (targetUser[0].positiveRatingCount || 0) + 1 
-                            : Math.max(0, (targetUser[0].positiveRatingCount || 0) - 1),
-                    })
-                    .where(eq(users.id, oldReview[0].targetId));
-            }
-        }
-
-        return result[0];
-    },
 };
 
 export default service;

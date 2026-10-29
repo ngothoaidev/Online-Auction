@@ -5,7 +5,7 @@ export function useNav() {
 
   return {
     // Basic Navigation
-    go: (p) => n(p),
+    go: (p, options) => n(p, options), // options = react-router's { state, replace }
     back: () => n(-1),
     replace: (p) => n(p, { replace: true }),
     

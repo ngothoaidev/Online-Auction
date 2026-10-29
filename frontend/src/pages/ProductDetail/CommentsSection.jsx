@@ -1,22 +1,30 @@
 import { useState, useEffect } from 'react';
+import { useFeedback } from '../../components/ui/Feedback.jsx';
 import { MessageSquare, Send } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext'; // Import Auth
 import { useNav } from '../../hooks/useNavigate';     // Import Nav
 import Comment from './Comment';
 import auctionService from '../../services/auctionService';
+import { Button, EmptyState } from '../../components/ui';
 
 export default function CommentsSection({ productId }) {
+  const { notify } = useFeedback();
   const { user } = useAuth(); 
   const nav = useNav();
   
   const [comments, setComments] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [failed, setFailed] = useState(false);
+  const [attempt, setAttempt] = useState(0);
   const [commentText, setCommentText] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // --- 1. FETCH & CHUẨN HÓA DỮ LIỆU ---
   useEffect(() => {
+    let cancelled = false;
     const fetchComments = async () => {
+        setLoading(true);
+        setFailed(false);
         try {
             const data = await auctionService.getComments(productId);
             // Để tránh lỗi nếu <Comment> component mong đợi 'user' là string
@@ -33,16 +41,18 @@ export default function CommentsSection({ productId }) {
                 replies: c.children || c.replies || [] 
             })) : [];
 
-            setComments(formattedData);
+            if (!cancelled) setComments(formattedData);
         } catch (err) {
             console.error("Error fetching comments:", err);
+            if (!cancelled) setFailed(true);
         } finally {
-            setLoading(false);
+            if (!cancelled) setLoading(false);
         }
     };
     
     if (productId) fetchComments();
-  }, [productId]);
+    return () => { cancelled = true; };
+  }, [productId, attempt]);
 
   // --- 2. GỬI COMMENT MỚI ---
   const handleComment = async () => {
@@ -72,7 +82,7 @@ export default function CommentsSection({ productId }) {
       setComments(prev => [formattedComment, ...prev]); 
       setCommentText('');
     } catch (error) {
-      alert('Failed to post comment. Please try again.');
+      notify('Failed to post comment. Please try again.', 'error');
       console.error(error);
     } finally {
         setIsSubmitting(false);
@@ -108,29 +118,30 @@ export default function CommentsSection({ productId }) {
             )
         );
     } catch (error) {
-        alert("Failed to reply. Please try again.");
+        notify("Failed to reply. Please try again.", 'error');
     }
   };
 
-  if (loading) return <div className="h-40 bg-gray-100 animate-pulse rounded-xl mt-8"></div>;
+  if (loading) return <div className="h-40 bg-(--surface-sunken) animate-pulse rounded-xl mt-8"></div>;
 
   return (
     <div className="bg-[var(--bg-soft)] rounded-2xl p-8 border border-[var(--border)] shadow-sm mt-8">
       <h3 className="text-xl font-bold mb-6 flex items-center gap-2 text-[var(--text)]">
         <MessageSquare size={20} className="text-[var(--accent)]" />
-        Q&A / Comments ({comments.length})
+        Q&A / Comments{failed ? '' : ` (${comments.length})`}
       </h3>
       
       {/* INPUT FORM */}
       <div className="mb-6 flex gap-2">
         <input
           type="text"
+          aria-label="Ask a question about this lot"
           value={commentText}
           onChange={(e) => setCommentText(e.target.value)}
           onKeyPress={(e) => e.key === 'Enter' && handleComment()}
           placeholder={user ? "Ask a question about this item..." : "Please login to ask a question"}
           disabled={isSubmitting}
-          className="flex-1 px-4 py-2 rounded-lg border focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+          className="min-w-0 flex-1 px-4 py-2 rounded-lg border focus:ring-2 focus:ring-(--focus) focus:border-transparent transition-all"
           style={{ 
             backgroundColor: 'var(--bg)', 
             borderColor: 'var(--border)', 
@@ -138,9 +149,11 @@ export default function CommentsSection({ productId }) {
           }}
         />
         <button
+          type="button"
+          aria-label="Post question"
           onClick={handleComment}
           disabled={isSubmitting || !commentText.trim()}
-          className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors shadow-md disabled:opacity-50"
+          className="min-h-11 px-4 rounded-(--radius-control) bg-(--ink) text-(--on-ink) hover:opacity-90 disabled:opacity-50"
         >
           {isSubmitting ? '...' : <Send className="w-5 h-5" />}
         </button>
@@ -148,7 +161,9 @@ export default function CommentsSection({ productId }) {
 
       {/* COMMENTS LIST */}
       <div className="space-y-6 max-h-[600px] overflow-y-auto pb-2 custom-scrollbar">
-        {comments && comments.length > 0 ? (
+        {failed ? (
+          <EmptyState title="Questions could not be loaded" action={<Button variant="secondary" onClick={() => setAttempt((n) => n + 1)}>Try again</Button>} />
+        ) : comments && comments.length > 0 ? (
           comments.map((commentItem) => (
             <Comment 
               key={commentItem.id || Math.random()} 

@@ -1,3 +1,5 @@
+import { apiFetch } from './apiClient.js';
+
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 const getAuthHeaders = () => {
@@ -23,7 +25,8 @@ const orderService = {
    * @returns {Promise<Object>} Order object
    */
   getByAuctionId: async (auctionId) => {
-    const response = await fetch(`${API_BASE_URL}/order/${auctionId}`, {
+    // GET /order/auction/:auctionId is read-only: 200 order | 202 {status:'settlement_pending',retryAfter} | 403 | 404
+    const response = await fetch(`${API_BASE_URL}/order/auction/${auctionId}`, {
       headers: getAuthHeaders(),
     });
     return handleResponse(response);
@@ -149,14 +152,49 @@ const orderService = {
    * @param {string} message - Message content
    * @returns {Promise<Object>} Created message
    */
-  sendMessage: async (orderId, message) => {
+  sendMessage: async (orderId, message, imageAssetId) => {
     const response = await fetch(`${API_BASE_URL}/order/${orderId}/messages`, {
       method: 'POST',
       headers: getAuthHeaders(),
-      body: JSON.stringify({ message }),
+      body: JSON.stringify({ message, imageAssetId }),
     });
     return handleResponse(response);
   },
 };
+
+// --- private proofs (T11) ---
+orderService.uploadProof = async (orderId, purpose, file) => {
+  const token = localStorage.getItem('authToken');
+  const form = new FormData();
+  form.append('file', file);
+  const response = await fetch(`${API_BASE_URL}/order/${orderId}/proofs?purpose=${encodeURIComponent(purpose)}`, {
+    method: 'POST',
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    body: form,
+  });
+  return handleResponse(response); // { assetId, previewPath, mime, size }
+};
+
+orderService.fetchProofBlobUrl = async (path) => {
+  const token = localStorage.getItem('authToken');
+  const response = await fetch(`${API_BASE_URL}${path}`, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
+  if (!response.ok) throw new Error('Could not load the file');
+  return URL.createObjectURL(await response.blob());
+};
+
+orderService.markMessagesRead = async (orderId) => {
+  const response = await fetch(`${API_BASE_URL}/order/${orderId}/messages/read`, { method: 'POST', headers: getAuthHeaders(), body: '{}' });
+  return handleResponse(response);
+};
+
+orderService.submitShipping = async (orderId, data) => {
+  const response = await fetch(`${API_BASE_URL}/order/${orderId}/shipping`, { method: 'POST', headers: getAuthHeaders(), body: JSON.stringify(data) });
+  return handleResponse(response);
+};
+
+// --- online payment through the configured adapter (T20; mock = demo, no real money) ---
+orderService.createPaymentAttempt = (orderId, data) => apiFetch(`/order/${orderId}/payment-attempts`, { method: 'POST', body: data, auth: 'required' });
+orderService.simulateMockPayment = (reference, outcome, deliver = true) =>
+  apiFetch(`/payments/mock/${encodeURIComponent(reference)}/simulate`, { method: 'POST', body: { outcome, deliver }, auth: 'required' });
 
 export default orderService;

@@ -1,4 +1,5 @@
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+import { apiFetch } from './apiClient.js';
 
 const auctionService = {
   // Lấy thông tin cơ bản
@@ -14,19 +15,11 @@ const auctionService = {
     return res.json();
   },
   
-  // 1. Lấy ảnh
-  getImages: async (id) => {
-    const res = await fetch(`${API_URL}/auction/images/${id}`);
-    if (!res.ok) return []; 
-    return res.json();
-  },
+  // Reads below throw ApiError on failure. Never turn an error into [] / "": the UI would say "no bids" or
+  // "no description" when it simply does not know (and an owner could save over a description that failed to load).
+  getImages: (id) => apiFetch(`/auction/images/${id}`),
 
-  // 2. Lấy mô tả
-  getDescription: async (id) => {
-    const res = await fetch(`${API_URL}/auction/description/${id}`);
-    if (!res.ok) return { description: "" };
-    return res.json();
-  },
+  getDescription: (id) => apiFetch(`/auction/description/${id}`),
 
   // 2b. Cập nhật mô tả (chỉ dành cho seller)
   updateDescription: async (id, description) => {
@@ -43,30 +36,9 @@ const auctionService = {
     return res.json();
   },
 
-  // 3. Lấy comment
-  getComments: async (id) => {
-    const res = await fetch(`${API_URL}/auction/comments/${id}`);
-    if (!res.ok) return [];
-    return res.json();
-  },
+  getComments: (id) => apiFetch(`/auction/comments/${id}`),
 
-  // 4. Lấy lịch sử đấu giá
-  getBidHistory: async (id, filter) => {
-    try {
-        const token = localStorage.getItem('authToken');
-        
-        const res = await fetch(`${API_URL}/auction/bids/${id}?f=${filter}`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        });
-        if (!res.ok) return [];
-        return res.json();
-    } catch (error) {
-        return [];
-    }
-  },
+  getBidHistory: (id, filter = 'all') => apiFetch(`/auction/bids/${id}?f=${filter}`),
 
   getTopAuctions: async ({ id = null, status = 'active', sortBy = 'newest', page = 1, limit = 5 } = {}) => {
     const queryParams = new URLSearchParams({ status, sortBy, page, limit });
@@ -97,19 +69,6 @@ const auctionService = {
     return res.json();
   },
 
-  uploadImage: async (file) => {
-    const token = localStorage.getItem('authToken');
-    const formData = new FormData();
-    formData.append('image', file);
-    const res = await fetch(`${API_URL}/upload`, {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${token}` },
-      body: formData
-    });
-    if (!res.ok) throw new Error('Image upload failed');
-    return res.json();
-  },
-
   //Add comment
   addComment: async (auctionId, content, parentId = null) => {
     const token = localStorage.getItem('authToken');
@@ -137,35 +96,14 @@ const auctionService = {
     return response.json();
   },
 
-  placeBid: async (auctionId, amount) => {
-    const token = localStorage.getItem('authToken');
-    const res = await fetch(`${API_URL}/auction/${auctionId}/bid`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify({ amount: Number(amount) })
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.message || 'Failed to place bid');
-    return data;
-  },
+  // Commands carry an Idempotency-Key chosen by the caller for ONE reviewed intent; a retry must reuse it.
+  placeBid: (auctionId, amount, key) => apiFetch(`/auction/${auctionId}/bid`, {
+    method: 'POST', body: { amount: String(amount) }, headers: key ? { 'Idempotency-Key': key } : {}, auth: 'required',
+  }),
 
-  // Buy Now - End auction immediately at buyNowPrice
-  buyNow: async (auctionId) => {
-    const token = localStorage.getItem('authToken');
-    const res = await fetch(`${API_URL}/auction/${auctionId}/buy-now`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      }
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.message || 'Failed to buy now');
-    return data;
-  }
+  buyNow: (auctionId, key) => apiFetch(`/auction/${auctionId}/buy-now`, {
+    method: 'POST', body: {}, headers: key ? { 'Idempotency-Key': key } : {}, auth: 'required',
+  }),
 };
 
 export default auctionService;

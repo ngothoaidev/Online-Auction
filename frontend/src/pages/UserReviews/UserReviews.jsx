@@ -1,23 +1,30 @@
 import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { ThumbsUp, ThumbsDown, MessageCircle, Calendar, User } from 'lucide-react';
 import { reviewService } from '../../services/reviewService';
-import userService from '../../services/userService';
 import Pagination from '../../components/Pagination';
-import './UserReviews.css';
+import { Button, EmptyState } from '../../components/ui';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
+function Avatar({ src, size }) {
+  return src
+    ? <img src={src} alt="" className={`${size} rounded-full border-2 border-(--border) object-cover`} />
+    : <span aria-hidden="true" className={`${size} inline-flex shrink-0 items-center justify-center rounded-full border-2 border-(--border) bg-(--surface-sunken) text-(--muted)`}><User size={20} /></span>;
+}
 
 export default function UserReviews() {
   const { username } = useParams();
   const [userData, setUserData] = useState(null);
+  const [profileStatus, setProfileStatus] = useState('loading'); // loading | ready | missing | error
+  const [profileAttempt, setProfileAttempt] = useState(0);
   const [activeTab, setActiveTab] = useState('received'); // 'received' or 'given'
   const [reviews, setReviews] = useState([]);
   const [stats, setStats] = useState({
     totalReviews: 0,
     positiveReviews: 0,
     negativeReviews: 0,
-    positivePercentage: 0,
+    positivePercentage: null,
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -30,19 +37,22 @@ export default function UserReviews() {
 
   // Fetch user data
   useEffect(() => {
-    const fetchUserData = async () => {
+    let cancelled = false;
+    setProfileStatus('loading');
+    (async () => {
       try {
-        const response = await fetch(`${API_URL}/users/profile?username=${username}`);
-        if (response.ok) {
-          const data = await response.json();
-          setUserData(data);
-        }
-      } catch (err) {
-        console.error('Error fetching user data:', err);
+        const response = await fetch(`${API_URL}/users/profile?username=${encodeURIComponent(username)}`);
+        if (cancelled) return;
+        if (response.status === 404) return setProfileStatus('missing');
+        if (!response.ok) return setProfileStatus('error');
+        setUserData(await response.json());
+        setProfileStatus('ready');
+      } catch {
+        if (!cancelled) setProfileStatus('error');
       }
-    };
-    fetchUserData();
-  }, [username]);
+    })();
+    return () => { cancelled = true; };
+  }, [username, profileAttempt]);
 
   // Fetch reviews
   useEffect(() => {
@@ -88,10 +98,18 @@ export default function UserReviews() {
     });
   };
 
-  if (!userData) {
+  if (profileStatus !== 'ready') {
     return (
       <div className="max-w-7xl mx-auto px-4 py-8">
-        <div className="text-center text-(--text-muted)">Loading user...</div>
+        {profileStatus === 'loading' && <div className="text-center text-(--text-muted)" role="status">Loading user...</div>}
+        {profileStatus === 'missing' && (
+          <EmptyState title="User not found" action={<Link to="/search" className="font-semibold underline">Browse auctions</Link>}>
+            There is no user named @{username}.
+          </EmptyState>
+        )}
+        {profileStatus === 'error' && (
+          <EmptyState title="This profile could not be loaded" action={<Button onClick={() => setProfileAttempt((n) => n + 1)}>Try again</Button>} />
+        )}
       </div>
     );
   }
@@ -101,13 +119,9 @@ export default function UserReviews() {
       {/* Header */}
       <div className="mb-8">
         <div className="flex items-center gap-4 mb-4">
-          <img 
-            src={userData.avatar} 
-            alt={userData.name} 
-            className="w-16 h-16 rounded-full border-4 border-(--border)"
-          />
+          <Avatar src={userData.avatar} size="w-16 h-16" />
           <div>
-            <h1 className="text-3xl font-bold text-(--text)">{userData.name}'s Reviews</h1>
+            <h1 className="text-3xl font-bold text-(--text)">{userData.name || userData.username}'s Reviews</h1>
             <p className="text-(--text-muted)">@{userData.username}</p>
           </div>
         </div>
@@ -119,16 +133,16 @@ export default function UserReviews() {
           <div className="text-3xl font-bold text-(--text) mb-2">{stats.totalReviews}</div>
           <div className="text-sm text-(--text-muted) uppercase tracking-wide">Total Reviews</div>
         </div>
-        <div className="p-6 rounded-xl bg-green-500/10 border border-green-500/20 text-center">
-          <div className="text-3xl font-bold text-green-600 dark:text-green-400 mb-2">{stats.positiveReviews}</div>
+        <div className="p-6 rounded-xl bg-(--success-soft) border border-(--success) text-center">
+          <div className="text-3xl font-bold text-(--success) mb-2">{stats.positiveReviews}</div>
           <div className="text-sm text-(--text-muted) uppercase tracking-wide">Positive</div>
         </div>
-        <div className="p-6 rounded-xl bg-red-500/10 border border-red-500/20 text-center">
-          <div className="text-3xl font-bold text-red-600 dark:text-red-400 mb-2">{stats.negativeReviews}</div>
+        <div className="p-6 rounded-xl bg-(--danger-soft) border border-(--danger) text-center">
+          <div className="text-3xl font-bold text-(--danger) mb-2">{stats.negativeReviews}</div>
           <div className="text-sm text-(--text-muted) uppercase tracking-wide">Negative</div>
         </div>
         <div className="p-6 rounded-xl bg-(--accent)/10 border border-(--accent)/20 text-center">
-          <div className="text-3xl font-bold text-(--accent) mb-2">{stats.positivePercentage}%</div>
+          <div className="text-3xl font-bold text-(--accent) mb-2">{stats.positivePercentage == null ? '—' : `${stats.positivePercentage}%`}</div>
           <div className="text-sm text-(--text-muted) uppercase tracking-wide">Positive Rate</div>
         </div>
       </div>
@@ -175,7 +189,7 @@ export default function UserReviews() {
           <div className="animate-pulse text-(--text-muted)">Loading reviews...</div>
         </div>
       ) : error ? (
-        <div className="text-center py-12 text-red-500">{error}</div>
+        <EmptyState title="Reviews could not be loaded" action={<Button onClick={fetchReviews}>Try again</Button>}>{error}</EmptyState>
       ) : reviews.length === 0 ? (
         <div className="text-center py-12">
           <MessageCircle size={48} className="mx-auto mb-4 text-(--text-muted) opacity-50" />
@@ -192,31 +206,23 @@ export default function UserReviews() {
               >
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center gap-4">
-                    <img
-                      src={
-                        activeTab === 'received'
-                          ? review.revieweravatarurl || '/default-avatar.png'
-                          : review.targetavatarurl || '/default-avatar.png'
-                      }
-                      alt="User"
-                      className="w-12 h-12 rounded-full border-2 border-(--border)"
-                    />
+                    <Avatar size="w-12 h-12" src={activeTab === 'received' ? review.reviewerAvatarUrl : review.targetAvatarUrl} />
                     <div>
                       <h3 className="font-bold text-(--text)">
                         {activeTab === 'received'
-                          ? review.reviewerfullname || review.reviewerusername
-                          : review.targetfullname || review.targetusername}
+                          ? review.reviewerFullName || review.reviewerUsername
+                          : review.targetFullName || review.targetUsername}
                       </h3>
                       <p className="text-sm text-(--text-muted)">
-                        @{activeTab === 'received' ? review.reviewerusername : review.targetusername}
+                        @{activeTab === 'received' ? review.reviewerUsername : review.targetUsername}
                       </p>
                     </div>
                   </div>
                   <div
                     className={`flex items-center gap-2 px-4 py-2 rounded-full font-bold ${
                       review.isGoodRating
-                        ? 'bg-green-500/10 text-green-600 dark:text-green-400'
-                        : 'bg-red-500/10 text-red-600 dark:text-red-400'
+                        ? 'bg-(--success-soft) text-(--success)'
+                        : 'bg-(--danger-soft) text-(--danger)'
                     }`}
                   >
                     {review.isGoodRating ? (
@@ -238,15 +244,15 @@ export default function UserReviews() {
                 )}
 
                 <div className="flex items-center gap-6 text-sm text-(--text-muted) pl-16">
-                  {review.auctiontitle && (
+                  {review.auctionTitle && (
                     <div className="flex items-center gap-2">
                       <span className="font-medium">Auction:</span>
-                      <span>{review.auctiontitle}</span>
+                      <Link to={`/auction/${review.auctionId}`} className="underline">{review.auctionTitle}</Link>
                     </div>
                   )}
                   <div className="flex items-center gap-2">
                     <Calendar size={14} />
-                    <span>{formatDate(review.createdat)}</span>
+                    <time dateTime={review.createdAt}>{formatDate(review.createdAt)}</time>
                   </div>
                 </div>
               </div>

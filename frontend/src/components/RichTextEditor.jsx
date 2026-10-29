@@ -13,7 +13,7 @@ const MenuBar = ({ editor }) => {
   // Helper to apply classes based on active state
   const getButtonClass = (isActive) => 
     `p-2 rounded-lg transition-colors hover:bg-[var(--bg-hover)] ${
-      isActive ? 'bg-[var(--accent)] text-[#1a1205]' : 'text-[var(--text-muted)]'
+      isActive ? 'bg-[var(--accent)] text-(--on-ink)' : 'text-[var(--text-muted)]'
     }`;
 
   return (
@@ -24,7 +24,8 @@ const MenuBar = ({ editor }) => {
         type="button"
         onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
         className={getButtonClass(editor.isActive('heading', { level: 2 }))}
-        title="Heading 1"
+        aria-pressed={editor.isActive('heading', { level: 2 })}
+        title="Heading"
       >
         <Heading1 size={18} />
       </button>
@@ -32,7 +33,8 @@ const MenuBar = ({ editor }) => {
         type="button"
         onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
         className={getButtonClass(editor.isActive('heading', { level: 3 }))}
-        title="Heading 2"
+        aria-pressed={editor.isActive('heading', { level: 3 })}
+        title="Subheading"
       >
         <Heading2 size={18} />
       </button>
@@ -44,6 +46,7 @@ const MenuBar = ({ editor }) => {
         type="button"
         onClick={() => editor.chain().focus().toggleBold().run()}
         className={getButtonClass(editor.isActive('bold'))}
+        aria-pressed={editor.isActive('bold')}
         title="Bold"
       >
         <Bold size={18} />
@@ -52,6 +55,7 @@ const MenuBar = ({ editor }) => {
         type="button"
         onClick={() => editor.chain().focus().toggleItalic().run()}
         className={getButtonClass(editor.isActive('italic'))}
+        aria-pressed={editor.isActive('italic')}
         title="Italic"
       >
         <Italic size={18} />
@@ -64,6 +68,7 @@ const MenuBar = ({ editor }) => {
         type="button"
         onClick={() => editor.chain().focus().toggleBulletList().run()}
         className={getButtonClass(editor.isActive('bulletList'))}
+        aria-pressed={editor.isActive('bulletList')}
         title="Bullet List"
       >
         <List size={18} />
@@ -72,6 +77,7 @@ const MenuBar = ({ editor }) => {
         type="button"
         onClick={() => editor.chain().focus().toggleOrderedList().run()}
         className={getButtonClass(editor.isActive('orderedList'))}
+        aria-pressed={editor.isActive('orderedList')}
         title="Ordered List"
       >
         <ListOrdered size={18} />
@@ -84,6 +90,7 @@ const MenuBar = ({ editor }) => {
         type="button"
         onClick={() => editor.chain().focus().toggleBlockquote().run()}
         className={getButtonClass(editor.isActive('blockquote'))}
+        aria-pressed={editor.isActive('blockquote')}
         title="Quote"
       >
         <Quote size={18} />
@@ -110,7 +117,8 @@ const MenuBar = ({ editor }) => {
   );
 };
 
-export default function RichTextEditor({ value, onChange }) {
+/** `labelledBy` (id of a visible label) or `label` names the editing area for assistive tech. */
+export default function RichTextEditor({ value, onChange, labelledBy, label }) {
   const editor = useEditor({
     extensions: [StarterKit],
     content: value,
@@ -119,6 +127,9 @@ export default function RichTextEditor({ value, onChange }) {
     },
     editorProps: {
       attributes: {
+        role: 'textbox',
+        'aria-multiline': 'true',
+        ...(labelledBy ? { 'aria-labelledby': labelledBy } : { 'aria-label': label || 'Description' }),
         class: 'prose prose-sm sm:prose max-w-none focus:outline-none min-h-[150px] p-4 text-[var(--text)]',
       },
     },

@@ -1,9 +1,11 @@
 import { useState } from 'react';
+import { useFeedback } from '../../components/ui/Feedback.jsx';
 import { Reply, X } from 'lucide-react';
 import { commentSchema } from '../../schemas/auction.schemas';
 import { validateForm } from '../../utils/validation';
 
 export default function Comment({ comment, onReplySubmit }) {
+  const { notify } = useFeedback();
   const [isReplying, setIsReplying] = useState(false);
   const [replyText, setReplyText] = useState("");
 
@@ -12,7 +14,7 @@ export default function Comment({ comment, onReplySubmit }) {
     const validation = validateForm(commentSchema, { content: replyText });
     
     if (!validation.success) {
-      alert(validation.message);
+      notify(validation.message, 'error');
       return;
     }
     
@@ -68,7 +70,7 @@ export default function Comment({ comment, onReplySubmit }) {
                 />
                 {/* Owner Badge */}
                 {reply.isOwner && (
-                    <div className="absolute -bottom-1 -right-1 bg-(--accent) text-[#1a1205] text-[8px] font-black px-1 rounded-sm">
+                    <div className="absolute -bottom-1 -right-1 bg-(--accent) text-(--on-ink) text-[8px] font-black px-1 rounded-sm">
                         OWNER
                     </div>
                 )}
@@ -94,6 +96,7 @@ export default function Comment({ comment, onReplySubmit }) {
         <div className="ml-12 mt-3 flex gap-2 animate-in fade-in slide-in-from-top-2 duration-200">
           <input
             type="text"
+            aria-label="Write a reply"
             autoFocus
             value={replyText}
             onChange={(e) => setReplyText(e.target.value)}
@@ -109,7 +112,7 @@ export default function Comment({ comment, onReplySubmit }) {
           <button
             onClick={handleSubmit}
             className="px-3 py-1.5 rounded-lg text-white text-xs font-bold shadow-sm transition-transform active:scale-95"
-            style={{ backgroundColor: 'var(--accent)', color: '#1A1205' }}
+            style={{ backgroundColor: 'var(--accent)', color: 'var(--on-ink)' }}
           >
             Reply
           </button>

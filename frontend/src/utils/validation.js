@@ -9,30 +9,24 @@
  * @returns {Object} - { success: boolean, data?: any, errors?: Array, message?: string }
  */
 export const validateForm = (schema, data) => {
-  try {
-    const validatedData = schema.parse(data);
-    return {
-      success: true,
-      data: validatedData,
-    };
-  } catch (error) {
-    if (error.errors && Array.isArray(error.errors)) {
-      // Get all error messages as an array
-      const messages = error.errors.map(err => err.message);
-      
-      return {
-        success: false,
-        errors: error.errors, // Raw Zod errors
-        messages: messages, // Array of error messages
-        message: messages.join('\n'), // Each error on new line
-      };
-    }
+  const result = schema.safeParse(data);
+  if (result.success) return { success: true, data: result.data };
 
-    return {
-      success: false,
-      message: error.message || 'Validation failed',
-    };
+  // Zod 4 exposes `issues` (older versions `errors`); never leak the raw JSON error string to people.
+  const issues = result.error?.issues ?? result.error?.errors ?? [];
+  const messages = issues.map((i) => i.message);
+  const fieldErrors = {};
+  for (const i of issues) {
+    const key = i.path?.[0];
+    if (key !== undefined && fieldErrors[key] === undefined) fieldErrors[key] = i.message;
   }
+  return {
+    success: false,
+    errors: issues,
+    messages,
+    fieldErrors,
+    message: messages.length ? messages.join('\n') : 'Validation failed',
+  };
 };
 
 /**

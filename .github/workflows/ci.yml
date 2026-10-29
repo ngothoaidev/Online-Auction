@@ -1,0 +1,92 @@
+name: ci
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env: { POSTGRES_USER: auction, POSTGRES_PASSWORD: auction, POSTGRES_DB: auction_test }
+        ports: ["55432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U auction" --health-interval 3s --health-timeout 3s --health-retries 20
+    defaults: { run: { working-directory: backend } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm, cache-dependency-path: backend/package-lock.json }
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run test:unit
+      - run: npm run test:integration
+        env: { TEST_DATABASE_URL: "postgres://auction:auction@localhost:55432/auction_test" }
+
+  frontend:
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: frontend } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm, cache-dependency-path: frontend/package-lock.json }
+      - run: npm ci
+      - run: npm run lint
+      - run: npm test
+      - run: npm run build
+
+  # Full browser journeys against a real API + worker + PostgreSQL (T23). The E2E database is disposable and separate
+  # from the integration-test database; specs list their own lots, so they never depend on (or exhaust) seeded data.
+  e2e:
+    runs-on: ubuntu-latest
+    needs: [backend, frontend]
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env: { POSTGRES_USER: auction, POSTGRES_PASSWORD: auction, POSTGRES_DB: auction_e2e }
+        ports: ["55432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U auction" --health-interval 3s --health-timeout 3s --health-retries 20
+    env:
+      DATABASE_URL: postgres://auction:auction@localhost:55432/auction_e2e
+      JWT_SECRET: ci-e2e-jwt-secret
+      SESSION_SECRET: ci-e2e-session-secret
+      PORT: "3000"
+      FRONTEND_URL: http://localhost:5173
+      EMAIL_TRANSPORT: local
+      PAYMENT_ADAPTER: mock
+      AUTH_RATE_LIMIT_MAX: "10000"
+      BID_RATE_LIMIT_MAX: "10000"
+      UPLOAD_RATE_LIMIT_MAX: "10000"
+      COMMENT_RATE_LIMIT_MAX: "10000"
+      WORKER_POLL_MS: "500"
+      VITE_API_URL: http://localhost:3000
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - name: Backend (migrate, seed, API, worker)
+        working-directory: backend
+        run: |
+          npm ci
+          npm run db:migrate
+          npm run db:seed
+          nohup node server.js > ../api.log 2>&1 &
+          nohup node worker.js > ../worker.log 2>&1 &
+          for i in $(seq 1 30); do curl -sf http://localhost:3000/categories > /dev/null && break; sleep 1; done
+      - name: Playwright
+        working-directory: frontend
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+          npx playwright test --reporter=line
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-artifacts
+          path: |
+            frontend/test-results
+            api.log
+            worker.log

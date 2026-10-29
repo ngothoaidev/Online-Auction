@@ -1,20 +1,24 @@
 import auctionService from "../services/auction.js";
+import { commands } from "../services/auctionCommands.js";
+import { keyFrom } from "../services/idempotency.js";
+import { streamAuction } from "../services/realtime.js";
+
+// Optional for now: the SPA starts sending one key per reviewed intent in T15, after which the header becomes mandatory.
+const idempotencyKey = keyFrom;
 
 const controller = {
     
     // GET /auctions/top
     listTop: async function(req, res, next) {
         try {
-            const { userId, status, sortBy, page, limit } = req.query;
+            const { userId, status, sortBy } = req.query;
             const viewId = req.user ? req.user.id : null;
             
             const auctions = await auctionService.findByOrder({ 
-                userId: userId ? parseInt(userId) : null,
-                viewId: viewId ? parseInt(viewId) : null,
-                status: status || 'active',
-                sortBy: sortBy || 'newest',
-                page: page ? parseInt(page) : 1,
-                limit: limit ? parseInt(limit) : 5,
+                userId: userId ?? null,
+                viewId,
+                status,
+                sortBy,
             });
 
             res.json(auctions);
@@ -27,17 +31,12 @@ const controller = {
         try {
             const { username, status, category } = req.query;
 
-            if (!username || !status) {
-                return res.status(400).json({ error: "Missing Required Fields" });
-            }
-
             const results = await auctionService.findByStatus(username, status, category);
 
             return res.status(200).json(results);
 
         } catch (error) {
-            console.error("Tab Query Error:", error);
-            return res.status(500).json({ error: "Internal Server Error" });
+            next(error);
         }
     },
 
@@ -45,13 +44,23 @@ const controller = {
     getById: async function(req, res, next) {
         try {
             const id = Number(req.params.id);
-            const auction = await auctionService.findById(id);
+            const auction = await auctionService.findById(id, req.user ?? null);
             
             if (!auction) {
                 return res.status(404).json({ message: 'Auction Not Found' });
             }
             
+            // A signed-in response carries the requester's private position: never store or share it in a cache.
+            if (req.user) res.set('Cache-Control', 'private, no-store');
             res.json(auction);
+        } catch (error) {
+            next(error);
+        }
+    },
+
+    events: async function(req, res, next) {
+        try {
+            await streamAuction(req, res, Number(req.params.id));
         } catch (error) {
             next(error);
         }
@@ -95,7 +104,6 @@ const controller = {
         try {
             const id = Number(req.params.id);
             const logs = await auctionService.findDescription(id);
-            console.log("Description: ", logs);
             if (!logs) {
                 return res.status(404).json({ message: 'Auction Not Found' });
             }
@@ -122,22 +130,12 @@ const controller = {
         }
     },
 
+    // DELETE /auction/reject?auctionId=&bidId=[&reason=]  (kept for compatibility; semantics = disqualify the bidder, B11)
     rejectBid: async (req, res, next) => {
         try {
-            const auctionId = Number(req.query.auctionId);
-            const bidId = Number(req.query.bidId);
-            const sellerId = req.user?.id;
-
-            console.log(req.user);
-
-            console.log(auctionId, bidId, sellerId);
-
-            await auctionService.rejectBid(auctionId, bidId, sellerId);
-
-            res.status(200).json({ 
-                message: "Bid rejected successfully",
-                bidId: bidId 
-            });
+            const { auctionId, bidId, reason } = req.query;
+            const result = await commands.rejectBidder({ auctionId, bidId, actor: req.user, reason });
+            res.status(200).json({ ...result, bidId });
         } catch (error) {
             next(error);
         }
@@ -146,39 +144,13 @@ const controller = {
     // POST /auctions
     create: async function(req, res, next) {
         try {
-            const { title, startingPrice, stepPrice, buyNowPrice, endTime, categoryId, description, autoExtend } = req.body;
+            // req.body was validated/coerced by createAuctionBody (money as digit strings, real booleans, sanitized HTML)
             const images = req.files;
-
-            // 1. Validate dữ liệu đầu vào
-            if (!title || !startingPrice || !stepPrice || !endTime || !categoryId) {
-                return res.status(400).json({ message: 'Missing required fields' });
-            }
-
-            if (Number(stepPrice) <= 0) {
-                return res.status(400).json({ message: 'Step price must be positive' });
-            }
-
-            if (buyNowPrice && Number(buyNowPrice) <= Number(startingPrice)) {
-                return res.status(400).json({ message: 'Buy Now price must be greater than Starting price' });
-            }
-
             if (!images || images.length < 3) {
-                return res.status(400).json({ message: 'At least 3 images are required' });
+                return res.status(400).json({ code: 'VALIDATION_ERROR', message: 'At least 3 images are required' });
             }
 
-            // 2. Chuẩn bị dữ liệu để lưu
-            const info = {
-                sellerId: req.user.id, // Lấy ID người đang đăng nhập
-                categoryId: Number(categoryId),
-                title,
-                description,
-                startingPrice: Number(startingPrice),
-                currentPrice: Number(startingPrice), // Giá hiện tại = Giá khởi điểm lúc tạo
-                stepPrice: Number(stepPrice),
-                buyNowPrice: buyNowPrice ? Number(buyNowPrice) : null,
-                endTime,
-                autoExtend: autoExtend || false,
-            };
+            const info = { ...req.body, sellerId: req.user.id, currentPrice: req.body.startingPrice };
 
             // 3. Gọi Service
             const auction = await auctionService.create(info, images);
@@ -193,28 +165,16 @@ const controller = {
             });
 
         } catch (error) {
-            console.error('Create Auction Error:', error);
-            return res.status(500).json({ error: error.message });
+            next(error);
         }
     },
 
-    // PUT /auctions/:id
+    // PUT /auction/:id  (body already restricted to title/description/categoryId)
     update: async function(req, res, next) {
         try {
-            const id = Number(req.params.id);
-            
-            // Check quyền sở hữu (chỉ người bán mới được sửa)
-            const existingAuction = await auctionService.findById(id);
-            if (!existingAuction) {
-                return res.status(404).json({ message: 'Auction Not Found' });
-            }
-            
-            if (existingAuction.sellerId !== req.user.id) {
-                return res.status(403).json({ message: 'Unauthorized to update this auction' });
-            }
-
-            const updatedAuction = await auctionService.update(id, req.body);
-            res.json(updatedAuction);
+            const id = req.params.id;
+            await commands.updateListing({ auctionId: id, actor: req.user, fields: req.body });
+            res.json(await auctionService.findById(id, req.user));
         } catch (error) {
             next(error);
         }
@@ -238,87 +198,44 @@ const controller = {
         }
     },
 
-    // PUT /auctions/:id/description
+    // PUT /auction/:id/description
     updateDescription: async function(req, res, next) {
         try {
-            const id = Number(req.params.id);
-            const { description } = req.body;
-            
-            // Check if auction exists
-            const existingAuction = await auctionService.findById(id);
-            if (!existingAuction) {
-                return res.status(404).json({ message: 'Auction Not Found' });
-            }
-            
-            // Check ownership (only seller can update)
-            if (existingAuction.sellerId !== req.user.id) {
-                return res.status(403).json({ message: 'Unauthorized to update this auction' });
-            }
-
-            // Update description
-            const updatedAuction = await auctionService.updateDescription(id, description);
-            res.json({ message: 'Description updated successfully', description: updatedAuction.description });
+            const id = req.params.id;
+            await commands.updateListing({ auctionId: id, actor: req.user, fields: { description: req.body.description } });
+            const { description } = await auctionService.findDescription(id);
+            res.json({ message: 'Description updated successfully', description });
         } catch (error) {
             next(error);
         }
     },
 
-    // DELETE /auctions/:id
+    // DELETE /auction/:id  — cancels the lot (soft); bids, history and orders are never hard-deleted
     delete: async function(req, res, next) {
         try {
-            const id = Number(req.params.id);
-
-            const existingAuction = await auctionService.findById(id);
-            if (!existingAuction) {
-                return res.status(404).json({ message: 'Auction Not Found' });
-            }
-
-            // Check quyền (Admin hoặc chính chủ mới được xóa)
-            if (req.user.role !== 'admin' && existingAuction.sellerId !== req.user.id) {
-                return res.status(403).json({ message: 'Unauthorized' });
-            }
-
-            await auctionService.delete(id);
-            res.json({ message: 'Deleted successfully' });
+            const result = await commands.cancelListing({ auctionId: Number(req.params.id), actor: req.user, reason: req.query.reason ?? req.body?.reason });
+            res.json({ ...result, message: 'Cancelled successfully' });
         } catch (error) {
             next(error);
         }
     },
 
-    // POST /auctions/:id/bid
+    // POST /auction/:id/bid  (body.amount = the bidder's private maximum; optional Idempotency-Key header)
     placeBid: async function(req, res, next) {
         try {
-            const auctionId = Number(req.params.id);
-            const userId = req.user.id; // Lấy từ token
-            const { amount } = req.body; // Đây là "Max Bid" mà user nhập
-
-            if (!amount || Number(amount) <= 0) {
-                return res.status(400).json({ message: 'Invalid bid amount' });
-            }
-
-            const result = await auctionService.placeBid(auctionId, userId, amount);
-            res.status(200).json(result);
+            const result = await commands.placeBid({ auctionId: req.params.id, actor: req.user, amount: req.body.amount, key: idempotencyKey(req) });
+            res.set('Idempotent-Replayed', String(Boolean(result.replayed))).status(result.status).json(result.body);
         } catch (error) {
             next(error);
         }
     },
 
-    // POST /auctions/:id/buy-now
+    // POST /auction/:id/buy-now
     buyNow: async function(req, res, next) {
         try {
-            const auctionId = Number(req.params.id);
-            const buyerId = req.user.id;
-
-            console.log(`Buy Now request - Auction: ${auctionId}, Buyer: ${buyerId}`);
-
-            const result = await auctionService.buyNow(auctionId, buyerId);
-            res.status(200).json(result);
+            const result = await commands.buyNow({ auctionId: req.params.id, actor: req.user, key: idempotencyKey(req) });
+            res.set('Idempotent-Replayed', String(Boolean(result.replayed))).status(result.status).json(result.body);
         } catch (error) {
-            console.error("Buy Now Error:", error.message, error.stack);
-            // Pass specific error messages to client
-            if (error.message) {
-                return res.status(400).json({ message: error.message });
-            }
             next(error);
         }
     }
