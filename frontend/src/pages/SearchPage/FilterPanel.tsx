@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Button, Field } from '../../components/ui';
+import type { ChangeEvent, FormEvent } from 'react';
+import type { CategoryNode } from '../../types/api';
 
 export const SORT_OPTIONS = [
   ['', 'Best match'],
@@ -12,8 +14,12 @@ export const SORT_OPTIONS = [
 ];
 
 /** Category / price / sort form. State lives in the URL; Apply writes it and resets paging. */
-export default function FilterPanel({ params, categories, onApply, onReset, idPrefix = 'f' }) {
-  const [draft, setDraft] = useState({ category: '', minPrice: '', maxPrice: '', sortBy: '' });
+type Draft = { category: string; minPrice: string; maxPrice: string; sortBy: string };
+
+export default function FilterPanel({ params, categories, onApply, onReset, idPrefix = 'f' }: {
+  params: URLSearchParams; categories: CategoryNode[]; onApply: (draft: Draft) => void; onReset: () => void; idPrefix?: string;
+}) {
+  const [draft, setDraft] = useState<Draft>({ category: '', minPrice: '', maxPrice: '', sortBy: '' });
   const key = params.toString();
 
   useEffect(() => {
@@ -25,12 +31,12 @@ export default function FilterPanel({ params, categories, onApply, onReset, idPr
     });
   }, [key]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const set = (k) => (e) => setDraft((d) => ({ ...d, [k]: e.target.value }));
-  const wholeOrEmpty = (v) => v === '' || /^\d{1,15}$/.test(v);
+  const set = (k: keyof Draft) => (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => setDraft((d) => ({ ...d, [k]: e.target.value }));
+  const wholeOrEmpty = (v: string) => v === '' || /^\d{1,15}$/.test(v);
   const priceError = !wholeOrEmpty(draft.minPrice) || !wholeOrEmpty(draft.maxPrice) ? 'Use whole numbers only'
     : draft.minPrice && draft.maxPrice && BigInt(draft.minPrice) > BigInt(draft.maxPrice) ? 'Minimum is above the maximum' : '';
 
-  const submit = (e) => {
+  const submit = (e: FormEvent) => {
     e.preventDefault();
     if (priceError) return;
     onApply(draft);

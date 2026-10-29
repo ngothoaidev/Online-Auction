@@ -3,8 +3,10 @@ import { Button, Field } from '../../components/ui';
 import { formatVnd } from '../../utils/money';
 import orderService from '../../services/orderService';
 import type { ApiError } from '../../services/apiClient';
+import type { FormEvent } from 'react';
+import type { OrderView, PaymentSummary } from '../../types/api';
 
-const EXCEPTION_TEXT = {
+const EXCEPTION_TEXT: Record<string, string> = {
   amount_mismatch: 'the amount reported by the gateway did not match this order',
   success_after_failure: 'the gateway reported a payment after the attempt had failed',
 };
@@ -13,15 +15,15 @@ const EXCEPTION_TEXT = {
  * Buyer checkout through the MOCK gateway (demo): no real money moves. The order amount comes from the server.
  * The simulate buttons stand in for what a real provider would do (success, failure, or a confirmation that never arrives).
  */
-export default function MockPaymentPanel({ order, payment, onChanged }) {
+export default function MockPaymentPanel({ order, payment, onChanged }: { order: OrderView; payment: PaymentSummary | null; onChanged: () => unknown }) {
   const latest = payment?.attempts?.[0] ?? null;
   const open = latest?.status === 'created' ? latest : null;
   const [form, setForm] = useState({ shippingAddress: order.shippingAddress ?? '', buyerPhone: order.buyerPhone ?? '' });
-  const [errors, setErrors] = useState({});
-  const [pending, setPending] = useState(null);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [pending, setPending] = useState<string | null>(null);
   const [status, setStatus] = useState('');
 
-  const run = async (label, fn) => {
+  const run = async (label: string, fn: () => Promise<string>) => {
     if (pending) return;
     setPending(label);
     setStatus('');
@@ -36,7 +38,7 @@ export default function MockPaymentPanel({ order, payment, onChanged }) {
     }
   };
 
-  const start = (e) => {
+  const start = (e: FormEvent) => {
     e.preventDefault();
     const next = {
       shippingAddress: form.shippingAddress.trim() ? '' : 'Enter the delivery address',
@@ -50,13 +52,16 @@ export default function MockPaymentPanel({ order, payment, onChanged }) {
     });
   };
 
-  const simulate = (outcome, deliver = true) => run(`${outcome}-${deliver}`, async () => {
-    const r = await orderService.simulateMockPayment(open.reference, outcome, deliver);
-    if (!r.delivered) return 'The gateway took the payment but its confirmation was lost. The background reconciliation will record it within a minute or two.';
-    if (r.outcome === 'applied') return 'Payment recorded. The seller can now ship.';
-    if (r.outcome === 'failed_recorded') return 'The payment failed. Nothing was charged; you can try again.';
-    return `The gateway answered "${r.outcome}". This payment needs a manual review.`;
-  });
+  const simulate = (outcome: 'succeeded' | 'failed', deliver = true) => {
+    if (!open) return; // the buttons only show while an attempt is open
+    return run(`${outcome}-${deliver}`, async () => {
+      const r = await orderService.simulateMockPayment(open.reference, outcome, deliver);
+      if (!r.delivered) return 'The gateway took the payment but its confirmation was lost. The background reconciliation will record it within a minute or two.';
+      if (r.outcome === 'applied') return 'Payment recorded. The seller can now ship.';
+      if (r.outcome === 'failed_recorded') return 'The payment failed. Nothing was charged; you can try again.';
+      return `The gateway answered "${r.outcome}". This payment needs a manual review.`;
+    });
+  };
 
   return (
     <section aria-labelledby="mock-pay-title" className="rounded-(--radius-card) border border-(--line) bg-(--surface) p-6">
@@ -68,7 +73,7 @@ export default function MockPaymentPanel({ order, payment, onChanged }) {
       {latest?.status === 'failed' && !open && <p className="mt-3 text-sm text-(--warning)">The last attempt failed. You can start a new one.</p>}
       {latest?.status === 'exception' && (
         <p className="mt-3 text-sm text-(--danger)">
-          A payment needs review: {EXCEPTION_TEXT[latest.exceptionReason] ?? latest.exceptionReason?.replace(/_/g, ' ')}. Contact the seller or support before paying again.
+          A payment needs review: {EXCEPTION_TEXT[latest.exceptionReason ?? ''] ?? latest.exceptionReason?.replace(/_/g, ' ')}. Contact the seller or support before paying again.
         </p>
       )}
 

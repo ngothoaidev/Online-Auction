@@ -8,10 +8,11 @@ import CommentsSection from './CommentsSection';
 import BidHistory from './BidHistory';
 import ReportListing from './ReportListing';
 import { EmptyState, Skeleton, Button } from '../../components/ui';
+import type { AuctionPatch } from '../../types/api';
 
 export default function ProductDetail() {
-  const { user } = useAuth() ?? {};
-  const { id } = useParams();
+  const { user } = useAuth();
+  const { id = '' } = useParams();
   const { status, data: product, refresh, applyCommandResult, clockOffset, connection } = useAuction(id);
 
   if (status === 'loading') {
@@ -28,6 +29,7 @@ export default function ProductDetail() {
   }
   if (status === 'missing') return <div className="mx-auto max-w-2xl px-4 py-16"><EmptyState title="Lot not found" action={<Link className="font-semibold text-(--brand) underline" to="/search">Browse lots</Link>}>This lot does not exist or was removed.</EmptyState></div>;
   if (status === 'error') return <div className="mx-auto max-w-2xl px-4 py-16"><EmptyState title="The lot could not be loaded" action={<Button onClick={() => refresh({ silent: false })}>Try again</Button>}>Check your connection and try again.</EmptyState></div>;
+  if (!product) return null; // 'ready' always carries a snapshot
 
   const ended = product.status !== 'active' || Boolean(product.serverTime && new Date(product.endTime) <= new Date(product.serverTime));
   const categoryName = product.category?.name || product.categoryName || 'Category';
@@ -35,7 +37,7 @@ export default function ProductDetail() {
   // a command that changed canonical state (or a refusal) -> bump the history table too
   const refreshKey = `${product.version}`;
 
-  const onChanged = (result) => (result ? applyCommandResult(result) : refresh());
+  const onChanged = (result?: AuctionPatch | null) => (result ? applyCommandResult(result) : refresh());
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-10">

@@ -7,16 +7,17 @@ import { apiFetch } from '../../services/apiClient';
 import { Button, Field } from '../../components/ui';
 import SocialButtons from '../../components/auth/SocialButtons';
 import type { ApiError } from '../../services/apiClient';
+import type { ChangeEvent, FormEvent } from 'react';
 
 export default function Register() {
   const nav = useNav();
   const [form, setForm] = useState({ username: '', email: '', password: '', confirmPassword: '' });
-  const [fieldErrors, setFieldErrors] = useState({});
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
+  const set = (k: keyof typeof form) => (e: ChangeEvent<HTMLInputElement>) => setForm((f) => ({ ...f, [k]: e.target.value }));
 
-  const submit = async (e) => {
+  const submit = async (e: FormEvent) => {
     e.preventDefault();
     const v = validateForm(registerSchema, form);
     if (!v.success) { setFieldErrors(v.fieldErrors); setError(''); return; }

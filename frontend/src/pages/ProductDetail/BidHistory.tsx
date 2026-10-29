@@ -5,18 +5,21 @@ import { formatBidderName, formatTimeAgo } from '../../utils/format';
 import { formatVnd } from '../../utils/money';
 import { Button, Dialog, EmptyState, StatusBadge } from '../../components/ui';
 import type { ApiError } from '../../services/apiClient';
+import type { PublicBid } from '../../types/api';
 
 const FILTERS = [['all', 'All'], ['mine', 'Mine'], ['recent', 'Last hour']];
 
 /** Public price history as a real table. Removed bidders stay visible (marked), the seller moderates through a confirm dialog. */
-export default function BidHistory({ productId, sellerId, refreshKey = 0, active = true, onChanged }) {
+export default function BidHistory({ productId, sellerId, refreshKey = 0, active = true, onChanged }: {
+  productId: number | string; sellerId: number; refreshKey?: string | number; active?: boolean; onChanged?: () => void;
+}) {
   const { user } = useAuth() ?? {};
   const me = user?.userId ?? user?.id;
   const [filter, setFilter] = useState('all');
-  const [state, setState] = useState({ status: 'loading', rows: [] });
+  const [state, setState] = useState<{ status: 'loading' | 'ready' | 'error'; rows: PublicBid[] }>({ status: 'loading', rows: [] });
   const [attempt, setAttempt] = useState(0);
-  const [reject, setReject] = useState(null); // { row, pending, error }
-  const rejectBtn = useRef(null);
+  const [reject, setReject] = useState<{ row: PublicBid; pending?: boolean; error?: string } | null>(null);
+  const rejectBtn = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -30,13 +33,14 @@ export default function BidHistory({ productId, sellerId, refreshKey = 0, active
   const isSeller = me !== undefined && me === Number(sellerId);
 
   const confirmReject = async () => {
-    setReject((r) => ({ ...r, pending: true, error: '' }));
+    if (!reject) return;
+    setReject((r) => r && { ...r, pending: true, error: '' });
     try {
       await auctionService.rejectBid(productId, reject.row.id);
       setReject(null);
       onChanged?.();
     } catch (error) {
-      setReject((r) => ({ ...r, pending: false, error: (error as ApiError).message || 'Could not remove this bidder' }));
+      setReject((r) => r && { ...r, pending: false, error: (error as ApiError).message || 'Could not remove this bidder' });
     }
   };
 

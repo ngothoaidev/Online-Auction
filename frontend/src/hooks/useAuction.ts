@@ -4,8 +4,10 @@ import { useAuth } from '../contexts/AuthContext';
 import { useAuctionEvents } from './useAuctionEvents';
 import type { AuctionDetail, AuctionPatch } from '../types/api';
 
+/** `ready` always has a snapshot; the other states may keep the last one while (re)loading or after a failed refresh. */
 type LotState =
-  | { status: 'loading' | 'missing' | 'error' | 'ready'; data: AuctionDetail | null; error: unknown };
+  | { status: 'ready'; data: AuctionDetail; error: unknown }
+  | { status: 'loading' | 'missing' | 'error'; data: AuctionDetail | null; error: unknown };
 
 const EVENT_FIELDS = ['currentPrice', 'bidCount', 'endTime', 'status', 'version', 'closeReason'] as const;
 
@@ -36,7 +38,7 @@ export function useAuction(id: number | string) {
     controller.current?.abort();
     const c = new AbortController();
     controller.current = c;
-    if (!silent) setState((s) => ({ ...s, status: s.data ? s.status : 'loading' }));
+    if (!silent) setState((s) => (s.data ? s : { ...s, status: 'loading' }));
     try {
       const data = await apiFetch<AuctionDetail>(`/auction/${id}`, { signal: c.signal });
       if (c.signal.aborted) return null;

@@ -142,3 +142,37 @@ export type CountKey = Exclude<keyof ProfileCounts, 'reviewsReceived' | 'reviews
 
 /** An in-app notification of the signed-in user. */
 export type AppNotification = { id: number; kind: string; title: string; body: string; link: string | null; createdAt: string; read: boolean };
+
+export type PartyRef = {
+  id: number; username: string; email?: string; fullName: string | null; avatarUrl: string | null;
+  ratingCount?: number | null; positiveRatingCount?: number | null;
+};
+
+/** The order page's view: the order row plus its lot, both parties and who has reviewed. */
+export type OrderView = {
+  id: number; auctionId: number; buyerId: number; sellerId: number; finalPrice: string; status: string; version?: number;
+  paymentMode: string; paymentDueAt: string | null; paymentConfirmedAt: string | null;
+  paymentProofUrl: string | null; shippingProofUrl: string | null; trackingNumber: string | null;
+  shippingAddress: string | null; buyerPhone: string | null; buyerNotes?: string | null; shippingNotes?: string | null;
+  cancelReason?: string | null;
+  auction?: { id: number; title: string; currentPrice: string; image: string | null };
+  buyer?: PartyRef; seller?: PartyRef;
+  buyerReviewSubmitted?: boolean; sellerReviewSubmitted?: boolean;
+};
+
+export type PaymentAttempt = {
+  id: string; provider: string; reference: string; amount: string; currency: string; status: string;
+  exceptionReason: string | null; createdAt: string;
+};
+export type PaymentSummary = { mode: string; available: string[]; attempts: PaymentAttempt[] };
+
+export type OrderMessage = {
+  id: number; orderId: number; senderId: number; message: string; imageUrl: string | null; isRead: boolean | null;
+  createdAt: string; sender?: { id: number; username: string; avatarUrl: string | null };
+};
+
+/** A row of the admin audit trail. */
+export type AuditEntry = {
+  id: number; action: string; targetType: string; targetId: number; reason: string | null;
+  before: Record<string, unknown> | null; after: Record<string, unknown> | null; createdAt: string; actorId: number; actor: string | null;
+};

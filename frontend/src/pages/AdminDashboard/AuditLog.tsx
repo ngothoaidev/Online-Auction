@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useState } from 'react';
 import { apiFetch } from '../../services/apiClient';
 import { Button, EmptyState, Field, Skeleton } from '../../components/ui';
+import type { AuditEntry } from '../../types/api';
 
 const TYPES = [['', 'All targets'], ['user', 'Users'], ['seller_request', 'Seller requests'], ['listing', 'Listings'], ['report', 'Reports'], ['category', 'Categories']];
 
 /** "status: active → banned" from the allowlisted before/after snapshots. */
-function changes(before, after) {
+function changes(before: Record<string, unknown> | null, after: Record<string, unknown> | null) {
   const keys = [...new Set([...Object.keys(before ?? {}), ...Object.keys(after ?? {})])];
   const diff = keys.filter((k) => JSON.stringify(before?.[k]) !== JSON.stringify(after?.[k]))
     .map((k) => `${k}: ${before?.[k] ?? '—'} → ${after?.[k] ?? '—'}`);
@@ -15,7 +16,7 @@ function changes(before, after) {
 /** Read-only, append-only record of admin actions (who, when, what, why). Entries are never edited. */
 export default function AuditLog() {
   const [type, setType] = useState('');
-  const [state, setState] = useState({ loading: true, error: false, items: [] });
+  const [state, setState] = useState<{ loading: boolean; error: boolean; items: AuditEntry[] }>({ loading: true, error: false, items: [] });
 
   const load = useCallback(async () => {
     try {

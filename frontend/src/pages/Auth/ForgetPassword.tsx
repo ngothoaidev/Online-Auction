@@ -6,6 +6,7 @@ import { useNav } from '../../hooks/useNavigate';
 import {validateForm} from '../../utils/validation';
 import { forgotPasswordEmailSchema, forgotPasswordOtpSchema, resetPasswordSchema } from '../../schemas/auth.schemas';
 import type { ApiError } from '../../services/apiClient';
+import type { FormEvent } from 'react';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
@@ -27,10 +28,10 @@ export default function ForgetPassword() {
     const [loading, setLoading] = useState(false);
     const [successMessage, setSuccessMessage] = useState('');
 
-    const otpRef = useRef(null);
+    const otpRef = useRef<HTMLInputElement>(null);
 
     // Handle email submission
-    const handleEmailSubmit = async (e) => {
+    const handleEmailSubmit = async (e: FormEvent) => {
         e.preventDefault();
         setError('');
         setSuccessMessage('');
@@ -69,7 +70,7 @@ export default function ForgetPassword() {
     };
 
     // Handle OTP verification
-    const handleOtpSubmit = async (e) => {
+    const handleOtpSubmit = async (e: FormEvent) => {
         e.preventDefault();
         setError('');
         setSuccessMessage('');
@@ -111,7 +112,7 @@ export default function ForgetPassword() {
     };
 
     // Handle password reset
-    const handlePasswordReset = async (e) => {
+    const handlePasswordReset = async (e: FormEvent) => {
         e.preventDefault();
         setError('');
         setSuccessMessage('');

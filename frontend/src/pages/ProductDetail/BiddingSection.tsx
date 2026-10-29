@@ -9,16 +9,23 @@ import { validateBid, REASON_TEXT } from '../../utils/bid';
 import auctionService from '../../services/auctionService';
 import { Button, Field, StatusBadge } from '../../components/ui';
 import ReviewDialog from '../../components/ui/ReviewDialog';
+import type { FormEvent, ReactNode } from 'react';
+import type { ReviewOutcome } from '../../components/ui/ReviewDialog';
+import type { AuctionDetail, AuctionPatch } from '../../types/api';
 
-const OUTCOME = {
-  success: { tone: 'success', title: 'You are the highest bidder', message: (r) => `Your maximum is recorded. The current price is ${formatVnd(r.currentPrice)}.` },
-  updated: { tone: 'info', title: 'Maximum updated', message: (r) => `Your new maximum is recorded. The price stays at ${formatVnd(r.currentPrice)}.` },
+/** POST /auction/:id/bid response body. */
+type BidResult = AuctionPatch & { outcome: 'success' | 'updated' | 'outbid'; message?: string; isLeading?: boolean; yourMaximum?: string };
+type Outcome = { tone: ReviewOutcome['tone']; title: string; message: (r: BidResult) => string };
+
+const OUTCOME: Record<string, Outcome> = {
+  success: { tone: 'success', title: 'You are the highest bidder', message: (r: BidResult) => `Your maximum is recorded. The current price is ${formatVnd(r.currentPrice)}.` },
+  updated: { tone: 'info', title: 'Maximum updated', message: (r: BidResult) => `Your new maximum is recorded. The price stays at ${formatVnd(r.currentPrice)}.` },
   // Accepted, but another bidder's maximum is higher: this must never read like a win.
-  outbid: { tone: 'warning', title: 'You were outbid', message: (r) => `Your bid was accepted, but a higher maximum was already in place. The price is now ${formatVnd(r.currentPrice)}. You can bid again with a higher maximum.` },
+  outbid: { tone: 'warning', title: 'You were outbid', message: (r: BidResult) => `Your bid was accepted, but a higher maximum was already in place. The price is now ${formatVnd(r.currentPrice)}. You can bid again with a higher maximum.` },
 };
 
 /** Local clock corrected to the server's, ticking every second (countdown and the deadline switch). */
-function useServerNow(offsetMs) {
+function useServerNow(offsetMs: number) {
   const [now, setNow] = useState(() => Date.now() + offsetMs);
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now() + offsetMs), 1000); // a new offset shows within a second
@@ -27,7 +34,7 @@ function useServerNow(offsetMs) {
   return now;
 }
 
-const CONNECTION_TEXT = {
+const CONNECTION_TEXT: Record<string, string> = {
   stale: 'Live updates paused, reconnecting. The price is re-checked every 10 seconds.',
   offline: 'You are offline. The price shown may be out of date.',
 };
@@ -36,17 +43,17 @@ const CONNECTION_TEXT = {
  * What a closed lot says, by who is looking. Before settlement `winnerId` is only the last leader, so nobody is told
  * they won until `settledAt` is set (the order page itself waits for settlement and checks who may open it).
  */
-function ClosedResult({ product, me }) {
+function ClosedResult({ product, me }: { product: AuctionDetail; me: number | null | undefined }) {
   const price = formatVnd(product.currentPrice);
   const settled = Boolean(product.settledAt) || product.status === 'sold';
-  const box = (title, body, action) => (
+  const box = (title: string, body?: ReactNode, action?: ReactNode) => (
     <div className="mt-4 rounded-(--radius-control) border border-(--line) p-4">
       <p className="font-semibold text-(--ink)">{title}</p>
       {body && <p className="mt-1 text-sm text-(--muted)">{body}</p>}
       {action}
     </div>
   );
-  const orderLink = (label) => (
+  const orderLink = (label: string) => (
     <Link to={`/order/${product.id}`} className="mt-3 inline-flex min-h-11 w-full items-center justify-center rounded-(--radius-control) bg-(--ink) px-4 font-semibold text-(--on-ink) hover:opacity-90">{label}</Link>
   );
 
@@ -59,13 +66,15 @@ function ClosedResult({ product, me }) {
   return box(`${how} for ${price}`);
 }
 
-export default function BiddingSection({ product, ended = false, onChanged, clockOffset = 0, connection = 'live' }) {
+export default function BiddingSection({ product, ended = false, onChanged, clockOffset = 0, connection = 'live' }: {
+  product: AuctionDetail; ended?: boolean; onChanged?: (result?: AuctionPatch | null) => unknown; clockOffset?: number; connection?: string;
+}) {
   const { user } = useAuth() ?? {};
   const navigate = useNavigate();
   const watchlist = useWatchlist();
   const [text, setText] = useState('');
   const [touched, setTouched] = useState(false);
-  const [review, setReview] = useState(null); // { kind:'bid'|'buyNow', amount? }
+  const [review, setReview] = useState<{ kind: 'bid'; amount: string } | { kind: 'buyNow' } | null>(null);
   const [announce, setAnnounce] = useState('');
 
   const caps = product.capabilities ?? { canBid: false, canBuyNow: false, reasons: {} };
@@ -86,18 +95,19 @@ export default function BiddingSection({ product, ended = false, onChanged, cloc
   const [opened] = useState(() => ({ id: product.id, endTime: product.endTime }));
   const extended = !closed && opened.id === product.id && Date.parse(product.endTime) > Date.parse(opened.endTime);
   // A leader whose private maximum is above Buy Now: buying ends the auction at the Buy Now price, below that maximum.
-  const buyNowBelowMyMax = me?.status === 'leading' && product.buyNowPrice && compareAmounts(String(product.buyNowPrice), me.yourMaximum) < 0;
+  const buyNowBelowMyMax = me?.status === 'leading' && product.buyNowPrice && me.yourMaximum && compareAmounts(String(product.buyNowPrice), me.yourMaximum) < 0;
   const rating = product.seller?.rating;
 
-  const startReview = (e) => {
+  const startReview = (e: FormEvent) => {
     e.preventDefault();
     setTouched(true);
     if (!check.ok) return;
     setReview({ kind: 'bid', amount: check.amount });
   };
 
-  const confirmBid = async (key) => {
-    const r = await auctionService.placeBid(product.id, review.amount, key);
+  const confirmBid = async (key: string): Promise<ReviewOutcome> => {
+    if (review?.kind !== 'bid') throw new Error('Nothing to confirm');
+    const r: BidResult = await auctionService.placeBid(product.id, review.amount, key);
     const o = OUTCOME[r.outcome] ?? OUTCOME.success;
     onChanged?.(r);
     setText('');
@@ -105,19 +115,19 @@ export default function BiddingSection({ product, ended = false, onChanged, cloc
     return { tone: o.tone, title: o.title, message: o.message(r) };
   };
 
-  const confirmBuyNow = async (key) => {
+  const confirmBuyNow = async (key: string): Promise<ReviewOutcome> => {
     const r = await auctionService.buyNow(product.id, key);
     onChanged?.(r);
     setTimeout(() => navigate(`/order/${r.auctionId ?? product.id}`), 600);
     return { tone: 'success', title: 'Order created', message: `The lot is yours for ${formatVnd(r.finalPrice)}. Nothing has been paid yet: payment and delivery are arranged on the order page. Taking you there now.` };
   };
 
-  const onSettled = (result, error) => {
+  const onSettled = (result: ReviewOutcome | null, error: unknown) => {
     if (result) setAnnounce(result.title);
     if (error) onChanged?.(null); // refused: pull the canonical state so the page shows why
   };
 
-  const reason = !caps.canBid ? REASON_TEXT[caps.reasons?.bid] : '';
+  const reason = !caps.canBid ? REASON_TEXT[caps.reasons?.bid ?? ''] : '';
 
   return (
     <section aria-labelledby="bid-panel-title" className="rounded-(--radius-card) border border-(--line) bg-(--surface) p-5 md:p-6">
@@ -199,7 +209,7 @@ export default function BiddingSection({ product, ended = false, onChanged, cloc
           <Button variant="secondary" size="lg" className="w-full" disabled={!caps.canBuyNow} onClick={() => setReview({ kind: 'buyNow' })}>
             <ShoppingCart size={18} aria-hidden="true" /> Buy now for {formatVnd(product.buyNowPrice)}
           </Button>
-          {!caps.canBuyNow && REASON_TEXT[caps.reasons?.buyNow] && caps.reasons?.buyNow !== caps.reasons?.bid && <p className="mt-2 text-sm text-(--muted)">{REASON_TEXT[caps.reasons.buyNow]}</p>}
+          {!caps.canBuyNow && caps.reasons?.buyNow && REASON_TEXT[caps.reasons.buyNow] && caps.reasons.buyNow !== caps.reasons.bid && <p className="mt-2 text-sm text-(--muted)">{REASON_TEXT[caps.reasons.buyNow]}</p>}
         </div>
       )}
 
@@ -213,7 +223,7 @@ export default function BiddingSection({ product, ended = false, onChanged, cloc
         description={review?.kind === 'buyNow' ? 'This ends the auction immediately and commits you to buy at this price.' : 'You are committing to pay up to this amount for the item if you win.'}
         rows={review?.kind === 'buyNow'
           ? [['Lot', product.title], ['Item price', formatVnd(product.buyNowPrice)], ['Shipping', 'Not included, arranged with the seller']]
-          : [['Lot', product.title], ['Current price', formatVnd(product.currentPrice)], ['Your maximum (item price)', formatVnd(review?.amount)], ['Shipping', 'Not included, arranged with the seller']]}
+          : [['Lot', product.title], ['Current price', formatVnd(product.currentPrice)], ['Your maximum (item price)', formatVnd(review?.kind === 'bid' ? review.amount : null)], ['Shipping', 'Not included, arranged with the seller']]}
         note={review?.kind === 'buyNow'
           ? `${buyNowBelowMyMax ? `You are already the highest bidder. Buying now ends the auction at ${formatVnd(product.buyNowPrice)}, below your maximum of ${formatVnd(me.yourMaximum)}. ` : ''}You pay the seller directly on the order page; this site does not hold money.`
           : 'Your maximum stays private. You only pay what is needed to stay ahead, never more than this. If you win, you pay the seller directly on the order page; this site does not hold money.'}
