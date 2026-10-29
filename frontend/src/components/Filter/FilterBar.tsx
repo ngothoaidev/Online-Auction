@@ -1,4 +1,6 @@
 import { useState, useEffect, useRef } from "react";
+import type { SetURLSearchParams } from "react-router-dom";
+import type { PriceRange } from "./types";
 import { Filter } from "lucide-react";
 import './FilterBar.css';
 
@@ -7,24 +9,24 @@ import PriceDropdown from "./Modal/PriceDropdown";
 import SortSelection from "./Modal/SortSelection";
 import ChoiceSelected from "./ChoiceSelected";
 
-export default function FilterBar({ setSearchParams }) {
-  const [activeDropdown, setActiveDropdown] = useState(null);
-  const [selectedCategory, setSelectedCategory] = useState(null);
-  const [priceRange, setPriceRange] = useState({ min: "", max: "" });
+export default function FilterBar({ setSearchParams }: { setSearchParams: SetURLSearchParams }) {
+  const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [priceRange, setPriceRange] = useState<PriceRange>({ min: "", max: "" });
   const [orderBy, setOrderBy] = useState("default");
-  const barRef = useRef(null);
+  const barRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const params = {};
+    const params: Record<string, string> = {};
     
     if (selectedCategory) {
       params.category = selectedCategory;
     }
     if (priceRange.min) {
-      params.minPrice = priceRange.min;
+      params.minPrice = String(priceRange.min);
     }
     if (priceRange.max) {
-      params.maxPrice = priceRange.max;
+      params.maxPrice = String(priceRange.max);
     }
     if (orderBy && orderBy !== "default") {
       params.sortBy = orderBy;
@@ -47,8 +49,8 @@ export default function FilterBar({ setSearchParams }) {
   }, [selectedCategory, priceRange, orderBy, setSearchParams]);
 
   useEffect(() => {
-    function handleClickOutside(event) {
-      if (barRef.current && !barRef.current.contains(event.target)) {
+    function handleClickOutside(event: MouseEvent) {
+      if (barRef.current && !barRef.current.contains(event.target as Node)) {
         setActiveDropdown(null);
       }
     }
@@ -56,7 +58,7 @@ export default function FilterBar({ setSearchParams }) {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const toggleDropdown = (name) => {
+  const toggleDropdown = (name: string) => {
     setActiveDropdown(activeDropdown === name ? null : name);
   };
 

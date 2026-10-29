@@ -6,15 +6,17 @@ import { useWatchlist } from '../../contexts/WatchlistContext';
 import { formatTimeLeft } from '../../utils/format';
 import { formatVnd } from '../../utils/money';
 import { StatusBadge } from '../ui';
+import type { Tone } from '../ui/StatusBadge';
+import type { CatalogAuction } from '../../types/api';
 
-const URGENCY_TONE = { critical: 'danger', warning: 'warning', normal: 'neutral', ended: 'neutral' };
+const URGENCY_TONE: Record<string, Tone> = { critical: 'danger', warning: 'warning', normal: 'neutral', ended: 'neutral' };
 
 /**
  * Lot card. Semantics: <article> with a real link on the image and the title (one tab stop each) and a sibling
  * favourite button; nothing is hover-only and the whole card is NOT a clickable div.
  */
 /** variant 'won' (profile Wins / Sold tabs): the lot is settled and the viewer is a participant, so the card links to its order. */
-export default function AuctionCard({ product, variant }) {
+export default function AuctionCard({ product, variant }: { product: CatalogAuction; variant?: 'won' }) {
   const { user } = useAuth() ?? {};
   const watchlist = useWatchlist();
   const [time, setTime] = useState(() => formatTimeLeft(product.endTime));
@@ -30,7 +32,7 @@ export default function AuctionCard({ product, variant }) {
   const href = `/auction/${product.id}`;
   const saved = user ? watchlist.has(product.id) : false;
   const hasBids = (product.bidCount ?? 0) > 0 && product.bids;
-  const price = hasBids ? product.bids.amount : product.currentPrice;
+  const price = hasBids && product.bids ? product.bids.amount : product.currentPrice;
   const rating = product.seller?.rating;
 
   const onHeart = async () => {

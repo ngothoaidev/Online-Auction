@@ -6,16 +6,20 @@ import { useNav } from '../../hooks/useNavigate';
 import { searchUrl } from '../../utils/searchUrl';
 import { Dialog } from '../ui';
 import { accountLinks } from './accountLinks';
+import type { FormEvent } from 'react';
+import type { CategoryNode, SessionUser } from '../../types/api';
 
 /** Mobile navigation drawer: a real modal dialog (focus trap, Escape, focus restore) from the shared primitive. */
-export default function MobileMenu({ open, onClose, focusSearch, categories, user, logout }) {
+export default function MobileMenu({ open, onClose, focusSearch, categories, user, logout }: {
+  open: boolean; onClose: () => void; focusSearch?: boolean; categories: CategoryNode[]; user: SessionUser | null; logout: () => void;
+}) {
   const nav = useNav();
-  const searchRef = useRef(null);
-  const [openCategory, setOpenCategory] = useState(null);
+  const searchRef = useRef<HTMLInputElement>(null);
+  const [openCategory, setOpenCategory] = useState<number | null>(null);
   const [query, setQuery] = useState('');
 
-  const go = (fn) => () => { onClose(); fn(); };
-  const onSearch = (e) => {
+  const go = (fn: () => void) => () => { onClose(); fn(); };
+  const onSearch = (e: FormEvent) => {
     e.preventDefault();
     const q = query.trim();
     if (!q) return;

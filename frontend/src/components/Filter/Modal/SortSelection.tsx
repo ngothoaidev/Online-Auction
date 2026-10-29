@@ -1,6 +1,6 @@
 import { ArrowUpDown } from "lucide-react";
 
-export default function SortSelection({orderBy, setOrderBy}){
+export default function SortSelection({orderBy, setOrderBy}: { orderBy: string; setOrderBy: (o: string) => void }){
     return (
         <div className="flex items-center gap-3 w-full md:w-auto justify-between md:justify-end">
             <div className="flex items-center gap-2">

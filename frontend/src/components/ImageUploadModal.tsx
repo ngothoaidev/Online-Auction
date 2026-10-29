@@ -6,19 +6,21 @@ const MAX_BYTES = 5 * 1024 * 1024;
 const TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 
 /** Pick one image (JPEG/PNG/WebP, up to 5 MB), preview it, confirm. The server re-checks type and size by content. */
-export default function ImageUploadModal({ isOpen, onClose, onUpload, title = 'Upload image' }) {
-  const [file, setFile] = useState(null);
-  const [preview, setPreview] = useState(null);
+export default function ImageUploadModal({ isOpen, onClose, onUpload, title = 'Upload image' }: {
+  isOpen: boolean; onClose: () => void; onUpload: (file: File) => Promise<unknown>; title?: string;
+}) {
+  const [file, setFile] = useState<File | null>(null);
+  const [preview, setPreview] = useState<string | null>(null);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
-  const inputRef = useRef(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!isOpen) { setFile(null); setPreview(null); setError(''); setBusy(false); }
   }, [isOpen]);
   useEffect(() => () => { if (preview) URL.revokeObjectURL(preview); }, [preview]);
 
-  const choose = (f) => {
+  const choose = (f: File | undefined) => {
     setError('');
     if (!f) return;
     if (!TYPES.includes(f.type)) { setError('Choose a JPEG, PNG or WebP image.'); return; }
@@ -28,13 +30,14 @@ export default function ImageUploadModal({ isOpen, onClose, onUpload, title = 'U
   };
 
   const confirm = async () => {
+    if (!file) return;
     setBusy(true);
     setError('');
     try {
       await onUpload(file);
       onClose();
     } catch (err) {
-      setError(err?.message || 'Upload failed. Try again.');
+      setError((err as Error | null)?.message || 'Upload failed. Try again.');
       setBusy(false);
     }
   };

@@ -1,7 +1,8 @@
+import type { DropdownControl } from './types';
 import {ChevronDown} from "lucide-react";
 import React from "react";
 
-export default function FilterButton({ label, name, toggleDropdown, activeDropdown }){
+export default function FilterButton({ label, name, toggleDropdown, activeDropdown }: { label: string; name: string } & Pick<DropdownControl, 'toggleDropdown' | 'activeDropdown'>){
   return (
     <button
       onClick={() => toggleDropdown(name)}

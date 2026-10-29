@@ -1,3 +1,5 @@
+import type { ReactNode } from 'react';
+import type { CatalogAuction } from '../types/api';
 import AuctionCard from './AuctionCard';
 
 export default function ProductGrid({ 
@@ -5,7 +7,7 @@ export default function ProductGrid({
   emptyState, 
   columns = "grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4",
   cardVariant,
-}) {
+}: { items?: CatalogAuction[]; emptyState?: ReactNode; columns?: string; cardVariant?: 'won' }) {
 
   if (!items || items.length === 0) {
     return (

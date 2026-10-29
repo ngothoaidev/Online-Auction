@@ -10,7 +10,7 @@ export default function NotificationsLink() {
   const [unread, setUnread] = useState(0);
 
   useEffect(() => {
-    let controller = null;
+    let controller: AbortController | null = null;
     const load = () => {
       controller?.abort();
       controller = new AbortController();

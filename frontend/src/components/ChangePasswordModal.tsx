@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { Mail, Eye, EyeOff, CheckCircle } from 'lucide-react';
 import { Dialog } from './ui';
+import type { FormEvent } from 'react';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
-export default function ChangePasswordModal({ isOpen, onClose }) {
+export default function ChangePasswordModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const [step, setStep] = useState(1); // 1: Request OTP, 2: Verify & Change
   const [otp, setOtp] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -61,13 +62,13 @@ export default function ChangePasswordModal({ isOpen, onClose }) {
         setSuccess('');
       }, 1500);
     } catch (err) {
-      setError(err.message || 'Failed to send verification code');
+      setError((err as Error).message || 'Failed to send verification code');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleChangePassword = async (e) => {
+  const handleChangePassword = async (e: FormEvent) => {
     e.preventDefault();
     setError('');
     setSuccess('');
@@ -122,7 +123,7 @@ export default function ChangePasswordModal({ isOpen, onClose }) {
         handleClose();
       }, 2000);
     } catch (err) {
-      setError(err.message || 'Failed to change password');
+      setError((err as Error).message || 'Failed to change password');
     } finally {
       setLoading(false);
     }

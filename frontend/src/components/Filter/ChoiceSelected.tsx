@@ -1,5 +1,9 @@
 import { X } from "lucide-react";
-export default function ChoiceSelected({ selectedCategory, setSelectedCategory, priceRange, setPriceRange, orderBy, setOrderBy }) {
+import type { PriceRange } from './types';
+export default function ChoiceSelected({ selectedCategory, setSelectedCategory, priceRange, setPriceRange, orderBy, setOrderBy }: {
+    selectedCategory: string | null; setSelectedCategory: (c: string | null) => void;
+    priceRange: PriceRange; setPriceRange: (r: PriceRange) => void; orderBy: string; setOrderBy: (o: string) => void;
+}) {
     return (
         <div className="flex gap-2 mt-3 pt-3 border-t animate-in fade-in slide-in-from-top-1 border-(--border)">
             {selectedCategory && (

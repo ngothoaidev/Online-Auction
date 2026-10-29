@@ -1,12 +1,16 @@
 import { Layers, Check } from "lucide-react";
 import FilterButton from "../FilterButton";
 import { useEffect, useState } from "react";
+import type { CategoryNode } from "../../../types/api";
+import type { DropdownControl } from "../types";
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 
-export default function CategoryDropdown({ selectedCategory, setSelectedCategory, activeDropdown, toggleDropdown, setActiveDropdown}) {
-    const [categories, setCategories] = useState([]);
+export default function CategoryDropdown({ selectedCategory, setSelectedCategory, activeDropdown, toggleDropdown, setActiveDropdown}: DropdownControl & {
+    selectedCategory: string | null; setSelectedCategory: (c: string | null) => void;
+}) {
+    const [categories, setCategories] = useState<CategoryNode[]>([]);
     useEffect(() => {
         fetch(`${API_URL}/categories`)
             .then(response => response.json())

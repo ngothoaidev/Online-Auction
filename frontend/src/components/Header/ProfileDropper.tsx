@@ -2,20 +2,21 @@ import { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { LogOut, Clock } from 'lucide-react';
 import { accountLinks } from './accountLinks';
+import type { SessionUser } from '../../types/api';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 /** Account disclosure: a button that reveals a group of links/actions (not an ARIA menu). Escape / outside click close it. */
-export default function ProfileDropper({ user, logout }) {
+export default function ProfileDropper({ user, logout }: { user: SessionUser; logout: () => void }) {
   const [isOpen, setIsOpen] = useState(false);
-  const [sellerStatus, setSellerStatus] = useState(null);
-  const rootRef = useRef(null);
-  const triggerRef = useRef(null);
+  const [sellerStatus, setSellerStatus] = useState<{ isActive?: boolean; daysRemaining?: number } | null>(null);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
   const name = user.fullName || user.username;
 
   useEffect(() => {
     if (!isOpen) return undefined;
-    const onPointer = (e) => { if (rootRef.current && !rootRef.current.contains(e.target)) setIsOpen(false); };
+    const onPointer = (e: Event) => { if (rootRef.current && !rootRef.current.contains(e.target as Node)) setIsOpen(false); };
     document.addEventListener('mousedown', onPointer);
     return () => document.removeEventListener('mousedown', onPointer);
   }, [isOpen]);
@@ -30,7 +31,7 @@ export default function ProfileDropper({ user, logout }) {
       .catch(() => {});
   }, [user?.role]);
 
-  const close = (restoreFocus) => { setIsOpen(false); if (restoreFocus) triggerRef.current?.focus(); };
+  const close = (restoreFocus?: boolean) => { setIsOpen(false); if (restoreFocus) triggerRef.current?.focus(); };
 
   return (
     <div className="relative hidden lg:block" ref={rootRef} onKeyDown={(e) => { if (e.key === 'Escape' && isOpen) { e.stopPropagation(); close(true); } }}>
@@ -55,7 +56,7 @@ export default function ProfileDropper({ user, logout }) {
             <p className="truncate text-xs text-(--muted)">{user.email}</p>
             {user.role === 'seller' && sellerStatus?.isActive && (
               <p className="mt-2 inline-flex items-center gap-1.5 rounded-md bg-(--warning-soft) px-2 py-1 text-xs font-medium text-(--warning)">
-                <Clock size={12} aria-hidden="true" /> Seller access expires in {sellerStatus.daysRemaining} day{sellerStatus.daysRemaining > 1 ? 's' : ''}
+                <Clock size={12} aria-hidden="true" /> Seller access expires in {sellerStatus.daysRemaining} day{(sellerStatus.daysRemaining ?? 0) > 1 ? 's' : ''}
               </p>
             )}
           </div>

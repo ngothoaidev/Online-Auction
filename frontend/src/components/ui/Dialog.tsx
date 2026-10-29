@@ -1,4 +1,5 @@
 import { useEffect, useRef, useId } from 'react';
+import type { KeyboardEvent, ReactNode, RefObject } from 'react';
 import { createPortal } from 'react-dom';
 
 const FOCUSABLE = ['a[href]', 'button:not([disabled])', 'input:not([disabled]):not([type="hidden"])', 'select:not([disabled])', 'textarea:not([disabled])', '[tabindex]']
@@ -9,19 +10,24 @@ const FOCUSABLE = ['a[href]', 'button:not([disabled])', 'input:not([disabled]):n
  * element that opened it (falls back to <body> if that element is gone), locks page scroll.
  * `pending` blocks every way of closing so an in-flight confirm cannot be abandoned or repeated.
  */
-export default function Dialog({ open, onClose, title, description, children, dismissible = true, pending = false, variant = 'center', initialFocusRef, className = '' }) {
-  const panelRef = useRef(null);
+type DialogProps = {
+  open: boolean; onClose?: () => void; title: ReactNode; description?: ReactNode; children?: ReactNode;
+  dismissible?: boolean; pending?: boolean; variant?: 'center' | 'drawer'; initialFocusRef?: RefObject<HTMLElement | null>; className?: string;
+};
+
+export default function Dialog({ open, onClose, title, description, children, dismissible = true, pending = false, variant = 'center', initialFocusRef, className = '' }: DialogProps) {
+  const panelRef = useRef<HTMLDivElement>(null);
   const titleId = useId();
   const descId = useId();
   const canClose = dismissible && !pending;
 
   useEffect(() => {
     if (!open) return undefined;
-    const opener = document.activeElement;
+    const opener = document.activeElement as HTMLElement | null;
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
-    const panel = panelRef.current;
-    const target = initialFocusRef?.current ?? panel.querySelector(FOCUSABLE) ?? panel;
+    const panel = panelRef.current!;
+    const target = initialFocusRef?.current ?? panel.querySelector<HTMLElement>(FOCUSABLE) ?? panel;
     target.focus();
     return () => {
       document.body.style.overflow = previousOverflow;
@@ -31,14 +37,15 @@ export default function Dialog({ open, onClose, title, description, children, di
 
   if (!open) return null;
 
-  const onKeyDown = (e) => {
+  const onKeyDown = (e: KeyboardEvent) => {
     if (e.key === 'Escape' && canClose) { e.stopPropagation(); onClose?.(); return; }
     if (e.key !== 'Tab') return;
-    const items = [...panelRef.current.querySelectorAll(FOCUSABLE)];
-    if (items.length === 0) { e.preventDefault(); panelRef.current.focus(); return; }
+    const panel = panelRef.current!;
+    const items = [...panel.querySelectorAll<HTMLElement>(FOCUSABLE)];
+    if (items.length === 0) { e.preventDefault(); panel.focus(); return; }
     const first = items[0];
     const last = items[items.length - 1];
-    if (e.shiftKey && (document.activeElement === first || document.activeElement === panelRef.current)) { e.preventDefault(); last.focus(); }
+    if (e.shiftKey && (document.activeElement === first || document.activeElement === panel)) { e.preventDefault(); last.focus(); }
     else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
   };
 

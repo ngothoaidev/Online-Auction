@@ -4,7 +4,7 @@ import { Outlet } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useNav } from '../hooks/useNavigate'; // Adjust path to your hook
 
-const ProtectedRoute = ({ requiredRole }) => {
+const ProtectedRoute = ({ requiredRole }: { requiredRole?: string }) => {
   const { user, loading } = useAuth();
   const nav = useNav();
 

@@ -1,4 +1,5 @@
 import { forwardRef } from 'react';
+import type { ButtonHTMLAttributes } from 'react';
 
 const VARIANTS = {
   primary: 'bg-(--ink) text-(--on-ink) hover:opacity-90 disabled:opacity-50',
@@ -9,7 +10,9 @@ const VARIANTS = {
 const SIZES = { md: 'min-h-11 px-4 text-sm', lg: 'min-h-12 px-6 text-base', sm: 'min-h-9 px-3 text-sm' };
 
 /** Plain button. `loading` blocks activation (no double submit) and announces busy state. */
-const Button = forwardRef(function Button({ variant = 'primary', size = 'md', loading = false, className = '', children, type = 'button', disabled, ...rest }, ref) {
+type Props = ButtonHTMLAttributes<HTMLButtonElement> & { variant?: keyof typeof VARIANTS; size?: keyof typeof SIZES; loading?: boolean };
+
+const Button = forwardRef<HTMLButtonElement, Props>(function Button({ variant = 'primary', size = 'md', loading = false, className = '', children, type = 'button', disabled, ...rest }, ref) {
   return (
     <button
       ref={ref}

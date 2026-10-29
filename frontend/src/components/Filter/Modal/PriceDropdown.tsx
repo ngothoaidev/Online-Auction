@@ -2,14 +2,17 @@ import React, { useState, useEffect } from "react";
 import { useFeedback } from '../../ui/Feedback';
 import FilterButton from "../FilterButton";
 import { Minus, Plus } from "lucide-react";
+import type { DropdownControl, PriceRange } from "../types";
 
-export default function PriceDropdown({ priceRange, setPriceRange, activeDropdown, toggleDropdown, setActiveDropdown }){
+export default function PriceDropdown({ priceRange, setPriceRange, activeDropdown, toggleDropdown, setActiveDropdown }: DropdownControl & {
+    priceRange: PriceRange; setPriceRange: (r: PriceRange) => void;
+}){
   const { notify } = useFeedback();
     const isActive = activeDropdown === 'price';
     
     // Local state for deferred updates (Only apply on button click)
-    const [localMin, setLocalMin] = useState(priceRange.min || "");
-    const [localMax, setLocalMax] = useState(priceRange.max || "");
+    const [localMin, setLocalMin] = useState<string | number>(priceRange.min || "");
+    const [localMax, setLocalMax] = useState<string | number>(priceRange.max || "");
 
     // Sync local state when dropdown opens
     useEffect(() => {
@@ -44,14 +47,14 @@ export default function PriceDropdown({ priceRange, setPriceRange, activeDropdow
     };
 
     // Helper to update via buttons
-    const adjustVal = (setter, val, delta) => {
+    const adjustVal = (setter: (v: number) => void, val: string | number, delta: number) => {
         const current = val === "" ? 0 : Number(val);
         const next = Math.max(0, current + delta);
         setter(next);
     };
 
     // Calculate percentages for slider track background
-    const getPercent = (value) => Math.round(((value || 0) - SLIDER_MIN) / (SLIDER_MAX - SLIDER_MIN) * 100);
+    const getPercent = (value: number) => Math.round(((value || 0) - SLIDER_MIN) / (SLIDER_MAX - SLIDER_MIN) * 100);
     const minPercent = getPercent(Number(localMin) || 0);
     const maxPercent = getPercent(Number(localMax) || SLIDER_MAX);
 
@@ -144,7 +147,7 @@ export default function PriceDropdown({ priceRange, setPriceRange, activeDropdow
                         style={{ borderColor: 'var(--border)', color: 'var(--text)' }}>
                         Reset
                     </button>
-                    <button onClick={() => { if (handleApply()) setActiveDropdown(null); }}
+                    <button onClick={handleApply}
                         className="flex-1 py-2 text-xs font-bold rounded-lg hover:brightness-110 transition-colors shadow-md"
                         style={{ backgroundColor: 'var(--accent)', color: 'var(--on-ink)' }}>
                         Apply

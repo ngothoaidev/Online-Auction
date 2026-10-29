@@ -1,17 +1,18 @@
 import { useEditor, EditorContent } from '@tiptap/react';
+import type { Editor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { 
   Bold, Italic, List, ListOrdered, 
   Heading1, Heading2, Quote, Undo, Redo 
 } from 'lucide-react';
 
-const MenuBar = ({ editor }) => {
+const MenuBar = ({ editor }: { editor: Editor | null }) => {
   if (!editor) {
     return null;
   }
 
   // Helper to apply classes based on active state
-  const getButtonClass = (isActive) => 
+  const getButtonClass = (isActive: boolean) => 
     `p-2 rounded-lg transition-colors hover:bg-[var(--bg-hover)] ${
       isActive ? 'bg-[var(--accent)] text-(--on-ink)' : 'text-[var(--text-muted)]'
     }`;
@@ -118,7 +119,7 @@ const MenuBar = ({ editor }) => {
 };
 
 /** `labelledBy` (id of a visible label) or `label` names the editing area for assistive tech. */
-export default function RichTextEditor({ value, onChange, labelledBy, label }) {
+export default function RichTextEditor({ value, onChange, labelledBy, label }: { value: string; onChange: (html: string) => void; labelledBy?: string; label?: string }) {
   const editor = useEditor({
     extensions: [StarterKit],
     content: value,

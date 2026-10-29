@@ -1,15 +1,15 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 /** Windowed page list (first, last, current ±1) so 200 pages do not render 200 buttons. */
-function pageItems(current, total) {
+function pageItems(current: number, total: number) {
   const set = new Set([1, total, current - 1, current, current + 1]);
   const pages = [...set].filter((p) => p >= 1 && p <= total).sort((a, b) => a - b);
-  const out = [];
-  pages.forEach((p, i) => { if (i > 0 && p - pages[i - 1] > 1) out.push('gap-' + p); out.push(p); });
+  const out: (number | `gap-${number}`)[] = [];
+  pages.forEach((p, i) => { if (i > 0 && p - pages[i - 1] > 1) out.push(`gap-${p}`); out.push(p); });
   return out;
 }
 
-export default function Pagination({ currentPage, totalPages, onPageChange }) {
+export default function Pagination({ currentPage, totalPages, onPageChange }: { currentPage: number; totalPages: number; onPageChange: (page: number) => void }) {
   if (totalPages <= 1) return null;
   const btn = 'inline-flex h-11 min-w-11 items-center justify-center rounded-(--radius-control) border px-2 text-sm font-semibold';
   return (

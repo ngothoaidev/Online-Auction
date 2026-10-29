@@ -3,8 +3,9 @@
 export type Role = 'unauthorized' | 'buyer' | 'seller' | 'admin';
 
 /**
- * The signed-in user. /auth/me answers { userId, username, email, role } while /auth/login returns a fuller user
- * with `id`, so both id fields exist; read the id with `sessionUserId()`.
+ * The signed-in user. /auth/login returns { userId, username, email, fullName, role, status, isVerified, imgUrl };
+ * /auth/me (used after a reload) only { userId, username, email, role }. `id` appears on users handed over by other
+ * flows, so read the id with `sessionUserId()`.
  */
 export type SessionUser = {
   userId?: number;
@@ -14,6 +15,7 @@ export type SessionUser = {
   role: Role;
   fullName?: string | null;
   avatarUrl?: string | null;
+  imgUrl?: string | null;
   isVerified?: boolean;
   status?: string;
 };
@@ -74,3 +76,43 @@ export type AuctionDetail = {
 
 /** A live SSE event or a command result merged into the lot snapshot. */
 export type AuctionPatch = Partial<AuctionDetail> & { auctionId?: number; type?: string };
+
+/** A public bid row (the private maximum never leaves the server). */
+export type PublicBid = {
+  id: number;
+  auctionId: number;
+  bidderId: number;
+  amount: string;
+  bidTime: string;
+  type: 'bid' | 'auto' | 'buy_now' | 'adjust' | string;
+  invalidated: boolean;
+  bidder: PersonRef | null;
+};
+
+/** A lot as listed on cards: home tabs, search, profile tabs. */
+export type CatalogAuction = {
+  id: number;
+  sellerId: number;
+  categoryId: number;
+  winnerId: number | null;
+  title: string;
+  startingPrice: string;
+  currentPrice: string;
+  stepPrice: string | null;
+  buyNowPrice: string | null;
+  status: AuctionStatus;
+  endTime: string;
+  createdAt: string | null;
+  allowNewbies: boolean | null;
+  autoExtend: boolean | null;
+  bidCount: number | null;
+  images: { id: number; auctionId: number; imageUrl: string; isPrimary: boolean | null }[];
+  image: string | null;
+  seller: { username?: string; rating: number | null; ratingCount: number };
+  category: string;
+  bids?: PublicBid;
+  isFavorited: boolean;
+};
+
+/** GET /categories: top-level categories with their children. */
+export type CategoryNode = { id: number; name: string; subcategories: { id: number; name: string }[] };

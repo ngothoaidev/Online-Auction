@@ -1,6 +1,6 @@
 // One list of account destinations for the desktop account panel AND the mobile menu, so a task reachable on a
-// laptop is reachable on a phone. Profile tabs are deep links (?tab=...), see pages/Profile/index.jsx.
-export function accountLinks(user) {
+// laptop is reachable on a phone. Profile tabs are deep links (?tab=...), see pages/Profile/index.tsx.
+export function accountLinks(user: { username: string; role: string } | null | undefined) {
   if (!user) return [];
   const me = `/profile/${encodeURIComponent(user.username)}`;
   const links = [

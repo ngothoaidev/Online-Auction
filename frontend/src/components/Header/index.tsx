@@ -11,10 +11,12 @@ import ThemeToggle from '../ThemeToggle';
 import { IconButton } from '../ui';
 import { useAuth } from '../../contexts/AuthContext';
 import './Header.css';
+import type { FormEvent } from 'react';
+import type { CategoryNode } from '../../types/api';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
-const primaryAction = (role) => {
+const primaryAction = (role: string | undefined) => {
   if (role === 'admin') return { to: '/admin', label: 'Dashboard', Icon: LayoutDashboard };
   if (role === 'seller') return { to: '/create-auction', label: 'Create listing', Icon: Plus };
   if (role === 'buyer') return { to: '/become-seller', label: 'Start selling', Icon: ArrowRight };
@@ -25,7 +27,7 @@ export default function Header() {
   const nav = useNav();
   const { user, logout } = useAuth();
   const [searchParams] = useSearchParams();
-  const [categories, setCategories] = useState([]);
+  const [categories, setCategories] = useState<CategoryNode[]>([]);
   const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '');
   const [menu, setMenu] = useState({ open: false, focusSearch: false });
 
@@ -40,13 +42,13 @@ export default function Header() {
 
   useEffect(() => { setSearchQuery(searchParams.get('q') || ''); }, [searchParams]);
 
-  const onSearch = (e) => {
+  const onSearch = (e: FormEvent) => {
     e.preventDefault();
     const trimmed = searchQuery.trim();
     if (trimmed) nav.search(trimmed);
   };
 
-  const action = user ? primaryAction(user.role) : null;
+  const action = primaryAction(user?.role); // only rendered when someone is signed in
 
   return (
     <>

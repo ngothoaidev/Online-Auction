@@ -2,12 +2,14 @@ import { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronDown, ChevronRight, LayoutGrid } from 'lucide-react';
 import { searchUrl } from '../../utils/searchUrl';
+import type { KeyboardEvent, MouseEvent } from 'react';
+import type { CategoryNode } from '../../types/api';
 
-export default function CategoryDropper({ categories }) {
+export default function CategoryDropper({ categories }: { categories: CategoryNode[] }) {
   const [isOpen, setIsOpen] = useState(false);
-  const [activeSub, setActiveSub] = useState(null); // Track active sub-category by ID
-  const containerRef = useRef(null);
-  const timeoutRef = useRef(null); // To handle smooth close delays
+  const [activeSub, setActiveSub] = useState<number | null>(null); // Track active sub-category by ID
+  const containerRef = useRef<HTMLDivElement>(null);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null); // To handle smooth close delays
   const openedByHover = useRef(false);
 
   // --- HANDLERS ---
@@ -34,14 +36,14 @@ export default function CategoryDropper({ categories }) {
   };
 
   // Sub-menu interaction
-  const handleSubEnter = (id) => {
+  const handleSubEnter = (id: number) => {
     if (window.matchMedia('(hover: hover)').matches) {
        setActiveSub(id);
     }
   };
 
   // Toggle sub-menu on click (for Touch)
-  const toggleSub = (e, id) => {
+  const toggleSub = (e: MouseEvent | KeyboardEvent, id: number) => {
     e.preventDefault(); // Prevent Link navigation if clicking the arrow area
     e.stopPropagation();
     setActiveSub(activeSub === id ? null : id);
@@ -49,8 +51,8 @@ export default function CategoryDropper({ categories }) {
 
   // Close when clicking outside
   useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (containerRef.current && !containerRef.current.contains(event.target)) {
+    const handleClickOutside = (event: globalThis.MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
         setIsOpen(false);
         setActiveSub(null);
       }

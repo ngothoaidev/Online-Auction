@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import type { ReactNode } from 'react';
 import Dialog from './Dialog';
 import Button from './Button';
 
@@ -12,9 +13,20 @@ const newKey = () => (typeof crypto !== 'undefined' && crypto.randomUUID ? crypt
  *  - A refusal (4xx) is final for this intent: show the reason, the caller refreshes the canonical state.
  * `onConfirm(key)` resolves to { tone: 'success'|'info'|'warning', title, message } or throws (ApiError | network error).
  */
-export default function ReviewDialog({ open, onClose, onSettled, title, description, rows = [], note, confirmLabel = 'Confirm', onConfirm }) {
-  const keyRef = useRef(null);
-  const [phase, setPhase] = useState({ name: 'review' });
+export type ReviewOutcome = { tone: 'success' | 'info' | 'warning'; title: string; message: ReactNode };
+type Phase =
+  | { name: 'review' | 'pending' }
+  | ({ name: 'done' } & ReviewOutcome)
+  | { name: 'failed'; retryable: boolean; message: string };
+type Props = {
+  open: boolean; onClose: () => void; onSettled?: (result: ReviewOutcome | null, error: unknown) => void;
+  title: string; description?: ReactNode; rows?: [string, ReactNode][]; note?: ReactNode; confirmLabel?: string;
+  onConfirm: (key: string) => Promise<ReviewOutcome>;
+};
+
+export default function ReviewDialog({ open, onClose, onSettled, title, description, rows = [], note, confirmLabel = 'Confirm', onConfirm }: Props) {
+  const keyRef = useRef<string>('');
+  const [phase, setPhase] = useState<Phase>({ name: 'review' });
 
   useEffect(() => {
     if (open) { keyRef.current = newKey(); setPhase({ name: 'review' }); }
@@ -26,8 +38,10 @@ export default function ReviewDialog({ open, onClose, onSettled, title, descript
       const result = await onConfirm(keyRef.current);
       setPhase({ name: 'done', ...result });
       onSettled?.(result, null);
-    } catch (error) {
-      const retryable = error?.status === undefined || error?.status === null || error.status >= 500 || error.status === 429 || error.status === 408;
+    } catch (err) {
+      const error = err as { status?: number | null; message?: string } | null;
+      const status = error?.status;
+      const retryable = status === undefined || status === null || status >= 500 || status === 429 || status === 408;
       setPhase({ name: 'failed', retryable, message: error?.message || 'Something went wrong' });
       if (!retryable) onSettled?.(null, error);
     }

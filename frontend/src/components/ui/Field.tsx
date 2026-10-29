@@ -1,11 +1,14 @@
 import { useId, cloneElement, isValidElement } from 'react';
+import type { ReactElement, ReactNode } from 'react';
 
 /** Label + control + hint + error wired with ids (aria-describedby / aria-invalid). Pass a single <input|select|textarea> child. */
-export default function Field({ label, hint, error, children, className = '' }) {
+export default function Field({ label, hint, error, children, className = '' }: {
+  label: ReactNode; hint?: ReactNode; error?: ReactNode; children: ReactNode; className?: string;
+}) {
   const id = useId();
   const describedBy = [hint && `${id}-hint`, error && `${id}-error`].filter(Boolean).join(' ') || undefined;
-  const control = isValidElement(children)
-    ? cloneElement(children, {
+  const control = isValidElement<{ className?: string }>(children)
+    ? cloneElement(children as ReactElement<Record<string, unknown>>, {
         id,
         'aria-describedby': describedBy,
         'aria-invalid': error ? true : undefined,

@@ -1,10 +1,20 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useCallback, useContext, useMemo, useRef, useState } from 'react';
+import type { ReactNode } from 'react';
 import Dialog from './Dialog';
 import Button from './Button';
 import Field from './Field';
 
-const FeedbackContext = createContext({ confirm: async () => true, notify: () => {} });
+export type ConfirmOptions = {
+  title: string; message?: ReactNode; confirmLabel?: string; cancelLabel?: string; tone?: 'danger';
+  reason?: { label?: string; required?: boolean; hint?: string };
+};
+/** true / { reason } when accepted, false when cancelled. */
+export type ConfirmResult = boolean | { reason: string };
+type NoteTone = 'info' | 'success' | 'error';
+type FeedbackValue = { confirm: (opts: ConfirmOptions) => Promise<ConfirmResult>; notify: (message: string, tone?: NoteTone) => void };
+
+const FeedbackContext = createContext<FeedbackValue>({ confirm: async () => true, notify: () => {} });
 
 /**
  * Promise-based replacements for window.confirm / window.alert:
@@ -14,19 +24,19 @@ const FeedbackContext = createContext({ confirm: async () => true, notify: () =>
  *   const ok = await confirm({ ..., reason: { label: 'Reason', required: true } }); // -> { reason } | false (audited admin actions)
  * Confirm is a real dialog (focus trap, Escape = cancel); notifications are one polite/assertive live region.
  */
-export function FeedbackProvider({ children }) {
-  const [ask, setAsk] = useState(null);
+export function FeedbackProvider({ children }: { children: ReactNode }) {
+  const [ask, setAsk] = useState<ConfirmOptions | null>(null);
   const [reason, setReason] = useState('');
-  const [note, setNote] = useState(null);
-  const resolver = useRef(null);
-  const timer = useRef(null);
+  const [note, setNote] = useState<{ message: string; tone: NoteTone; id: number } | null>(null);
+  const resolver = useRef<((value: ConfirmResult) => void) | null>(null);
+  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
-  const confirm = useCallback((opts) => new Promise((resolve) => { resolver.current = resolve; setReason(''); setAsk(opts); }), []);
-  const settle = (value) => { resolver.current?.(value); resolver.current = null; setAsk(null); };
+  const confirm = useCallback((opts: ConfirmOptions) => new Promise<ConfirmResult>((resolve) => { resolver.current = resolve; setReason(''); setAsk(opts); }), []);
+  const settle = (value: ConfirmResult) => { resolver.current?.(value); resolver.current = null; setAsk(null); };
   const accept = () => settle(ask?.reason ? { reason: reason.trim() } : true);
   const blocked = Boolean(ask?.reason?.required && !reason.trim());
 
-  const notify = useCallback((message, tone = 'info') => {
+  const notify = useCallback((message: string, tone: NoteTone = 'info') => {
     clearTimeout(timer.current);
     setNote({ message, tone, id: Date.now() });
     timer.current = setTimeout(() => setNote(null), tone === 'error' ? 10000 : 5000);

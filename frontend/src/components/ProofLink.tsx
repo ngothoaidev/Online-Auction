@@ -1,10 +1,11 @@
+import type { ReactNode } from 'react';
 import { useState } from 'react';
 import { useFeedback } from './ui/Feedback';
 import orderService from '../services/orderService';
 
 // Proofs are private: the browser cannot load them with a plain <a href>/<img src> (no Authorization header),
 // so fetch with the session token and open the resulting blob.
-export default function ProofLink({ path, children }) {
+export default function ProofLink({ path, children }: { path: string; children: ReactNode }) {
   const { notify } = useFeedback();
   const [busy, setBusy] = useState(false);
   if (!path) return <span className="text-(--text-muted)">Not provided</span>;
@@ -15,7 +16,7 @@ export default function ProofLink({ path, children }) {
       const url = await orderService.fetchProofBlobUrl(path);
       window.open(url, '_blank', 'noopener');
     } catch (err) {
-      notify(err.message || 'Could not open the file', 'error');
+      notify((err as Error).message || 'Could not open the file', 'error');
     } finally {
       setBusy(false);
     }
