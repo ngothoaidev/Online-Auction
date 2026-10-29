@@ -212,7 +212,7 @@ const controller = {
         }
     },
 
-    // Cancel order: seller while unpaid, admin until shipping; a reason is mandatory and no review is created (B09)
+    // Cancel order: seller while unpaid, admin until shipping; a reason is mandatory and no review is created
     cancelOrder: async function(req, res, next) {
         try {
             const result = await transitionOrder({
@@ -225,7 +225,7 @@ const controller = {
         }
     },
 
-    // Submit or edit my review of the counterpart (B10)
+    // Submit or edit my review of the counterpart
     submitReview: async function(req, res, next) {
         try {
             const result = await submitReview({ orderId: parseInt(req.params.id), actor: req.user, isGoodRating: req.body?.isGoodRating, comment: req.body?.comment, key: idempotencyKey(req) });

@@ -57,7 +57,7 @@ export async function applyTransition(tx, { orderId, command, actor, payload = {
       reason: plan.reason ?? null, commandId: key ?? `${command}-${orderId}-${updated.version}`,
     });
 
-    // Auction mapping (B07): 'sold' once payment is recorded; a cancel after payment cancels the lot, otherwise it stays ended.
+    // Auction mapping: 'sold' once payment is recorded; a cancel after payment cancels the lot, otherwise it stays ended.
     if (plan.auction === "sold" || plan.auction === "cancel_if_sold") {
       const [a] = await tx.select().from(auctions).where(eq(auctions.id, head.auctionId));
       if (plan.auction === "sold" && a.status === "ended") {
@@ -77,7 +77,7 @@ export async function applyTransition(tx, { orderId, command, actor, payload = {
   }
 }
 
-/** Worker job: expire unpaid orders whose deadline passed (B08). Each order is its own transaction; safe to run in parallel. */
+/** Worker job: expire unpaid orders whose deadline passed. Each order is its own transaction; safe to run in parallel. */
 export async function expireDuePayments({ limit = 50 } = {}) {
   const due = await db.execute(sql`
     SELECT order_id FROM orders WHERE status = 'pending_payment' AND payment_due_at <= clock_timestamp()

@@ -1,4 +1,4 @@
-// Moderation and admin commands (D9.4, T22). Every admin change runs in one transaction with its audit row, takes an
+// Moderation and admin commands. Every admin change runs in one transaction with its audit row, takes an
 // optional Idempotency-Key (a repeated click/retry replays instead of acting twice) and re-checks the role server-side.
 // Listing impacts go through the auction domain command (same lock/state rules as everywhere else). Moderation never
 // edits reputation: ratings only ever come from reviews.

@@ -1,4 +1,4 @@
-// Load test (T23). Zero dependencies beyond the backend's own. Run AFTER the correctness suites, against a dedicated DB:
+// Load test. Zero dependencies beyond the backend's own. Run AFTER the correctness suites, against a dedicated DB:
 //   DATABASE_URL=.../auction_load LOAD_API=http://localhost:3002 node scripts/loadtest.js [--out=../docs/validation/load-t23.json]
 // The API under test must run with the same DATABASE_URL/JWT_SECRET and a raised BID_RATE_LIMIT_MAX (the default
 // 30 bids/min/user would measure the limiter, not the system); the worker must be running (settlement phase).

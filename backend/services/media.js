@@ -5,8 +5,8 @@ import { mediaAssets } from "../db/schema.js";
 import { AppError } from "../utils/errors.js";
 import { localMedia } from "../adapters/media/local.js";
 
-// ponytail: only the local private adapter exists. Real deployments need an object-store adapter with private ACLs and
-// short-lived signed reads behind this same {put,get,remove} interface (T24 runbook).
+// Only the local private adapter exists. Real deployments need an object-store adapter with private ACLs and
+// short-lived signed reads behind this same {put,get,remove} interface.
 const adapter = localMedia;
 
 export const MAX_BYTES = Number(process.env.MEDIA_MAX_BYTES || 5 * 1024 * 1024);

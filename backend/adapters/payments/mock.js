@@ -1,4 +1,4 @@
-// Mock payment provider (D9.3). NO real money moves. It mimics a hosted-checkout provider: an attempt has a reference,
+// Mock payment provider. NO real money moves. It mimics a hosted-checkout provider: an attempt has a reference,
 // the "provider" later reports success/failure through a signed webhook, and its own status can be polled.
 // Its store is the `provider_status` column of payment_attempts, so a lost webhook is recoverable by reconciliation.
 import crypto from "node:crypto";

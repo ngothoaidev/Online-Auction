@@ -97,5 +97,5 @@ test("killed after an email left but before it was recorded: the email is resent
   assert.equal((await worker()).code, 0);
   const final = await emailRows();
   assert.ok(final.every((r) => r.status === "sent" && r.attempts === 1), JSON.stringify(final));
-  // the provider accepted that first message too: this is the at-least-once window D9.1/T21 document, not a silent loss
+  // the provider accepted that first message too: this is the documented at-least-once window, not a silent loss
 });

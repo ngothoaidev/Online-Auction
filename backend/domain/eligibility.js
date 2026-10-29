@@ -1,4 +1,4 @@
-// Who may bid / Buy Now (B05). Pure: pass the already-loaded user + auction rows.
+// Who may bid / Buy Now. Pure: pass the already-loaded user + auction rows.
 export const RATING_THRESHOLD_PERCENT = 80;
 
 /** Returns null when allowed, else { status, code, message }. */
@@ -23,7 +23,7 @@ export function checkBidderEligibility(user, auction, { disqualified = false } =
   return null;
 }
 
-/** Server-side Buy Now rule (B06), independent of who is asking. */
+/** Server-side Buy Now rule, independent of who is asking. */
 export function buyNowAvailable(auction, now) {
   return auction.status === "active"
     && auction.buyNowPrice !== null && auction.buyNowPrice !== undefined

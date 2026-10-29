@@ -30,7 +30,7 @@ export const authenticate = async (req, res, next) => {
         }
 
         // Check seller status - if seller role has expired, revert to buyer
-        // ponytail: still a write on the auth path; move to a worker job with audit in T09/T10.
+        // TODO: this is a write on the auth path; move it to a worker job.
         if (user.role === 'seller') {
             const statusCheck = await sellerRequestService.checkAndUpdateSellerStatus(user.id);
             if (statusCheck.status === 'expired' && statusCheck.reverted) user.role = 'buyer';

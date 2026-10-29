@@ -1,5 +1,4 @@
-// The API now rejects stale/revoked bearer tokens with 401 (instead of treating them as guest).
-// Until a central apiClient exists (T14) this wraps fetch once: when the server says the session is
+// The API rejects stale/revoked bearer tokens with 401. This wraps fetch once: when the server says the session is
 // dead, drop the stored credentials and tell AuthContext.
 const DEAD_SESSION = new Set(['TOKEN_EXPIRED', 'TOKEN_INVALID', 'TOKEN_REVOKED', 'ACCOUNT_BANNED']);
 

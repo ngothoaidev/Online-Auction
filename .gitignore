@@ -28,3 +28,10 @@ test-results
 playwright-report
 
 backend/storage/
+
+# Local agent/spec notes
+.kiro/
+.AGENT/
+docs/design-audit/
+PORTFOLIO_SUMMARY.md
+PROJECT_ANALYSIS.md

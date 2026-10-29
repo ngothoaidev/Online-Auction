@@ -43,7 +43,7 @@ async function loadActor(tx, userId) {
 
 const audit = (tx, row) => tx.insert(auctionCommandAudit).values(row);
 
-/** Public event payload (D9.1). Who leads/won goes in the private payload for internal consumers only. */
+/** Public event payload. Who leads/won goes in the private payload for internal consumers only. */
 const snapshot = (a, now) => ({
   auctionId: a.id, version: a.version, status: a.status, currentPrice: toStr(fromDb(a.currentPrice)), bidCount: a.bidCount,
   endTime: a.endTime, serverTime: now,
@@ -182,7 +182,7 @@ export const commands = {
     }));
   },
   /**
-   * Seller disqualifies the bidder behind `bidId` (B11): the history is kept (their rows are flagged), their ceiling stops
+   * Seller disqualifies the bidder behind `bidId`: the history is kept (their rows are flagged), their ceiling stops
    * counting, leader and price are recomputed from the remaining ceilings under the same lock, and they cannot bid again.
    * Retrying is a no-op: nothing is decremented twice.
    */

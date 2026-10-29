@@ -21,8 +21,8 @@ What is protected, how, and where the evidence is. Not a formal audit; known gap
 ## Known gaps / owner actions
 
 - **Old secrets in Git history**: a `backend/.env` was committed before this upgrade. The owner rotated those credentials (2026-10-22); `.env` files are now ignored. Never reuse a value that was ever in that file.
-- **Legacy proof URLs** uploaded before T11 are public Cloudinary links; migrating/locking them needs the storage owner (`npm run db:audit-proofs` lists affected orders).
+- **Legacy proof URLs** uploaded before private storage existed are public Cloudinary links; migrating/locking them needs the storage owner (`npm run db:audit-proofs` lists affected orders).
 - OAuth flows (`state` enabled) are untested without real provider credentials.
 - Behind a reverse proxy, set Express `trust proxy` so per-IP limits see real client IPs.
-- No CSRF tokens: the API uses bearer tokens from `localStorage`, not cookies, for authenticated calls (sessions are only used for the OAuth handshake). The trade-off is that an XSS bug could read the token; mitigated by sanitization on write/read/render. `helmet`'s CSP covers API responses only — the static host serving the SPA must add its own Content-Security-Policy (see deployment.md).
+- No CSRF tokens: the API uses bearer tokens from `localStorage`, not cookies, for authenticated calls (sessions are only used for the OAuth handshake). The trade-off is that an XSS bug could read the token; mitigated by sanitization on write/read/render. `helmet`'s CSP covers API responses only — the static host serving the SPA must add its own Content-Security-Policy.
 - No malware scanning of uploads; images are sniffed but not re-encoded.

@@ -1,6 +1,6 @@
 # API reference
 
-Base URL (local): `http://localhost:3000`. JSON in and out unless stated. Inventory generated from `backend/routes/*` at T24.
+Base URL (local): `http://localhost:3000`. JSON in and out unless stated.
 The public read endpoints are also published as OpenAPI 3.1 at `/openapi.json` on the SPA host (`frontend/public/openapi.json`, checked against the real routes by `backend/tests/integration/openapi.test.js`).
 
 ## Conventions

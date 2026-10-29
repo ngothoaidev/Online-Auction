@@ -24,7 +24,7 @@ export default defineConfig([
       },
     },
     rules: {
-      // Legacy debt is warned (cleaned per screen in T13-T17); undefined vars/dupe keys stay errors.
+      // Legacy debt is warned; undefined vars/dupe keys stay errors.
       'no-unused-vars': ['warn', { varsIgnorePattern: '^[A-Z_]', caughtErrors: 'none' }],
       'react-hooks/set-state-in-effect': 'warn',
       'react-refresh/only-export-components': 'warn',

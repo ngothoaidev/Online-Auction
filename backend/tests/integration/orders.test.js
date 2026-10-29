@@ -98,7 +98,7 @@ test("stale client: expectedVersion mismatch is rejected", async () => {
   assert.equal((await post(id, "payment", "buyer", await withProof(id, { expectedVersion: 0 }))).status, 200);
 });
 
-test("cancel (B09): seller while unpaid, admin until shipping; reason mandatory; no review is created", async () => {
+test("cancel: seller while unpaid, admin until shipping; reason mandatory; no review is created", async () => {
   const a = await makeOrder();
   assert.equal((await post(a.id, "cancel", "seller", {})).status, 400, "reason required");
   assert.equal((await post(a.id, "cancel", "buyer", { reason: "changed my mind" })).status, 403);
@@ -135,7 +135,7 @@ test("pending_delivery (adapter/legacy) uses the separate shipping endpoint", as
   assert.equal((await auction(auctionId)).status, "sold");
 });
 
-test("payment expiry (B08): after the deadline the worker expires the order; proof submitted late is refused; the lot is not reopened", async () => {
+test("payment expiry: after the deadline the worker expires the order; proof submitted late is refused; the lot is not reopened", async () => {
   const { id, auctionId } = await makeOrder("pending_payment", { dueInHours: -1 });
   const late = await post(id, "payment", "buyer", proof);
   assert.equal(late.status, 409);
