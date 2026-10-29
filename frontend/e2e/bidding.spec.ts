@@ -21,7 +21,7 @@ test('buyer: review -> cancel sends nothing; invalid amount is explained; outbid
   const token = await login(request, 'demo_buyer2')
   await page.addInitScript((t) => localStorage.setItem('authToken', t), token)
   const lot = await lotWithBids(request)
-  const posts = []
+  const posts: any[] = []
   page.on('request', (r) => { if (r.method() === 'POST' && r.url().includes('/bid')) posts.push(r) })
 
   await page.goto(`/auction/${lot.id}`)
@@ -37,7 +37,7 @@ test('buyer: review -> cancel sends nothing; invalid amount is explained; outbid
   const dialog = page.getByRole('dialog', { name: 'Review your bid' })
   await expect(dialog).toBeVisible()
   await page.keyboard.press('Tab')
-  expect(await page.evaluate(() => document.activeElement.closest('[role=dialog]') !== null)).toBeTruthy() // focus stays inside
+  expect(await page.evaluate(() => document.activeElement?.closest('[role=dialog]') != null)).toBeTruthy() // focus stays inside
   await page.keyboard.press('Escape')
   await expect(dialog).toHaveCount(0)
   expect(posts).toHaveLength(0)

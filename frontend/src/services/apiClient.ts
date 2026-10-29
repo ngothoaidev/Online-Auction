@@ -50,11 +50,11 @@ export async function apiFetch<T = any>(path: string, { method = 'GET', body, si
     body: body === undefined ? undefined : isForm ? (body as FormData) : JSON.stringify(body),
   });
 
-  let data = null;
+  let data: unknown = null;
   const text = await response.text();
   if (text) { try { data = JSON.parse(text); } catch { data = { message: text.slice(0, 200) }; } }
-  if (!response.ok) throw new ApiError(response.status, data);
-  return data;
+  if (!response.ok) throw new ApiError(response.status, data as ErrorBody);
+  return data as T;
 }
 
 export const isAbort = (error: unknown) => (error as Error | null)?.name === 'AbortError';

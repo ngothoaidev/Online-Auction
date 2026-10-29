@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 
 const apiFetch = vi.fn()
-vi.mock('../../src/services/apiClient.js', () => ({ apiFetch: (...a) => apiFetch(...a) }))
+vi.mock('../../src/services/apiClient', () => ({ apiFetch: (...a) => apiFetch(...a) }))
 
 import { FeedbackProvider, useFeedback } from '../../src/components/ui/Feedback'
 import ReportListing from '../../src/pages/ProductDetail/ReportListing'

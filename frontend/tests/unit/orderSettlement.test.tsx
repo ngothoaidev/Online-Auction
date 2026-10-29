@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Routes, Route } from 'react-router-dom'
 
 const getByAuctionId = vi.fn()
-vi.mock('../../src/services/orderService', () => ({ default: { getByAuctionId: (...a) => getByAuctionId(...a), getMessages: vi.fn().mockResolvedValue({ messages: [] }), markMessagesRead: vi.fn().mockResolvedValue() } }))
+vi.mock('../../src/services/orderService', () => ({ default: { getByAuctionId: (...a) => getByAuctionId(...a), getMessages: vi.fn().mockResolvedValue({ messages: [] }), markMessagesRead: vi.fn().mockResolvedValue(undefined) } }))
 vi.mock('../../src/services/auctionService', () => ({ default: {} }))
 vi.mock('../../src/contexts/AuthContext', () => ({ useAuth: () => ({ user: { userId: 1 } }) }))
 
@@ -135,7 +135,7 @@ describe('orderService.getByAuctionId', () => {
     vi.useRealTimers()
     const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ status: 'settlement_pending', retryAfter: 5 }) })
     vi.stubGlobal('fetch', fetchMock)
-    const actual = await vi.importActual('../../src/services/orderService.js')
+    const actual = await vi.importActual<typeof import('../../src/services/orderService')>('../../src/services/orderService')
     const out = await actual.default.getByAuctionId(7)
     expect(fetchMock.mock.calls[0][0]).toMatch(/\/order\/auction\/7$/)
     expect(out.status).toBe('settlement_pending')

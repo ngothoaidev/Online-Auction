@@ -16,7 +16,7 @@ Payments are either a manual receipt upload or a mock gateway. No real money is 
 
 ## Stack
 
-- Frontend: React 19, Vite, Tailwind CSS 4, React Router
+- Frontend: React 19 with TypeScript, Vite, Tailwind CSS 4, React Router
 - Backend: Node.js, Express, Drizzle ORM, PostgreSQL 16, a separate worker process
 - Realtime: Server-Sent Events
 - Tests: `node:test` against a real PostgreSQL, Vitest, Playwright

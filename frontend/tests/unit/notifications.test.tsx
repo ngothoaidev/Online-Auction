@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Routes, Route } from 'react-router-dom'
 
 const apiFetch = vi.fn()
-vi.mock('../../src/services/apiClient.js', () => ({ apiFetch: (...a) => apiFetch(...a) }))
+vi.mock('../../src/services/apiClient', () => ({ apiFetch: (...a) => apiFetch(...a) }))
 
 import NotificationsLink from '../../src/components/Header/NotificationsLink'
 import Notifications from '../../src/pages/Notifications/index'

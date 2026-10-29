@@ -31,7 +31,7 @@ test('admin routes: /admin redirects to categories, deep links work, guests and 
   await expect(ap.getByRole('link', { name: 'Seller requests' })).toHaveAttribute('aria-current', 'page')
 
   // the Users page shortcut is a real link (it used to call a missing callback and throw)
-  const errors = []
+  const errors: any[] = []
   ap.on('pageerror', (e) => errors.push(e.message))
   await ap.goto('/admin/users')
   await ap.getByRole('link', { name: 'Upgrade Requests' }).click()
@@ -44,7 +44,7 @@ test('admin on a phone: drawer navigation, Escape closes it, destructive actions
   const ctx = await browser.newContext({ viewport: { width: 390, height: 800 } })
   await ctx.addInitScript((t) => localStorage.setItem('authToken', t), await tokenOf(request, 'demo_admin'))
   const page = await ctx.newPage()
-  const writes = []
+  const writes: string[] = []
   page.on('request', (r) => { if (['POST', 'PUT', 'DELETE'].includes(r.method()) && r.url().startsWith(API)) writes.push(r.method() + ' ' + r.url()) })
 
   await page.goto('/admin/users')

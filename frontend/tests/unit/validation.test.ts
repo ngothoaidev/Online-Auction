@@ -6,6 +6,7 @@ describe('validateForm (Zod 4)', () => {
   it('returns readable messages and per-field errors, never raw JSON', () => {
     const r = validateForm(registerSchema, { username: 'a', email: 'nope', password: 'abc', confirmPassword: 'x' })
     expect(r.success).toBe(false)
+    if (r.success) throw new Error('expected a validation failure')
     expect(r.fieldErrors.username).toMatch(/at least 3/)
     expect(r.fieldErrors.email).toMatch(/email/i)
     expect(r.message).not.toMatch(/^\[|"code"|"path"/)
@@ -16,6 +17,7 @@ describe('validateForm (Zod 4)', () => {
   })
   it('reports a mismatch on the confirm field', () => {
     const r = validateForm(registerSchema, { username: 'alice', email: 'a@b.co', password: 'Passw0rd', confirmPassword: 'Passw0rd2' })
+    if (r.success) throw new Error('expected a validation failure')
     expect(r.fieldErrors.confirmPassword).toBe('Passwords do not match')
   })
 })
@@ -28,6 +30,7 @@ describe('review form schema', () => {
     for (const rating of [0, 2, undefined, '1']) {
       const r = validateForm(reviewFormSchema, { rating })
       expect(r.success).toBe(false)
+      if (r.success) throw new Error('expected a validation failure')
       expect(r.fieldErrors.rating).toBe('Please select a rating')
     }
   })

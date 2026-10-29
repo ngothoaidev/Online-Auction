@@ -16,7 +16,7 @@ describe('SafeHtml', () => {
     const { container } = render(<SafeHtml html={html} />)
     expect(container.querySelector('script, iframe, svg')).toBeNull()
     expect(container.innerHTML).not.toMatch(/onerror|onclick|javascript:/i)
-    expect(window.__pwned).toBeUndefined()
+    expect((window as { __pwned?: unknown }).__pwned).toBeUndefined()
   })
 
   it('keeps editor formatting', () => {

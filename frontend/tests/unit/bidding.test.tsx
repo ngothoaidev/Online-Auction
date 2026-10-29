@@ -9,8 +9,9 @@ const placeBid = vi.fn()
 const buyNow = vi.fn()
 vi.mock('../../src/services/auctionService', () => ({ default: { placeBid: (...a) => placeBid(...a), buyNow: (...a) => buyNow(...a), getBidHistory: vi.fn().mockResolvedValue([]), rejectBid: vi.fn() } }))
 vi.mock('../../src/contexts/AuthContext', () => ({ useAuth: () => ({ user: { userId: 5, id: 5, username: 'me' } }) }))
-vi.mock('../../src/contexts/WatchlistContext.jsx', () => ({ useWatchlist: () => ({ has: () => false, pending: () => false, toggle: vi.fn().mockResolvedValue() }) }))
+vi.mock('../../src/contexts/WatchlistContext', () => ({ useWatchlist: () => ({ has: () => false, pending: () => false, toggle: vi.fn().mockResolvedValue(undefined) }) }))
 
+import type { AuctionDetail } from '../../src/types/api'
 import BiddingSection from '../../src/pages/ProductDetail/BiddingSection'
 
 const product = (over = {}) => ({
@@ -20,7 +21,7 @@ const product = (over = {}) => ({
   capabilities: { canBid: true, canBuyNow: true, reasons: {} }, ...over,
 })
 const apiError = (status, message, code) => Object.assign(new Error(message), { status, code })
-const mount = (p = product(), props = {}) => render(<MemoryRouter><BiddingSection product={p} onChanged={props.onChanged ?? vi.fn()} /></MemoryRouter>)
+const mount = (p = product(), props: { onChanged?: () => unknown } = {}) => render(<MemoryRouter><BiddingSection product={p as unknown as AuctionDetail} onChanged={props.onChanged ?? vi.fn()} /></MemoryRouter>)
 const typeAndReview = async (value) => {
   await userEvent.type(screen.getByLabelText(/your maximum bid/i), value)
   await userEvent.click(screen.getByRole('button', { name: 'Review bid' }))
@@ -32,7 +33,7 @@ describe('validateBid', () => {
   it('uses the server minimum for every bid and exact digit strings', () => {
     expect(validateBid('1.100.000', '1100000')).toEqual({ ok: true, amount: '1100000' })
     expect(validateBid('1099999', '1100000').ok).toBe(false)
-    expect(validateBid('', '1100000').error).toMatch(/enter/i)
+    expect((validateBid('', '1100000') as { error: string }).error).toMatch(/enter/i)
     expect(validateBid('12.5', '1').ok).toBe(false)
     expect(validateBid('999999999999999', '999999999999998')).toEqual({ ok: true, amount: '999999999999999' })
   })
@@ -181,7 +182,7 @@ describe('private viewer state (after reload the bidder still knows where they s
 })
 
 describe('closed lot result (winner and seller can always get back to the order)', () => {
-  const closed = (over) => product({ status: 'ended', endTime: new Date(Date.now() - 60e3).toISOString(), currentPrice: '1234567', settledAt: new Date().toISOString(), winnerId: 9, winnerName: 'bob', ...over })
+  const closed = (over = {}) => product({ status: 'ended', endTime: new Date(Date.now() - 60e3).toISOString(), currentPrice: '1234567', settledAt: new Date().toISOString(), winnerId: 9, winnerName: 'bob', ...over })
   const orderLink = () => screen.queryByRole('link', { name: /view order/i })
 
   it('the winner gets the exact price and a link to pay', () => {
@@ -238,7 +239,7 @@ describe('what a commitment covers, and when it ends', () => {
     expect(screen.getByText(/^Ends \d{1,2} \w{3} \d{4}/)).toBeInTheDocument()
     expect(screen.getByText(/adds 5 minutes to the deadline/)).toBeInTheDocument()
     expect(screen.queryByText(/Deadline extended/)).toBeNull()
-    rerender(<MemoryRouter><BiddingSection product={product({ endTime: new Date(Date.parse(end) + 5 * 60e3).toISOString(), autoExtend: true })} onChanged={vi.fn()} /></MemoryRouter>)
+    rerender(<MemoryRouter><BiddingSection product={product({ endTime: new Date(Date.parse(end) + 5 * 60e3).toISOString(), autoExtend: true }) as unknown as AuctionDetail} onChanged={vi.fn()} /></MemoryRouter>)
     expect(screen.getByText(/^Deadline extended to/)).toBeInTheDocument()
   })
 })

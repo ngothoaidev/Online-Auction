@@ -3,10 +3,9 @@ import { act, render, renderHook, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 
 const apiFetch = vi.fn()
-vi.mock('../../src/services/apiClient.js', () => ({ API_URL: 'http://api', apiFetch: (...a) => apiFetch(...a), isAbort: (e) => e?.name === 'AbortError' }))
-vi.mock('../../src/contexts/AuthContext.jsx', () => ({ useAuth: () => ({ user: null }) }))
+vi.mock('../../src/services/apiClient', () => ({ API_URL: 'http://api', apiFetch: (...a) => apiFetch(...a), isAbort: (e) => e?.name === 'AbortError' }))
 vi.mock('../../src/contexts/AuthContext', () => ({ useAuth: () => ({ user: null }) }))
-vi.mock('../../src/contexts/WatchlistContext.jsx', () => ({ useWatchlist: () => ({ has: () => false, toggle: vi.fn() }) }))
+vi.mock('../../src/contexts/WatchlistContext', () => ({ useWatchlist: () => ({ has: () => false, toggle: vi.fn() }) }))
 vi.mock('../../src/services/auctionService', () => ({ default: {} }))
 
 import { useAuction } from '../../src/hooks/useAuction'
@@ -16,8 +15,15 @@ class FakeEventSource {
   static CONNECTING = 0
   static OPEN = 1
   static CLOSED = 2
-  static all = []
-  constructor(url) { this.url = url; this.readyState = 0; this.listeners = {}; FakeEventSource.all.push(this) }
+  static all: FakeEventSource[] = []
+  url: string
+  readyState = 0
+  closed = false
+  listeners: Record<string, ((e: { data: string }) => void)[]> = {}
+  onopen?: () => unknown
+  onmessage?: (e: { data: string }) => void
+  onerror?: () => void
+  constructor(url: string) { this.url = url; FakeEventSource.all.push(this) }
   addEventListener(type, fn) { (this.listeners[type] ??= []).push(fn) }
   close() { this.readyState = 2; this.closed = true }
   // test drivers
@@ -26,7 +32,7 @@ class FakeEventSource {
   reset() { (this.listeners.reset ?? []).forEach((fn) => fn({ data: '{}' })) }
   fail(readyState) { this.readyState = readyState; this.onerror?.() }
 }
-const last = () => FakeEventSource.all.at(-1)
+const last = () => FakeEventSource.all[FakeEventSource.all.length - 1]
 
 const snapshot = (over = {}) => ({ id: 7, status: 'active', currentPrice: '1000', bidCount: 1, version: 3, endTime: '2030-01-01T00:00:00Z', serverTime: new Date().toISOString(), minimumNextBid: '1100', ...over })
 const flush = () => act(() => vi.advanceTimersByTimeAsync(0))
@@ -34,11 +40,11 @@ const flush = () => act(() => vi.advanceTimersByTimeAsync(0))
 beforeEach(() => {
   vi.useFakeTimers()
   FakeEventSource.all = []
-  globalThis.EventSource = FakeEventSource
+  globalThis.EventSource = FakeEventSource as unknown as typeof EventSource
   apiFetch.mockReset()
   apiFetch.mockResolvedValue(snapshot())
 })
-afterEach(() => { vi.useRealTimers(); delete globalThis.EventSource })
+afterEach(() => { vi.useRealTimers(); delete (globalThis as { EventSource?: unknown }).EventSource })
 
 async function mountHook() {
   const hook = renderHook(() => useAuction('7'))
@@ -55,11 +61,11 @@ describe('useAuction live updates', () => {
 
     apiFetch.mockResolvedValue(snapshot({ currentPrice: '1500', bidCount: 2, version: 4, minimumNextBid: '1600' }))
     act(() => { last().push({ type: 'auction.bid_placed', auctionId: 7, version: 4, currentPrice: '1500', bidCount: 2 }) })
-    expect(result.current.data.currentPrice).toBe('1500')
+    expect(result.current.data!.currentPrice).toBe('1500')
     expect(apiFetch).toHaveBeenCalledTimes(1)
     await act(() => vi.advanceTimersByTimeAsync(300))
     expect(apiFetch).toHaveBeenCalledTimes(2)
-    expect(result.current.data.minimumNextBid).toBe('1600')
+    expect(result.current.data!.minimumNextBid).toBe('1600')
   })
 
   it('drops duplicate, out-of-order and foreign events', async () => {
@@ -70,7 +76,7 @@ describe('useAuction live updates', () => {
       last().push({ auctionId: 99, version: 10, currentPrice: '7' })    // another lot
     })
     await act(() => vi.advanceTimersByTimeAsync(300))
-    expect(result.current.data.currentPrice).toBe('1000')
+    expect(result.current.data!.currentPrice).toBe('1000')
     expect(apiFetch).toHaveBeenCalledTimes(1)
   })
 
@@ -82,7 +88,7 @@ describe('useAuction live updates', () => {
     act(() => { last().push({ auctionId: 7, version: 5, currentPrice: '2000' }) })
     apiFetch.mockResolvedValue(snapshot({ version: 5, currentPrice: '2000' }))
     await act(async () => { resolveOld(snapshot({ version: 4, currentPrice: '1500' })) })
-    expect(result.current.data.currentPrice).toBe('2000')
+    expect(result.current.data!.currentPrice).toBe('2000')
   })
 
   it('server reset -> refetch', async () => {

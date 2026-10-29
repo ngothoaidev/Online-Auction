@@ -6,12 +6,13 @@ const createPaymentAttempt = vi.fn()
 const simulateMockPayment = vi.fn()
 vi.mock('../../src/services/orderService', () => ({ default: { createPaymentAttempt: (...a) => createPaymentAttempt(...a), simulateMockPayment: (...a) => simulateMockPayment(...a) } }))
 
+import type { OrderView, PaymentSummary } from '../../src/types/api'
 import MockPaymentPanel from '../../src/pages/OrderCompletion/MockPaymentPanel'
 
 const order = { id: 9, finalPrice: '12500000', shippingAddress: '', buyerPhone: '' }
 const attempt = (over = {}) => ({ id: 'a1', reference: 'mock_abc', amount: '12500000', currency: 'VND', status: 'created', ...over })
-const mount = (payment = { mode: 'manual', available: ['manual', 'mock'], attempts: [] }, onChanged = vi.fn().mockResolvedValue()) =>
-  ({ onChanged, ...render(<MockPaymentPanel order={order} payment={payment} onChanged={onChanged} />) })
+const mount = (payment: Record<string, unknown> = { mode: 'manual', available: ['manual', 'mock'], attempts: [] }, onChanged = vi.fn().mockResolvedValue(undefined)) =>
+  ({ onChanged, ...render(<MockPaymentPanel order={order as unknown as OrderView} payment={payment as unknown as PaymentSummary} onChanged={onChanged} />) })
 
 beforeEach(() => { createPaymentAttempt.mockReset(); simulateMockPayment.mockReset() })
 

@@ -27,7 +27,7 @@ describe('Dialog', () => {
     const dialog = screen.getByRole('dialog', { name: 'Confirm bid' })
     expect(dialog).toHaveAttribute('aria-modal', 'true')
     expect(dialog).toHaveAccessibleDescription('Review before you commit')
-    expect(dialog).toContainElement(document.activeElement)
+    expect(dialog).toContainElement(document.activeElement as HTMLElement)
     await user.keyboard('{Escape}')
     expect(screen.queryByRole('dialog')).toBeNull()
     expect(opener).toHaveFocus()
@@ -38,8 +38,8 @@ describe('Dialog', () => {
     render(<Harness />)
     await user.click(screen.getByRole('button', { name: 'Open' }))
     const dialog = screen.getByRole('dialog')
-    for (let i = 0; i < 7; i++) { await user.tab(); expect(dialog).toContainElement(document.activeElement) }
-    for (let i = 0; i < 7; i++) { await user.tab({ shift: true }); expect(dialog).toContainElement(document.activeElement) }
+    for (let i = 0; i < 7; i++) { await user.tab(); expect(dialog).toContainElement(document.activeElement as HTMLElement) }
+    for (let i = 0; i < 7; i++) { await user.tab({ shift: true }); expect(dialog).toContainElement(document.activeElement as HTMLElement) }
   })
 
   it('pending or non-dismissible dialogs ignore Escape and backdrop clicks', async () => {
@@ -65,6 +65,7 @@ describe('Dialog', () => {
 describe('primitives', () => {
   it('IconButton refuses to exist without an accessible name', () => {
     vi.spyOn(console, 'error').mockImplementation(() => {})
+    // @ts-expect-error: missing `label` on purpose
     expect(() => render(<IconButton>x</IconButton>)).toThrow(/label/)
     render(<IconButton label="Toggle theme">x</IconButton>)
     expect(screen.getByRole('button', { name: 'Toggle theme' })).toBeInTheDocument()

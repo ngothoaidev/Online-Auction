@@ -7,8 +7,8 @@ const block = (selector) => {
   const start = css.indexOf(`${selector} {`)
   return css.slice(start, css.indexOf('\n}', start))
 }
-const tokens = (selector, base = {}) => {
-  const out = { ...base }
+const tokens = (selector, base: Record<string, string> = {}) => {
+  const out: Record<string, string> = { ...base }
   for (const m of block(selector).matchAll(/--([a-z-]+):\s*(#[0-9A-Fa-f]{6})\b/g)) out[m[1]] = m[2]
   return out
 }

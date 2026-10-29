@@ -14,7 +14,7 @@ export async function freshBuyNowLot(request, seller, { buyNowPrice = '2500000' 
 }
 
 /** A new lot (1.000.000 ₫ start, 100.000 ₫ step, no auto-extend), optionally with an opening proxy bid so it already has a leader. */
-export async function freshLot(request, seller, { buyNowPrice = '', openingBid, endInMs = 86_400_000 } = {}) {
+export async function freshLot(request, seller, { buyNowPrice = '', openingBid, endInMs = 86_400_000 }: { buyNowPrice?: string; openingBid?: { token: string; amount: string }; endInMs?: number } = {}) {
   const categories = await (await request.get(`${API}/categories`)).json()
   const form = new FormData()
   const fields = {

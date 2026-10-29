@@ -33,7 +33,7 @@ test('buy now -> mock gateway payment in the UI -> seller ships -> buyer waits f
   const sellerCtx = await browser.newContext()
   await sellerCtx.addInitScript((t) => localStorage.setItem('authToken', t), seller)
   const sp = await sellerCtx.newPage()
-  const dialogs = []
+  const dialogs: string[] = []
   sp.on('dialog', (d) => { dialogs.push(d.message()); d.dismiss() })
   await sp.goto(`/order/${lotId}`)
   await expect(sp.getByRole('heading', { name: 'Payment Recorded: Ship the Item' })).toBeVisible()

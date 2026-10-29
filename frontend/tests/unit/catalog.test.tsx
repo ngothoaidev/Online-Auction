@@ -5,10 +5,10 @@ import { MemoryRouter, Routes, Route, useLocation, useNavigate } from 'react-rou
 import { formatVnd, parseAmountInput, compareAmounts } from '../../src/utils/money'
 
 const apiFetch = vi.fn()
-vi.mock('../../src/services/apiClient.js', () => ({ apiFetch: (...a) => apiFetch(...a), isAbort: (e) => e?.name === 'AbortError', ApiError: class extends Error {} }))
-let authUser = { userId: 1, id: 1, username: 'me' }
+vi.mock('../../src/services/apiClient', () => ({ apiFetch: (...a) => apiFetch(...a), isAbort: (e) => e?.name === 'AbortError', ApiError: class extends Error {} }))
+let authUser: { userId: number; id: number; username: string } | null = { userId: 1, id: 1, username: 'me' }
 vi.mock('../../src/contexts/AuthContext', () => ({ useAuth: () => ({ user: authUser }) }))
-vi.mock('../../src/contexts/AuthContext.jsx', () => ({ useAuth: () => ({ user: authUser }) }))
+vi.mock('../../src/contexts/AuthContext', () => ({ useAuth: () => ({ user: authUser }) }))
 
 import { WatchlistProvider, useWatchlist } from '../../src/contexts/WatchlistContext'
 import AuctionCard from '../../src/components/AuctionCard'
@@ -58,7 +58,7 @@ describe('WatchlistContext', () => {
   })
 
   it('serialises rapid clicks per lot: writes are sent one after another and end on the last intent', async () => {
-    const order = []
+    const order: string[] = []
     let release
     apiFetch.mockImplementation(async (path, opts = {}) => {
       if (opts.method !== 'PUT') return { auctionIds: [] }
@@ -90,7 +90,7 @@ describe('WatchlistContext', () => {
 })
 
 describe('AuctionCard', () => {
-  const renderCard = (p, variant) => render(<MemoryRouter><WatchlistProvider><AuctionCard product={p} variant={variant} /></WatchlistProvider></MemoryRouter>)
+  const renderCard = (p, variant?: string) => render(<MemoryRouter><WatchlistProvider><AuctionCard product={p} variant={variant} /></WatchlistProvider></MemoryRouter>)
 
   it('on the profile Wins / Sold tabs the card links back to the order; elsewhere it does not', async () => {
     apiFetch.mockResolvedValue({ auctionIds: [] })

@@ -14,10 +14,12 @@ import MockPaymentPanel from './MockPaymentPanel';
 import { Dialog } from '../../components/ui';
 import { nextStep } from './nextStep';
 import type { ApiError } from '../../services/apiClient';
+import type { FormEvent } from 'react';
+import type { OrderMessage, OrderView, PaymentSummary } from '../../types/api';
 
 // Status -> step. Step 2 is the seller's turn in both payment paths: confirm a manual payment and ship
 // (pending_confirmation), or ship after the gateway recorded the payment (pending_delivery).
-const STATUS_STEPS = {
+const STATUS_STEPS: Record<string, number> = {
   pending_payment: 1,
   pending_confirmation: 2,
   pending_delivery: 2,
@@ -30,11 +32,11 @@ const STATUS_STEPS = {
 
 const STEP_LABELS = ['Payment', 'Shipping', 'Receipt', 'Reviews'];
 
-const ItemPhoto = ({ src, alt, className }) => (src
+const ItemPhoto = ({ src, alt, className }: { src: string | null | undefined; alt: string; className?: string }) => (src
   ? <img src={src} alt={alt} className={`object-cover ${className}`} />
   : <div role="img" aria-label={`${alt}: no photo`} className={`flex items-center justify-center bg-(--surface-sunken) text-xs text-(--muted) ${className}`}>No photo</div>);
 
-const ChatAvatar = ({ user }) => (user?.avatarUrl
+const ChatAvatar = ({ user }: { user?: { avatarUrl?: string | null; username?: string } | null }) => (user?.avatarUrl
   ? <img src={user.avatarUrl} alt="" className="h-8 w-8 flex-shrink-0 rounded-full object-cover" />
   : <span aria-hidden="true" className="inline-flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-(--surface-sunken) text-xs font-semibold text-(--muted)">{(user?.username ?? '?')[0].toUpperCase()}</span>);
 
@@ -42,19 +44,19 @@ export default function OrderCompletion() {
   const { confirm, notify } = useFeedback();
   const { auctionId } = useParams();
   const { user } = useAuth();
-  const [order, setOrder] = useState(null);
-  const [auction, setAuction] = useState(null);
-  const [payment, setPayment] = useState(null); // { mode, available, attempts }
+  const [order, setOrder] = useState<OrderView | null>(null);
+  const [auction, setAuction] = useState<OrderView['auction'] | null>(null);
+  const [payment, setPayment] = useState<PaymentSummary | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
   // Settlement runs in the background worker: while it has not produced an order the API answers 202 and we poll.
-  const [settlement, setSettlement] = useState(null); // { attempts, retryAfter }
+  const [settlement, setSettlement] = useState<{ attempts: number; retryAfter?: number } | null>(null);
   const MAX_SETTLEMENT_POLLS = 24;
-  const [messages, setMessages] = useState([]);
+  const [messages, setMessages] = useState<OrderMessage[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [sendingMessage, setSendingMessage] = useState(false);
-  const chatRef = useRef(null);
-  const [channelChoice, setChannelChoice] = useState(null); // buyer's pick while the server has not locked a payment mode
+  const chatRef = useRef<HTMLDivElement>(null);
+  const [channelChoice, setChannelChoice] = useState<string | null>(null); // buyer's pick while the server has not locked a payment mode
 
   // Form states
   const [paymentForm, setPaymentForm] = useState({
@@ -81,7 +83,7 @@ export default function OrderCompletion() {
   const [submitting, setSubmitting] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [showImageModal, setShowImageModal] = useState(false);
-  const [imageUploadType, setImageUploadType] = useState(null); // 'payment' or 'shipping'
+  const [imageUploadType, setImageUploadType] = useState<'payment' | 'shipping' | null>(null);
 
   // Determine user role
   const isSeller = user?.userId === order?.sellerId;
@@ -115,7 +117,7 @@ export default function OrderCompletion() {
     if (box) box.scrollTop = box.scrollHeight; // newest message in view, inside the chat box only
   }, [messages]);
 
-  const loadData = async ({ attempts = 0, silent = attempts > 0 } = {}) => {
+  const loadData = async ({ attempts = 0, silent = attempts > 0 }: { attempts?: number; silent?: boolean } = {}) => {
     try {
       if (!silent) setLoading(true);
       const orderData = await orderService.getByAuctionId(auctionId);
@@ -148,6 +150,7 @@ export default function OrderCompletion() {
   };
 
   const loadMessages = async () => {
+    if (!order) return; // handlers only run once the order is on screen
     try {
       const data = await orderService.getMessages(order.id);
       setMessages(data.messages || []);
@@ -157,7 +160,8 @@ export default function OrderCompletion() {
     }
   };
 
-  const handleSendMessage = async (e) => {
+  const handleSendMessage = async (e: FormEvent) => {
+    if (!order) return; // handlers only run once the order is on screen
     e.preventDefault();
     if (sendingMessage) return;
 
@@ -181,7 +185,8 @@ export default function OrderCompletion() {
     }
   };
 
-  const handleSubmitPayment = async (e) => {
+  const handleSubmitPayment = async (e: FormEvent) => {
+    if (!order) return; // handlers only run once the order is on screen
     e.preventDefault();
     if (submitting) return;
 
@@ -203,7 +208,8 @@ export default function OrderCompletion() {
     }
   };
 
-  const handleConfirmPayment = async (e) => {
+  const handleConfirmPayment = async (e: FormEvent) => {
+    if (!order) return; // handlers only run once the order is on screen
     e.preventDefault();
     if (submitting) return;
 
@@ -230,6 +236,7 @@ export default function OrderCompletion() {
   };
 
   const handleConfirmReceipt = async () => {
+    if (!order) return; // handlers only run once the order is on screen
     if (submitting) return;
 
     if (!(await confirm({ title: 'Confirm receipt?', message: 'Confirm only once the item has arrived as described. The seller is then asked to review you.', confirmLabel: 'I received it' }))) return;
@@ -245,7 +252,8 @@ export default function OrderCompletion() {
     }
   };
 
-  const handleSubmitReview = async (e) => {
+  const handleSubmitReview = async (e: FormEvent) => {
+    if (!order) return; // handlers only run once the order is on screen
     e.preventDefault();
     if (submitting) return;
 
@@ -269,7 +277,8 @@ export default function OrderCompletion() {
     }
   };
 
-  const handleImageUpload = async (file) => {
+  const handleImageUpload = async (file: File) => {
+    if (!order) return; // handlers only run once the order is on screen
     try {
       // Private upload bound to this order and purpose; only the returned asset id is ever sent back to the API.
       const uploaded = await orderService.uploadProof(order.id, imageUploadType, file);
@@ -287,12 +296,13 @@ export default function OrderCompletion() {
     }
   };
 
-  const openImageUpload = (type) => {
+  const openImageUpload = (type: 'payment' | 'shipping') => {
     setImageUploadType(type);
     setShowImageModal(true);
   };
 
-  const handleCancelOrder = async (e) => {
+  const handleCancelOrder = async (e: FormEvent) => {
+    if (!order) return; // handlers only run once the order is on screen
     e.preventDefault();
     if (submitting) return;
 
@@ -316,7 +326,7 @@ export default function OrderCompletion() {
   };
 
   const getCurrentStep = () => {
-    return STATUS_STEPS[order?.status] || 1;
+    return STATUS_STEPS[order?.status ?? ''] || 1;
   };
 
   const canUserReview = () => {
@@ -659,7 +669,7 @@ export default function OrderCompletion() {
                       </p>
                     ) : (
                       <p><span className="text-(--text-muted)">Payment Proof:</span>{' '}
-                        <ProofLink path={order?.paymentProofUrl}>View Receipt</ProofLink>
+                        <ProofLink path={order?.paymentProofUrl ?? ''}>View Receipt</ProofLink>
                       </p>
                     )}
                     <p><span className="text-(--text-muted)">Shipping Address:</span>{' '}
@@ -792,7 +802,7 @@ export default function OrderCompletion() {
                   <h3 className="font-medium text-(--ink) mb-2">Shipping Information</h3>
                   <div className="space-y-2 text-sm">
                     <p><span className="text-(--text-muted)">Shipping Invoice:</span>{' '}
-                      <ProofLink path={order?.shippingProofUrl}>View Invoice</ProofLink>
+                      <ProofLink path={order?.shippingProofUrl ?? ''}>View Invoice</ProofLink>
                     </p>
                     <p><span className="text-(--text-muted)">Tracking Number:</span>{' '}
                       <span className="text-(--text) font-mono">{order?.trackingNumber}</span>

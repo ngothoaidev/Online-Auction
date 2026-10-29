@@ -68,7 +68,7 @@ test('header category menu, own profile, seller forms and admin users have named
 })
 
 // Theme follows the app toggle, not the OS: the browser below is OS-light while the app is set to dark (and vice versa).
-for (const [appTheme, osTheme] of [['light', 'dark'], ['dark', 'light']]) {
+for (const [appTheme, osTheme] of [['light', 'dark'], ['dark', 'light']] as const) {
   test(`reviews directory has readable contrast in app ${appTheme} mode (OS ${osTheme})`, async ({ browser }) => {
     const ctx = await browser.newContext({ colorScheme: osTheme })
     await ctx.addInitScript((t) => localStorage.setItem('theme', t), appTheme)

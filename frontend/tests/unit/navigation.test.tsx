@@ -7,12 +7,12 @@ import { searchUrl, TAB_SEARCH_SORT } from '../../src/utils/searchUrl'
 vi.mock('../../src/services/auctionService', () => ({ default: { getTopAuctions: vi.fn().mockResolvedValue([]) } }))
 vi.mock('../../src/components/AuctionCard', () => ({ default: () => null }))
 const logout = vi.fn()
-const authState = { user: { role: 'admin' }, loading: false }
-vi.mock('../../src/contexts/AuthContext.jsx', () => ({ useAuth: () => ({ ...authState, logout }) }))
+const authState: { user: { role: string } | null; loading: boolean } = { user: { role: 'admin' }, loading: false }
+vi.mock('../../src/contexts/AuthContext', () => ({ useAuth: () => ({ ...authState, logout }) }))
 
-vi.mock('../../src/pages/AdminDashboard/ProductList.jsx', () => ({ default: () => null }))
-vi.mock('../../src/pages/AdminDashboard/UserList.jsx', () => ({ default: () => null }))
-vi.mock('../../src/pages/AdminDashboard/UpgradeRequests.jsx', () => ({ default: () => null }))
+vi.mock('../../src/pages/AdminDashboard/ProductList', () => ({ default: () => null }))
+vi.mock('../../src/pages/AdminDashboard/UserList', () => ({ default: () => null }))
+vi.mock('../../src/pages/AdminDashboard/UpgradeRequests', () => ({ default: () => null }))
 
 import ProductTabs from '../../src/pages/HomePage/ProductTabs'
 import MobileMenu from '../../src/components/Header/MobileMenu'
@@ -46,8 +46,8 @@ describe('Mobile category menu', () => {
     render(<MemoryRouter><MobileMenu open onClose={() => {}} user={null} categories={categories} logout={() => {}} /></MemoryRouter>)
     await userEvent.click(screen.getByRole('button', { name: 'Art subcategories' }))
     const href = screen.getByRole('link', { name: /Tranh sơn dầu/ }).getAttribute('href')
-    expect(href.startsWith('/search?')).toBe(true)
-    expect(new URL(href, 'http://x').searchParams.get('category')).toBe('Tranh sơn dầu & màu nước')
+    expect(href!.startsWith('/search?')).toBe(true)
+    expect(new URL(href!, 'http://x').searchParams.get('category')).toBe('Tranh sơn dầu & màu nước')
   })
 })
 
@@ -108,11 +108,11 @@ describe('account navigation (design audit F06: phones had no way to bids, saved
     expect(labels('seller')).not.toContain('Start selling')
     expect(labels('admin')).toContain('Admin dashboard')
     expect(accountLinks(null)).toEqual([])
-    expect(accountLinks({ username: 'an', role: 'buyer' }).find((l) => l.label === 'My bids').to).toBe('/profile/an?tab=active-bids')
+    expect(accountLinks({ username: 'an', role: 'buyer' }).find((l) => l.label === 'My bids')!.to).toBe('/profile/an?tab=active-bids')
   })
 
   it('the mobile menu lists them for a signed-in user and not for a guest', () => {
-    const { unmount } = render(<MemoryRouter><MobileMenu open onClose={() => {}} user={{ username: 'sel', role: 'seller' }} categories={[]} logout={() => {}} /></MemoryRouter>)
+    const { unmount } = render(<MemoryRouter><MobileMenu open onClose={() => {}} user={{ username: 'sel', email: 'sel@example.test', role: 'seller' }} categories={[]} logout={() => {}} /></MemoryRouter>)
     const account = screen.getByRole('navigation', { name: 'Account' })
     expect(within(account).getByRole('link', { name: 'My bids' })).toHaveAttribute('href', '/profile/sel?tab=active-bids')
     expect(within(account).getByRole('link', { name: 'Create listing' })).toHaveAttribute('href', '/create-auction')
@@ -127,13 +127,13 @@ describe('desktop Categories button', () => {
     const { default: CategoryDropper } = await import('../../src/components/Header/CategoryDropper')
     render(<MemoryRouter><CategoryDropper categories={[{ id: 1, name: 'Watches', subcategories: [] }]} /></MemoryRouter>)
     const button = screen.getByRole('button', { name: /categories/i })
-    fireEvent.mouseEnter(button.parentElement)
+    fireEvent.mouseEnter(button.parentElement!)
     expect(button).toHaveAttribute('aria-expanded', 'true')
     fireEvent.click(button)
     expect(button).toHaveAttribute('aria-expanded', 'true')
     fireEvent.click(button)
     expect(button).toHaveAttribute('aria-expanded', 'false')
-    fireEvent.mouseLeave(button.parentElement)
+    fireEvent.mouseLeave(button.parentElement!)
     button.focus()
     await userEvent.keyboard('{Enter}')
     expect(button).toHaveAttribute('aria-expanded', 'true')
