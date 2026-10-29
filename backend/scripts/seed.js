@@ -1,15 +1,17 @@
-// Deterministic local seed. Fake data only; refuses to run against non-local databases. Idempotent.
+// Deterministic seed. Fake data only; refuses non-local databases unless SEED_ALLOW_REMOTE=yes. Idempotent.
+// Remote (public demo) runs skip demo_admin: its password is in this file, so it would be a public admin login.
 // Images are static SVGs served by the frontend dev server from /seed/*.svg (no external hosts).
 import dotenv from "dotenv";
 import bcrypt from "bcrypt";
 import postgres from "postgres";
 import { drizzle } from "drizzle-orm/postgres-js";
-import { and, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import * as s from "../db/schema.js";
 dotenv.config();
 
 const url = process.env.DATABASE_URL;
-if (!/@(localhost|127\.0\.0\.1|db)(:|\/)/.test(url || "")) throw new Error("seed refuses non-local DATABASE_URL");
+const remote = !/@(localhost|127\.0\.0\.1|db)(:|\/)/.test(url || "");
+if (remote && process.env.SEED_ALLOW_REMOTE !== "yes") throw new Error("seed refuses non-local DATABASE_URL (set SEED_ALLOW_REMOTE=yes for a public demo DB)");
 process.env.JWT_SECRET ||= "seed-only-secret";
 
 const client = postgres(url, { max: 1 });
@@ -22,7 +24,7 @@ const people = [
   { username: "demo_buyer1", email: "buyer1@example.test", role: "buyer" },
   { username: "demo_buyer2", email: "buyer2@example.test", role: "buyer" },
 ];
-for (const p of people) {
+for (const p of people.filter((p) => !(remote && p.role === "admin"))) {
   await db.insert(s.users).values({ ...p, encryptedPassword: pw, fullName: p.username.replace("demo_", "Demo "), isVerified: true }).onConflictDoNothing();
 }
 const user = async (username) => (await db.select().from(s.users).where(eq(s.users.username, username)))[0];
@@ -57,25 +59,26 @@ if (!existing.some((a) => a.status === "active" && a.endTime > new Date())) {
     ["Watercolour, harbour at first light", sub.paintings, 1_500_000, 50_000, null, hours(160), false],
   ];
   let i = 0;
+  const created = [];
   for (const [title, cat, start, step, buyNow, end, autoExtend] of lots) {
     i += 1;
     const [a] = await db.insert(s.auctions).values({
-      sellerId: seller.id, categoryId: cat.id, title, description: `<p>${title}. Seeded lot for local development.</p>`,
+      sellerId: seller.id, categoryId: cat.id, title, description: `<p>${title}. Demo lot with fake data.</p>`,
       startingPrice: String(start), currentPrice: String(start), stepPrice: String(step), buyNowPrice: buyNow ? String(buyNow) : null,
       endTime: end, status: "active", autoExtend,
     }).returning();
+    created.push(a);
     await db.insert(s.auctionImages).values([0, 1, 2].map((k) => ({ auctionId: a.id, imageUrl: `/seed/lot-${((i + k * 4 - 1) % 12) + 1}.svg`, isPrimary: k === 0 })));
   }
   // a little bidding history through the real command path
   const b1 = await user("demo_buyer1");
   const b2 = await user("demo_buyer2");
-  const all = await db.select().from(s.auctions).where(and(eq(s.auctions.sellerId, seller.id), eq(s.auctions.status, "active")));
-  for (const a of all.slice(0, 5)) {
+  for (const a of created.slice(0, 5)) { // only this batch: older "active" lots may be past end_time awaiting the worker
     const start = BigInt(a.startingPrice);
     await commands.placeBid({ auctionId: a.id, actor: b1, amount: (start * 13n / 10n).toString() });
     await commands.placeBid({ auctionId: a.id, actor: b2, amount: (start * 12n / 10n).toString() });
   }
 }
 await client.end();
-console.log("seed done (users: demo_admin/demo_seller/demo_buyer1/demo_buyer2, password: Passw0rd!demo)");
+console.log(`seed done (users: ${remote ? "" : "demo_admin/"}demo_seller/demo_buyer1/demo_buyer2, password: Passw0rd!demo)`);
 process.exit(0);
