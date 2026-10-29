@@ -7,6 +7,9 @@ API [health](https://online-auction-uf4s.onrender.com/health/ready) ·
 [OpenAPI spec](https://online-auction-1-a3t4.onrender.com/openapi.json)
 <sub>(free Render tier: the first request after idle can take ~1 minute)</sub>
 
+**Try it:** log in as `demo_buyer1` or `demo_buyer2` (bidder) or `demo_seller`, password `Passw0rd!demo`.
+Open the same lot as two buyers in two browsers to watch proxy bidding and live prices.
+
 A full-stack auction site built to behave correctly under concurrency: proxy bidding that is serialized per lot,
 auctions that close by themselves, an order lifecycle with a real state machine, live prices, notifications,
 moderation with an audit trail — and the tests, measurements and runbooks that show it.
