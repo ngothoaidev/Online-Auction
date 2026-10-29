@@ -67,7 +67,7 @@ docker compose up
 Open http://localhost:5173 once the `api` container is healthy. The seed also creates `demo_admin` (same password)
 locally.
 
-Or with Node 20+ and Docker for the database:
+Or with Node 22.18+ and Docker for the database:
 
 ```bash
 docker compose up -d db

@@ -5,7 +5,7 @@ import { client } from "./db/index.js";
 import log from "./utils/log.js";
 
 const port = Number(process.env.PORT || 3000);
-const server = app.listen(port, () => log.info("api listening", { port, env: process.env.NODE_ENV || "development" }));
+const server = app.listen(port, () => log.info("api listening", { port, node: process.version, env: process.env.NODE_ENV || "development" }));
 
 // Graceful stop: refuse new connections, close idle ones, give in-flight requests (and open SSE streams) 5s.
 function shutdown(signal) {
