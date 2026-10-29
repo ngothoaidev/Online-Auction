@@ -5,10 +5,12 @@ import { reviewService } from '../../services/reviewService';
 import Pagination from '../../components/Pagination';
 import { Button, EmptyState } from '../../components/ui';
 import type { ApiError } from '../../services/apiClient';
+import type { ReviewFilters } from '../../services/reviewService';
+import type { ReviewRow, UserProfile } from '../../types/api';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
-function Avatar({ src, size }) {
+function Avatar({ src, size }: { src: string | null | undefined; size: string }) {
   return src
     ? <img src={src} alt="" className={`${size} rounded-full border-2 border-(--border) object-cover`} />
     : <span aria-hidden="true" className={`${size} inline-flex shrink-0 items-center justify-center rounded-full border-2 border-(--border) bg-(--surface-sunken) text-(--muted)`}><User size={20} /></span>;
@@ -16,11 +18,11 @@ function Avatar({ src, size }) {
 
 export default function UserReviews() {
   const { username } = useParams();
-  const [userData, setUserData] = useState(null);
+  const [userData, setUserData] = useState<UserProfile | null>(null);
   const [profileStatus, setProfileStatus] = useState('loading'); // loading | ready | missing | error
   const [profileAttempt, setProfileAttempt] = useState(0);
   const [activeTab, setActiveTab] = useState('received'); // 'received' or 'given'
-  const [reviews, setReviews] = useState([]);
+  const [reviews, setReviews] = useState<ReviewRow[]>([]);
   const [stats, setStats] = useState({
     totalReviews: 0,
     positiveReviews: 0,
@@ -28,7 +30,7 @@ export default function UserReviews() {
     positivePercentage: null,
   });
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
   const [pagination, setPagination] = useState({
     page: 1,
     limit: 10,
@@ -42,7 +44,7 @@ export default function UserReviews() {
     setProfileStatus('loading');
     (async () => {
       try {
-        const response = await fetch(`${API_URL}/users/profile?username=${encodeURIComponent(username)}`);
+        const response = await fetch(`${API_URL}/users/profile?username=${encodeURIComponent(username ?? '')}`);
         if (cancelled) return;
         if (response.status === 404) return setProfileStatus('missing');
         if (!response.ok) return setProfileStatus('error');
@@ -66,15 +68,16 @@ export default function UserReviews() {
       setLoading(true);
       setError(null);
 
-      const filterParams = {
+      const filterParams: ReviewFilters = {
         page: pagination.page,
         limit: pagination.limit,
       };
 
+      const profileId = userData?.id;
       if (activeTab === 'received') {
-        filterParams.targetId = userData.id;
+        filterParams.targetId = profileId;
       } else {
-        filterParams.reviewerId = userData.id;
+        filterParams.reviewerId = profileId;
       }
 
       const response = await reviewService.getReviews(filterParams);
@@ -91,7 +94,7 @@ export default function UserReviews() {
     }
   };
 
-  const formatDate = (dateString) => {
+  const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'long',
@@ -114,6 +117,8 @@ export default function UserReviews() {
       </div>
     );
   }
+
+  if (!userData) return null;
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">

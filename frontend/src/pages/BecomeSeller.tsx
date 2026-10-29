@@ -6,6 +6,15 @@ import { Store, CheckCircle, Clock, XCircle, Star, TrendingUp, Users, ShieldChec
 import { becomeSellerSchema } from '../schemas/user.schemas';
 import { validateForm } from '../utils/validation';
 import type { ApiError } from '../services/apiClient';
+import type { FormEvent, ReactNode } from 'react';
+
+type SellerRequest = { id: number; status: 'pending' | 'approved' | 'rejected'; adminNote: string | null; createdAt: string };
+/** What /seller/my-request says about the caller's seller access or reapplication window. */
+type SellerStatusInfo = { isActive?: boolean; expired?: boolean; canReapply?: boolean; expiryDate?: string; canReapplyDate?: string; daysRemaining?: number };
+type StatusDisplay = {
+  icon: ReactNode; title: string; description: string; bgColor: string;
+  canReapply?: boolean; isActive?: boolean; expiryDate?: string; canReapplyDate?: string; daysRemaining?: number; effectiveDate?: string;
+};
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
@@ -17,8 +26,8 @@ export default function BecomeSeller() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [successMessage, setSuccessMessage] = useState('');
-    const [existingRequest, setExistingRequest] = useState(null);
-    const [statusInfo, setStatusInfo] = useState(null);
+    const [existingRequest, setExistingRequest] = useState<SellerRequest | null>(null);
+    const [statusInfo, setStatusInfo] = useState<SellerStatusInfo | null>(null);
     const [checkingRequest, setCheckingRequest] = useState(true);
 
     // Check if user already has a request
@@ -52,7 +61,7 @@ export default function BecomeSeller() {
         checkExistingRequest();
     }, []);
 
-    const handleSubmit = async (e) => {
+    const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
         setError('');
         setSuccessMessage('');
@@ -97,14 +106,13 @@ export default function BecomeSeller() {
         }
     };
 
-    const getStatusDisplay = (status, statusInfo) => {
+    const getStatusDisplay = (status: string, statusInfo: SellerStatusInfo | null): StatusDisplay | null => {
         switch (status) {
             case 'pending':
                 return {
                     icon: <Clock className="w-12 h-12 text-(--warning)" />,
                     title: 'Request Pending',
                     description: 'Your seller upgrade request is being reviewed by our admin team.',
-                    color: 'var(--warning)',
                     bgColor: 'var(--warning-soft)',
                 };
             case 'approved':
@@ -113,8 +121,7 @@ export default function BecomeSeller() {
                     return {
                         icon: <CheckCircle className="w-12 h-12 text-(--success)" />,
                         title: 'You are a Seller! 🎉',
-                        description: `Your seller status is active for ${statusInfo.daysRemaining} more day${statusInfo.daysRemaining > 1 ? 's' : ''}.`,
-                        color: 'var(--success)',
+                        description: `Your seller status is active for ${statusInfo.daysRemaining} more day${(statusInfo.daysRemaining ?? 0) > 1 ? 's' : ''}.`,
                         bgColor: 'var(--success-soft)',
                         expiryDate: statusInfo.expiryDate,
                         daysRemaining: statusInfo.daysRemaining,
@@ -127,7 +134,6 @@ export default function BecomeSeller() {
                         icon: <Clock className="w-12 h-12 text-(--warning)" />,
                         title: 'Seller Status Expired',
                         description: 'Your seller period has ended. You can submit a new request to become a seller again.',
-                        color: 'var(--warning)',
                         bgColor: 'var(--warning-soft)',
                         canReapply: true,
                     };
@@ -136,7 +142,6 @@ export default function BecomeSeller() {
                     icon: <CheckCircle className="w-12 h-12 text-(--success)" />,
                     title: 'Congratulations! 🎉',
                     description: 'Your request has been approved! You are now a seller.',
-                    color: 'var(--success)',
                     bgColor: 'var(--success-soft)',
                 };
             case 'rejected':
@@ -145,7 +150,6 @@ export default function BecomeSeller() {
                         icon: <XCircle className="w-12 h-12 text-(--danger)" />,
                         title: 'Request Rejected',
                         description: 'Unfortunately, your request was not approved at this time.',
-                        color: 'var(--danger)',
                         bgColor: 'var(--danger-soft)',
                         canReapplyDate: statusInfo.canReapplyDate,
                         daysRemaining: statusInfo.daysRemaining,
@@ -155,7 +159,6 @@ export default function BecomeSeller() {
                     icon: <XCircle className="w-12 h-12 text-(--danger)" />,
                     title: 'Request Rejected',
                     description: 'Unfortunately, your request was not approved. You can now submit a new request.',
-                    color: 'var(--danger)',
                     bgColor: 'var(--danger-soft)',
                     canReapply: true,
                 };
@@ -208,7 +211,7 @@ export default function BecomeSeller() {
         if ((existingRequest.status === 'rejected' && displayInfo?.canReapply) ||
             (existingRequest.status === 'approved' && displayInfo?.canReapply)) {
             // Don't return early - show the form below
-        } else {
+        } else if (displayInfo) {
             return (
                 <div className="max-w-2xl mx-auto px-4 py-16">
                     <div className="bg-(--bg-soft) rounded-2xl p-8 border border-(--border)">
@@ -233,7 +236,7 @@ export default function BecomeSeller() {
                                         })}
                                     </p>
                                     <p className="text-xs text-(--text-muted) mt-1">
-                                        {displayInfo.daysRemaining} day{displayInfo.daysRemaining > 1 ? 's' : ''} remaining
+                                        {displayInfo.daysRemaining} day{(displayInfo.daysRemaining ?? 0) > 1 ? 's' : ''} remaining
                                     </p>
                                 </div>
                             )}
@@ -242,7 +245,7 @@ export default function BecomeSeller() {
                             {existingRequest.status === 'rejected' && displayInfo.canReapplyDate && (
                                 <div className="bg-(--warning-soft) rounded-lg p-4 mb-6 border border-(--warning)">
                                     <p className="text-sm font-medium text-(--warning)">
-                                        ⏳ You can submit a new request in {displayInfo.daysRemaining} day{displayInfo.daysRemaining > 1 ? 's' : ''}
+                                        ⏳ You can submit a new request in {displayInfo.daysRemaining} day{(displayInfo.daysRemaining ?? 0) > 1 ? 's' : ''}
                                     </p>
                                     <p className="text-xs text-(--text-muted) mt-1">
                                         Available on: {new Date(displayInfo.canReapplyDate).toLocaleDateString('en-US', {

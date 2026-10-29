@@ -176,3 +176,11 @@ export type AuditEntry = {
   id: number; action: string; targetType: string; targetId: number; reason: string | null;
   before: Record<string, unknown> | null; after: Record<string, unknown> | null; createdAt: string; actorId: number; actor: string | null;
 };
+
+/** A review as GET /reviews lists it (reviewer, target and lot flattened in). */
+export type ReviewRow = {
+  id: number; reviewerId: number; targetId: number; auctionId: number; isGoodRating: boolean; comment: string | null; createdAt: string;
+  reviewerUsername: string | null; reviewerFullName: string | null; reviewerAvatarUrl: string | null;
+  targetUsername: string | null; targetFullName: string | null; targetAvatarUrl: string | null;
+  auctionTitle: string | null; auctionStatus: string | null;
+};

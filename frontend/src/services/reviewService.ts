@@ -1,6 +1,6 @@
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
-type ReviewFilters = { reviewerId?: number | string; targetId?: number | string; auctionId?: number | string; page?: number; limit?: number };
+export type ReviewFilters = { reviewerId?: number | string; targetId?: number | string; auctionId?: number | string; page?: number; limit?: number };
 
 export const reviewService = {
   /**

@@ -10,7 +10,12 @@ export type ListingForm = {
   buyNowPrice?: string | null; endTime: string; images: unknown[];
 };
 
-export function validateListing(form: ListingForm, now = Date.now()) {
+export type ListingValue = { title: string; startingPrice: string; stepPrice: string; buyNowPrice: string | null; endTime: string };
+type ListingCheck =
+  | { ok: true; errors: Record<string, string>; value: ListingValue }
+  | { ok: false; errors: Record<string, string>; value: { [K in keyof ListingValue]: ListingValue[K] | null } };
+
+export function validateListing(form: ListingForm, now = Date.now()): ListingCheck {
   const errors: Record<string, string> = {};
   const title = form.title.trim();
   if (!title) errors.title = 'Enter a title';
@@ -38,5 +43,7 @@ export function validateListing(form: ListingForm, now = Date.now()) {
   if (n < 3) errors.images = `Add at least 3 photos (${n} added)`;
   else if (n > 10) errors.images = 'Use at most 10 photos';
 
-  return { ok: Object.keys(errors).length === 0, errors, value: { title, startingPrice, stepPrice, buyNowPrice, endTime } };
+  const value = { title, startingPrice, stepPrice, buyNowPrice, endTime };
+  // no errors means every required amount and the end time parsed
+  return Object.keys(errors).length === 0 ? { ok: true, errors, value: value as ListingValue } : { ok: false, errors, value };
 }

@@ -8,8 +8,15 @@ import { validateListing } from '../utils/listing';
 import { formatVnd } from '../utils/money';
 import { Button, Field, IconButton } from '../components/ui';
 import type { ApiError } from '../services/apiClient';
+import type { ChangeEvent, FormEvent, ReactNode } from 'react';
+import type { CategoryNode } from '../types/api';
 
-const Section = ({ title, hint, children }) => (
+type CreateForm = {
+  title: string; description: string; categoryId: string; startingPrice: string; stepPrice: string; buyNowPrice: string;
+  endTime: string; autoExtend: boolean; allowNewbies: boolean; images: { file: File; preview: string }[];
+};
+
+const Section = ({ title, hint, children }: { title: string; hint?: ReactNode; children: ReactNode }) => (
   <fieldset className="rounded-(--radius-card) border border-(--line) bg-(--surface) p-5">
     <legend className="px-1 text-lg font-semibold text-(--ink)">{title}</legend>
     {hint && <p className="mb-4 text-sm text-(--muted)">{hint}</p>}
@@ -19,22 +26,23 @@ const Section = ({ title, hint, children }) => (
 
 export default function CreateAuction() {
   const nav = useNav();
-  const [categories, setCategories] = useState([]);
+  const [categories, setCategories] = useState<CategoryNode[]>([]);
   const [uploadOpen, setUploadOpen] = useState(false);
-  const [errors, setErrors] = useState({});
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [form, setForm] = useState({ title: '', description: '', categoryId: '', startingPrice: '', stepPrice: '', buyNowPrice: '', endTime: '', autoExtend: true, allowNewbies: true, images: [] });
-  const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.type === 'checkbox' ? e.target.checked : e.target.value }));
+  const [form, setForm] = useState<CreateForm>({ title: '', description: '', categoryId: '', startingPrice: '', stepPrice: '', buyNowPrice: '', endTime: '', autoExtend: true, allowNewbies: true, images: [] });
+  const set = (k: keyof CreateForm) => (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
+    setForm((f) => ({ ...f, [k]: e.target.type === 'checkbox' ? (e.target as HTMLInputElement).checked : e.target.value }));
 
   useEffect(() => {
     auctionService.getCategories().then((d) => setCategories(Array.isArray(d) ? d : [])).catch(() => setFormError('Categories could not be loaded. Refresh the page.'));
   }, []);
 
-  const addImage = (file) => setForm((f) => ({ ...f, images: [...f.images, { file, preview: URL.createObjectURL(file) }] }));
-  const removeImage = (i) => setForm((f) => ({ ...f, images: f.images.filter((_, idx) => idx !== i) }));
+  const addImage = async (file: File) => setForm((f) => ({ ...f, images: [...f.images, { file, preview: URL.createObjectURL(file) }] }));
+  const removeImage = (i: number) => setForm((f) => ({ ...f, images: f.images.filter((_, idx) => idx !== i) }));
 
-  const submit = async (e) => {
+  const submit = async (e: FormEvent) => {
     e.preventDefault();
     setFormError('');
     const check = validateListing(form);

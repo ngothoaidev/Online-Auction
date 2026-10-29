@@ -4,9 +4,12 @@ import Pagination from '../../components/Pagination';
 import { Button, EmptyState } from '../../components/ui';
 import './Reviews.css';
 import type { ApiError } from '../../services/apiClient';
+import type { ChangeEvent } from 'react';
+import type { ReviewFilters } from '../../services/reviewService';
+import type { ReviewRow } from '../../types/api';
 
 const Reviews = () => {
-  const [reviews, setReviews] = useState([]);
+  const [reviews, setReviews] = useState<ReviewRow[]>([]);
   const [stats, setStats] = useState({
     totalReviews: 0,
     positiveReviews: 0,
@@ -14,7 +17,7 @@ const Reviews = () => {
     positivePercentage: null,
   });
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
   const [pagination, setPagination] = useState({
     page: 1,
     limit: 20,
@@ -36,7 +39,7 @@ const Reviews = () => {
       setLoading(true);
       setError(null);
 
-      const filterParams = {
+      const filterParams: ReviewFilters = {
         page: pagination.page,
         limit: pagination.limit,
       };
@@ -59,7 +62,7 @@ const Reviews = () => {
     }
   };
 
-  const handleFilterChange = (e) => {
+  const handleFilterChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFilters((prev) => ({
       ...prev,
@@ -77,7 +80,7 @@ const Reviews = () => {
     setPagination((prev) => ({ ...prev, page: 1 }));
   };
 
-  const formatDate = (dateString) => {
+  const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleString('vi-VN', {
       year: 'numeric',
       month: 'long',
