@@ -2,16 +2,17 @@ import { useFeedback } from '../../components/ui/Feedback';
 import { useState, useEffect } from "react";
 import { CheckCircle, XCircle, Eye, Star, Trophy, Clock, RefreshCw } from "lucide-react";
 import type { ApiError } from '../../services/apiClient';
+import type { SellerRequestRow } from "../../types/api";
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 export default function UpgradeRequests() {
   const { confirm, notify } = useFeedback();
-  const [requests, setRequests] = useState([]);
+  const [requests, setRequests] = useState<SellerRequestRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [filterStatus, setFilterStatus] = useState("pending");
-  const [actionLoading, setActionLoading] = useState(null);
+  const [actionLoading, setActionLoading] = useState<number | null>(null);
 
   // Fetch requests from backend
   const fetchRequests = async () => {
@@ -46,7 +47,7 @@ export default function UpgradeRequests() {
     filterStatus === "all" || req.status === filterStatus
   );
 
-  const handleApprove = async (id) => {
+  const handleApprove = async (id: number) => {
     const decision = await confirm({ title: 'Approve seller request?', message: 'The user will be able to create listings.', confirmLabel: 'Approve', reason: { label: 'Note' } });
     if (!decision) return;
     
@@ -69,7 +70,7 @@ export default function UpgradeRequests() {
 
       // Update local state
       setRequests(requests.map(req =>
-        req.id === id ? { ...req, status: "approved" } : req
+        req.id === id ? { ...req, status: "approved" as const } : req
       ));
     } catch (err) {
       notify((err as ApiError).message, 'error');
@@ -78,7 +79,7 @@ export default function UpgradeRequests() {
     }
   };
 
-  const handleReject = async (id) => {
+  const handleReject = async (id: number) => {
     const decision = await confirm({ title: 'Reject seller request?', message: 'The user keeps their buyer account and can apply again after 7 days.', confirmLabel: 'Reject', tone: 'danger', reason: { label: 'Reason' } });
     if (!decision) return;
     
@@ -101,7 +102,7 @@ export default function UpgradeRequests() {
 
       // Update local state
       setRequests(requests.map(req =>
-        req.id === id ? { ...req, status: "rejected" } : req
+        req.id === id ? { ...req, status: "rejected" as const } : req
       ));
     } catch (err) {
       notify((err as ApiError).message, 'error');
@@ -110,8 +111,8 @@ export default function UpgradeRequests() {
     }
   };
 
-  const getStatusBadge = (status) => {
-    const styles = {
+  const getStatusBadge = (status: string) => {
+    const styles: Record<string, string> = {
       pending: 'bg-[var(--warning-soft)] text-[var(--warning)]',
       approved: 'bg-[var(--success-soft)] text-[var(--success)]',
       rejected: 'bg-[var(--danger-soft)] text-[var(--danger)]'
@@ -119,7 +120,7 @@ export default function UpgradeRequests() {
     return styles[status] || styles.pending;
   };
 
-  const getRatingColor = (rating) => {
+  const getRatingColor = (rating: number) => {
     if (rating >= 95) return 'text-[var(--success)]';
     if (rating >= 85) return 'text-[var(--accent)]';
     return 'text-[var(--warning)]';
@@ -186,9 +187,10 @@ export default function UpgradeRequests() {
       ) : (
         <div className="grid grid-cols-1 gap-4">
           {filteredRequests.map((request) => {
-            const user = request.user || {};
-            const ratingPercent = user.ratingCount > 0 
-              ? Math.round((user.positiveRatingCount / user.ratingCount) * 100) 
+            const user: Partial<NonNullable<SellerRequestRow['user']>> = request.user ?? {};
+            const ratingCount = user.ratingCount ?? 0;
+            const ratingPercent = ratingCount > 0 
+              ? Math.round(((user.positiveRatingCount ?? 0) / ratingCount) * 100) 
               : 0;
             
             return (

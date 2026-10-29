@@ -4,15 +4,16 @@ import { Link } from 'react-router-dom';
 import { Button, Dialog } from '../../components/ui';
 import { Search, Eye, Ban, CheckCircle, UserPlus, Filter, ChevronLeft, ChevronRight, X, User } from "lucide-react";
 import type { ApiError } from '../../services/apiClient';
+import type { AdminUser, AdminUserStats } from "../../types/api";
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 export default function UserList() {
   const { confirm, notify } = useFeedback();
-  const [users, setUsers] = useState([]);
+  const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [stats, setStats] = useState(null);
+  const [stats, setStats] = useState<AdminUserStats | null>(null);
   
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -27,9 +28,9 @@ export default function UserList() {
   const [debouncedSearch, setDebouncedSearch] = useState("");
 
   // Modal state
-  const [selectedUser, setSelectedUser] = useState(null);
+  const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
   const [showUserModal, setShowUserModal] = useState(false);
-  const [userStats, setUserStats] = useState(null);
+  const [userStats, setUserStats] = useState<{ totalAuctions: number; totalBids: number } | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
 
   // Debounce search
@@ -57,8 +58,8 @@ export default function UserList() {
       const token = localStorage.getItem('authToken');
       
       const params = new URLSearchParams({
-        page: currentPage,
-        limit: limit,
+        page: String(currentPage),
+        limit: String(limit),
         search: debouncedSearch,
         role: roleFilter,
         status: statusFilter
@@ -103,7 +104,7 @@ export default function UserList() {
     }
   };
 
-  const fetchUserDetails = async (userId) => {
+  const fetchUserDetails = async (userId: number) => {
     try {
       const token = localStorage.getItem('authToken');
       const response = await fetch(`${API_URL}/users/${userId}`, {
@@ -123,7 +124,7 @@ export default function UserList() {
     }
   };
 
-  const handleBanUser = async (userId) => {
+  const handleBanUser = async (userId: number) => {
     const decision = await confirm({ title: 'Ban this user?', message: 'They are signed out everywhere and cannot bid, list or order until unbanned.', confirmLabel: 'Ban user', tone: 'danger', reason: { label: 'Reason for the ban', required: true } });
     if (!decision) return;
     
@@ -154,7 +155,7 @@ export default function UserList() {
     }
   };
 
-  const handleUnbanUser = async (userId) => {
+  const handleUnbanUser = async (userId: number) => {
     const decision = await confirm({ title: 'Unban this user?', message: 'They can sign in and trade again.', confirmLabel: 'Unban', reason: { label: 'Note' } });
     if (!decision) return;
     
@@ -185,7 +186,7 @@ export default function UserList() {
     }
   };
 
-  const getRoleBadge = (role) => {
+  const getRoleBadge = (role: string) => {
     switch (role) {
       case 'seller':
         return 'bg-[var(--accent-soft)] text-[var(--accent)]';
@@ -198,13 +199,13 @@ export default function UserList() {
     }
   };
 
-  const getStatusBadge = (status) => {
+  const getStatusBadge = (status: string | null | undefined) => {
     return status === 'active' || !status
       ? 'bg-[var(--success-soft)] text-[var(--success)]'
       : 'bg-[var(--danger-soft)] text-[var(--danger)]';
   };
 
-  const handleFilterChange = (type, value) => {
+  const handleFilterChange = (type: 'role' | 'status', value: string) => {
     if (type === 'role') setRoleFilter(value);
     if (type === 'status') setStatusFilter(value);
     setCurrentPage(1);
@@ -526,12 +527,12 @@ export default function UserList() {
                   </div>
                 )}
 
-                {selectedUser.ratingCount > 0 && (
+                {(selectedUser.ratingCount ?? 0) > 0 && (
                   <div className="bg-(--surface-sunken) rounded-lg p-3">
                     <div className="text-sm text-(--muted) mb-1">Rating</div>
                     <div className="font-medium text-(--ink)">
                       {selectedUser.positiveRatingCount}/{selectedUser.ratingCount} positive reviews
-                      ({Math.round((selectedUser.positiveRatingCount / selectedUser.ratingCount) * 100)}%)
+                      ({Math.round(((selectedUser.positiveRatingCount ?? 0) / (selectedUser.ratingCount ?? 1)) * 100)}%)
                     </div>
                   </div>
                 )}

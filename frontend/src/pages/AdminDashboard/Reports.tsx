@@ -5,17 +5,19 @@ import { Button, EmptyState, Skeleton, StatusBadge } from '../../components/ui';
 import { useFeedback } from '../../components/ui/Feedback';
 import { formatTimeAgo } from '../../utils/format';
 import type { ApiError } from '../../services/apiClient';
+import type { Tone } from '../../components/ui/StatusBadge';
+import type { ReportRow } from '../../types/api';
 
 const FILTERS = [['open', 'Open'], ['actioned', 'Actioned'], ['dismissed', 'Dismissed'], ['all', 'All']];
-const REASONS = { counterfeit: 'Counterfeit', prohibited: 'Prohibited item', misleading: 'Misleading', offensive: 'Offensive', other: 'Other' };
-const TONE = { open: 'warning', actioned: 'danger', dismissed: 'neutral' };
+const REASONS: Record<string, string> = { counterfeit: 'Counterfeit', prohibited: 'Prohibited item', misleading: 'Misleading', offensive: 'Offensive', other: 'Other' };
+const TONE: Record<string, Tone> = { open: 'warning', actioned: 'danger', dismissed: 'neutral' };
 
 /** Listing reports. A decision closes every open report of that lot; cancelling goes through the listing domain command. */
 export default function Reports() {
   const { confirm, notify } = useFeedback();
   const [status, setStatus] = useState('open');
-  const [state, setState] = useState({ loading: true, error: false, items: [] });
-  const [busy, setBusy] = useState(null);
+  const [state, setState] = useState<{ loading: boolean; error: boolean; items: ReportRow[] }>({ loading: true, error: false, items: [] });
+  const [busy, setBusy] = useState<number | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -27,7 +29,7 @@ export default function Reports() {
   }, [status]);
   useEffect(() => { load(); }, [load]);
 
-  const resolve = async (report, action) => {
+  const resolve = async (report: ReportRow, action: 'dismiss' | 'cancel_listing') => {
     const cancel = action === 'cancel_listing';
     const decision = await confirm({
       title: cancel ? 'Cancel this listing?' : 'Dismiss these reports?',

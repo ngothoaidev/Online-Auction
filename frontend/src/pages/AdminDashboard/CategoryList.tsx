@@ -5,16 +5,18 @@ import { categorySchema } from '../../schemas/admin.schemas';
 import { validateForm } from '../../utils/validation';
 import { Dialog } from '../../components/ui';
 import type { ApiError } from '../../services/apiClient';
+import type { FormEvent } from "react";
+import type { AdminCategory } from "../../types/api";
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 export default function CategoryList() {
   const { confirm, notify } = useFeedback();
-  const [categories, setCategories] = useState([]);
+  const [categories, setCategories] = useState<AdminCategory[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [actionLoading, setActionLoading] = useState(null);
-  const [expandedCategories, setExpandedCategories] = useState({});
+  const [actionLoading, setActionLoading] = useState<number | null>(null);
+  const [expandedCategories, setExpandedCategories] = useState<Record<number, boolean>>({});
   
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -23,7 +25,7 @@ export default function CategoryList() {
   // Modal states
   const [showAddModal, setShowAddModal] = useState(false);
   const [showAddSubModal, setShowAddSubModal] = useState(false);
-  const [selectedParentCategory, setSelectedParentCategory] = useState(null);
+  const [selectedParentCategory, setSelectedParentCategory] = useState<AdminCategory | null>(null);
   const [newCategoryName, setNewCategoryName] = useState('');
   const [newCategoryDescription, setNewCategoryDescription] = useState('');
   const [modalLoading, setModalLoading] = useState(false);
@@ -58,7 +60,7 @@ export default function CategoryList() {
   }, []);
 
   // Toggle category expansion
-  const toggleExpand = (categoryId) => {
+  const toggleExpand = (categoryId: number) => {
     setExpandedCategories(prev => ({
       ...prev,
       [categoryId]: !prev[categoryId]
@@ -66,7 +68,7 @@ export default function CategoryList() {
   };
 
   // Handle add category
-  const handleAddCategory = async (e) => {
+  const handleAddCategory = async (e: FormEvent) => {
     e.preventDefault();
     setModalError('');
     
@@ -115,8 +117,9 @@ export default function CategoryList() {
   };
 
   // Handle add subcategory
-  const handleAddSubcategory = async (e) => {
+  const handleAddSubcategory = async (e: FormEvent) => {
     e.preventDefault();
+    if (!selectedParentCategory) return;
     setModalError('');
     
     // Zod Validation
@@ -168,7 +171,7 @@ export default function CategoryList() {
   };
 
   // Handle delete category/subcategory
-  const handleDelete = async (categoryId, isSubcategory = false) => {
+  const handleDelete = async (categoryId: number, isSubcategory = false) => {
     const confirmMsg = isSubcategory 
       ? 'Are you sure you want to delete this subcategory?' 
       : 'Are you sure you want to delete this category and all its subcategories?';
@@ -201,7 +204,7 @@ export default function CategoryList() {
   };
 
   // Check if a main category can be deleted
-  const canDeleteCategory = (category) => {
+  const canDeleteCategory = (category: AdminCategory) => {
     if (category.productCount > 0) return false;
     if (category.subcategories && category.subcategories.length > 0) {
       return category.subcategories.every(sub => sub.productCount === 0);

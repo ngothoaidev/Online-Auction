@@ -4,14 +4,16 @@ import { Eye, Trash2, Filter, ChevronDown } from "lucide-react";
 import Pagination from "../../components/Pagination";
 import { formatVnd } from '../../utils/money';
 import type { ApiError } from '../../services/apiClient';
+import type { PriceRange } from "../../components/Filter/types";
+import type { CatalogAuction, CategoryNode } from "../../types/api";
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 export default function ProductList() {
   const { confirm, notify } = useFeedback();
-  const [products, setProducts] = useState([]);
+  const [products, setProducts] = useState<CatalogAuction[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
   
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -19,15 +21,15 @@ export default function ProductList() {
   const [totalItems, setTotalItems] = useState(0);
   const itemsPerPage = 12;
   // Filters
-  const [selectedCategory, setSelectedCategory] = useState(null);
-  const [priceRange, setPriceRange] = useState({ min: "", max: "" });
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [priceRange, setPriceRange] = useState<PriceRange>({ min: "", max: "" });
   const [orderBy, setOrderBy] = useState("default");
   const [statusFilter, setStatusFilter] = useState("all");
   
   // Dropdown states
-  const [activeDropdown, setActiveDropdown] = useState(null);
-  const [categories, setCategories] = useState([]);
-  const barRef = useRef(null);
+  const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
+  const [categories, setCategories] = useState<CategoryNode[]>([]);
+  const barRef = useRef<HTMLDivElement>(null);
 
   // Fetch categories
   useEffect(() => {
@@ -59,10 +61,10 @@ export default function ProductList() {
           params.set("category", selectedCategory);
         }
         if (priceRange.min) {
-          params.set("minPrice", priceRange.min);
+          params.set("minPrice", String(priceRange.min));
         }
         if (priceRange.max) {
-          params.set("maxPrice", priceRange.max);
+          params.set("maxPrice", String(priceRange.max));
         }
         if (orderBy && orderBy !== "default") {
           params.set("sortBy", orderBy);
@@ -92,8 +94,8 @@ export default function ProductList() {
 
   // Handle click outside to close dropdowns
   useEffect(() => {
-    function handleClickOutside(event) {
-      if (barRef.current && !barRef.current.contains(event.target)) {
+    function handleClickOutside(event: MouseEvent) {
+      if (barRef.current && !barRef.current.contains(event.target as Node)) {
         setActiveDropdown(null);
       }
     }
@@ -101,15 +103,15 @@ export default function ProductList() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const toggleDropdown = (name) => {
+  const toggleDropdown = (name: string) => {
     setActiveDropdown(activeDropdown === name ? null : name);
   };
 
-  const handlePageChange = (newPage) => {
+  const handlePageChange = (newPage: number) => {
     setCurrentPage(newPage);
   };
 
-  const handleRemove = async (id, title) => {
+  const handleRemove = async (id: number, title: string) => {
     const decision = await confirm({ title: 'Cancel this listing?', message: `"${title}" will stop accepting bids. Its bids and history are kept; this cannot be undone.`, confirmLabel: 'Cancel listing', tone: 'danger', reason: { label: 'Reason (shown in the audit log)', required: true } });
     if (!decision) return;
     
@@ -127,7 +129,7 @@ export default function ProductList() {
       if (!response.ok) throw new Error('Failed to delete product');
       
       // Refresh the list
-      setProducts(products.map(p => (p.id === id ? { ...p, status: 'cancelled' } : p)));
+      setProducts(products.map(p => (p.id === id ? { ...p, status: 'cancelled' as const } : p)));
     } catch (err) {
       notify((err as ApiError).message || 'Could not cancel the listing', 'error');
     }
@@ -141,8 +143,8 @@ export default function ProductList() {
     setCurrentPage(1);
   };
 
-  const getStatusBadge = (status) => {
-    const styles = {
+  const getStatusBadge = (status: string) => {
+    const styles: Record<string, string> = {
       active: 'bg-[var(--success-soft)] text-[var(--success)]',
       ended: 'bg-[var(--bg-subtle)] text-[var(--text-muted)]',
       sold: 'bg-[var(--info-soft)] text-[var(--info)]',

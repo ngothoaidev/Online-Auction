@@ -6,15 +6,20 @@ import Button from './Button';
 import Field from './Field';
 
 export type ConfirmOptions = {
-  title: string; message?: ReactNode; confirmLabel?: string; cancelLabel?: string; tone?: 'danger';
+  title: string; message?: ReactNode; confirmLabel?: string; cancelLabel?: string; tone?: 'danger' | 'primary';
   reason?: { label?: string; required?: boolean; hint?: string };
 };
 /** true / { reason } when accepted, false when cancelled. */
 export type ConfirmResult = boolean | { reason: string };
 type NoteTone = 'info' | 'success' | 'error';
-type FeedbackValue = { confirm: (opts: ConfirmOptions) => Promise<ConfirmResult>; notify: (message: string, tone?: NoteTone) => void };
+type Confirm = {
+  /** With `reason`: the typed reason when accepted, false when cancelled. */
+  (opts: ConfirmOptions & { reason: NonNullable<ConfirmOptions['reason']> }): Promise<{ reason: string } | false>;
+  (opts: ConfirmOptions): Promise<boolean>;
+};
+type FeedbackValue = { confirm: Confirm; notify: (message: string, tone?: NoteTone) => void };
 
-const FeedbackContext = createContext<FeedbackValue>({ confirm: async () => true, notify: () => {} });
+const FeedbackContext = createContext<FeedbackValue>({ confirm: (async () => true) as unknown as Confirm, notify: () => {} });
 
 /**
  * Promise-based replacements for window.confirm / window.alert:
@@ -42,7 +47,7 @@ export function FeedbackProvider({ children }: { children: ReactNode }) {
     timer.current = setTimeout(() => setNote(null), tone === 'error' ? 10000 : 5000);
   }, []);
 
-  const value = useMemo(() => ({ confirm, notify }), [confirm, notify]);
+  const value = useMemo(() => ({ confirm: confirm as Confirm, notify }), [confirm, notify]);
 
   return (
     <FeedbackContext.Provider value={value}>

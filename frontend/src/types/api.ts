@@ -184,3 +184,31 @@ export type ReviewRow = {
   targetUsername: string | null; targetFullName: string | null; targetAvatarUrl: string | null;
   auctionTitle: string | null; auctionStatus: string | null;
 };
+
+/** Admin: a listing report with its lot, reporter and seller. */
+export type ReportRow = {
+  id: number; auctionId: number; reason: string; details: string | null; status: 'open' | 'actioned' | 'dismissed';
+  resolution: string | null; resolvedAt: string | null; createdAt: string;
+  reporter: string; lotTitle: string; lotStatus: AuctionStatus | null; lotBidCount: number | null; seller: string;
+};
+
+/** Admin: a category with product counts and its subcategories. */
+export type AdminCategory = {
+  id: number; name: string; description: string | null; productCount: number;
+  subcategories: { id: number; name: string; description: string | null; productCount: number }[];
+};
+
+/** Admin: a user row of GET /users. */
+export type AdminUser = {
+  id: number; username: string; email: string; fullName: string | null; role: Role; status: 'active' | 'banned';
+  avatarUrl: string | null; bio?: string | null; createdAt: string | null; isVerified: boolean | null;
+  ratingCount: number | null; positiveRatingCount: number | null;
+};
+export type AdminUserStats = { total: number; byRole: Record<string, number>; byStatus: Record<string, number> };
+
+/** Admin: a seller request with its applicant. */
+export type SellerRequestRow = {
+  id: number; userId: number; reason: string; status: 'pending' | 'approved' | 'rejected'; adminNote: string | null;
+  createdAt: string; updatedAt: string;
+  user: { id: number; username: string; email: string; fullName: string | null; avatarUrl: string | null; createdAt: string | null; ratingCount: number | null; positiveRatingCount: number | null } | null;
+};
