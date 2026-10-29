@@ -6,9 +6,9 @@ let t, seller, buyer, other, tokens, categoryId, payments, mock, orderCmd;
 
 before(async () => {
   t = await startApp();
-  payments = await import("../../services/payments.js");
-  mock = await import("../../adapters/payments/mock.js");
-  orderCmd = await import("../../services/orderCommands.js");
+  payments = await import("../../services/payments.ts");
+  mock = await import("../../adapters/payments/mock.ts");
+  orderCmd = await import("../../services/orderCommands.ts");
   seller = await t.createUser("pseller", { role: "seller" });
   buyer = await t.createUser("pbuyer");
   other = await t.createUser("pother");

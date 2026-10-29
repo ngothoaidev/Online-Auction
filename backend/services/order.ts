@@ -1,0 +1,146 @@
+import db from "../db/index.ts";
+import { orders, orderMessages, users, auctions, auctionImages, reviews } from "../db/schema.ts";
+import { eq, and, or, ne, desc } from "drizzle-orm";
+import { attachAsset } from "./media.ts";
+
+const service = {
+    // Get order by ID
+    getById: async function(orderId: number) {
+        const result = await db.select().from(orders).where(eq(orders.id, orderId));
+        return result.length > 0 ? result[0] : null;
+    },
+
+    // Get order by auction ID
+    getByAuctionId: async function(auctionId: number) {
+        const result = await db.select().from(orders).where(eq(orders.auctionId, auctionId));
+        return result.length > 0 ? result[0] : null;
+    },
+
+    // Get orders for a user (as buyer or seller)
+    getByUserId: async function(userId: number) {
+        return db.select()
+            .from(orders)
+            .where(or(eq(orders.buyerId, userId), eq(orders.sellerId, userId)))
+            .orderBy(desc(orders.createdAt));
+    },
+
+    // Get order with full details (auction, buyer, seller info)
+    getOrderWithDetails: async function(orderId: number) {
+        const result = await db.select({
+            order: orders,
+            auction: auctions,
+            buyer: {
+                id: users.id,
+                username: users.username,
+                email: users.email,
+                fullName: users.fullName,
+                avatarUrl: users.avatarUrl,
+                ratingCount: users.ratingCount,
+                positiveRatingCount: users.positiveRatingCount,
+            },
+        })
+        .from(orders)
+        .innerJoin(auctions, eq(orders.auctionId, auctions.id))
+        .innerJoin(users, eq(orders.buyerId, users.id))
+        .where(eq(orders.id, orderId));
+
+        if (result.length === 0) return null;
+
+        // Get seller info separately
+        const sellerResult = await db.select({
+            id: users.id,
+            username: users.username,
+            email: users.email,
+            fullName: users.fullName,
+            avatarUrl: users.avatarUrl,
+            ratingCount: users.ratingCount,
+            positiveRatingCount: users.positiveRatingCount,
+        })
+        .from(users)
+        .where(eq(users.id, result[0].order.sellerId));
+
+        // The order page shows the item: primary photo (else the first one). The auctions row itself has no image column.
+        const [photo] = await db.select({ imageUrl: auctionImages.imageUrl }).from(auctionImages)
+            .where(eq(auctionImages.auctionId, result[0].order.auctionId))
+            .orderBy(desc(auctionImages.isPrimary), auctionImages.id).limit(1);
+
+        return {
+            ...result[0],
+            auction: { ...result[0].auction, image: photo?.imageUrl ?? null },
+            seller: sellerResult[0],
+        };
+    },
+
+    // All order state changes live in services/orderCommands.js (state machine, locking, audit).
+
+    // ============ MESSAGES ============
+
+    // Send message (an optional image must be a pending upload of the sender, attached in the same transaction)
+    sendMessage: async function(orderId: number, senderId: number, message: string, imageAssetId: string | null = null) {
+        return db.transaction(async (tx) => {
+            const imageUrl = imageAssetId ? await attachAsset(tx, { assetId: imageAssetId, orderId, ownerId: senderId, purpose: 'message' }) : null;
+            const result = await tx.insert(orderMessages).values({
+                orderId, senderId, message, imageUrl, isRead: false, createdAt: new Date(),
+            }).returning();
+            return result[0];
+        });
+    },
+
+    // Get messages for an order
+    getMessages: async function(orderId: number) {
+        return db.select({
+            message: orderMessages,
+            sender: {
+                id: users.id,
+                username: users.username,
+                avatarUrl: users.avatarUrl,
+            }
+        })
+        .from(orderMessages)
+        .innerJoin(users, eq(orderMessages.senderId, users.id))
+        .where(eq(orderMessages.orderId, orderId))
+        .orderBy(orderMessages.createdAt);
+    },
+
+    // Mark the OTHER party's messages as read for this reader
+    markMessagesAsRead: async function(orderId: number, readerId: number) {
+        await db.update(orderMessages)
+            .set({ isRead: true })
+            .where(and(
+                eq(orderMessages.orderId, orderId),
+                ne(orderMessages.senderId, readerId),
+                eq(orderMessages.isRead, false)
+            ));
+    },
+
+    // ============ REVIEWS ============
+
+    // Get reviews for an order
+    getOrderReviews: async function(auctionId: number) {
+        return db.select({
+            review: reviews,
+            reviewer: {
+                id: users.id,
+                username: users.username,
+                avatarUrl: users.avatarUrl,
+            }
+        })
+        .from(reviews)
+        .innerJoin(users, eq(reviews.reviewerId, users.id))
+        .where(eq(reviews.auctionId, auctionId));
+    },
+
+    // Check if user has reviewed
+    hasUserReviewed: async function(auctionId: number, reviewerId: number) {
+        const result = await db.select()
+            .from(reviews)
+            .where(and(
+                eq(reviews.auctionId, auctionId),
+                eq(reviews.reviewerId, reviewerId)
+            ));
+        return result.length > 0;
+    },
+
+};
+
+export default service;

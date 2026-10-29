@@ -1,9 +1,9 @@
 import passport from 'passport';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import { Strategy as FacebookStrategy } from 'passport-facebook';
-import userService from '../services/user.js';
-import authService from '../services/auth.js';
-import accountSecurity from '../services/accountSecurity.js';
+import userService from '../services/user.ts';
+import authService from '../services/auth.ts';
+import accountSecurity from '../services/accountSecurity.ts';
 import crypto from 'node:crypto';
 
 // Google Strategy

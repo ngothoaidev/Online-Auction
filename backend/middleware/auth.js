@@ -1,6 +1,6 @@
-import authService from "../services/auth.js";
-import userService from "../services/user.js";
-import sellerRequestService from "../services/sellerRequest.js";
+import authService from "../services/auth.ts";
+import userService from "../services/user.ts";
+import sellerRequestService from "../services/sellerRequest.ts";
 
 // Optional authentication: no Authorization header (or a literal "Bearer null/undefined" left by
 // logged-out clients) means guest. Any real token that is invalid, expired, revoked or belongs to a

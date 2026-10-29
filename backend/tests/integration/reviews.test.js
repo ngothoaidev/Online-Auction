@@ -2,7 +2,7 @@ import { test, before, after } from "node:test";
 import assert from "node:assert/strict";
 import { startApp } from "../helpers/app.js";
 import { connect, wipeDatabase, applyMigrations } from "../helpers/db.js";
-import { planReviewRepair, applyReviewRepair, recomputeRatings } from "../../services/reviewRepair.js";
+import { planReviewRepair, applyReviewRepair, recomputeRatings } from "../../services/reviewRepair.ts";
 
 let t, seller, buyer, outsider, tokens, categoryId;
 

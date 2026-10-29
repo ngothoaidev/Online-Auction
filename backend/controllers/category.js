@@ -1,7 +1,7 @@
-import * as moderation from "../services/moderation.js";
-import { keyFrom } from "../services/idempotency.js";
-import categoryService from "../services/category.js";
-import authService from "../services/auth.js";
+import * as moderation from "../services/moderation.ts";
+import { keyFrom } from "../services/idempotency.ts";
+import categoryService from "../services/category.ts";
+import authService from "../services/auth.ts";
 
 const controller = {
     

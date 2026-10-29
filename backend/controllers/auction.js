@@ -1,7 +1,7 @@
-import auctionService from "../services/auction.js";
-import { commands } from "../services/auctionCommands.js";
-import { keyFrom } from "../services/idempotency.js";
-import { streamAuction } from "../services/realtime.js";
+import auctionService from "../services/auction.ts";
+import { commands } from "../services/auctionCommands.ts";
+import { keyFrom } from "../services/idempotency.ts";
+import { streamAuction } from "../services/realtime.ts";
 
 // Idempotency-Key is optional on the API; the SPA always sends one per reviewed bid.
 const idempotencyKey = keyFrom;

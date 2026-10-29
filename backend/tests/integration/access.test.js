@@ -89,7 +89,7 @@ test("order resources: an outsider is denied every read and write; participants 
 
 test("OAuth callback guard: banned users are redirected without a token, normal users receive a valid one", async () => {
   const { oauthFinish } = await import("../../controllers/auth.js");
-  const authService = (await import("../../services/auth.js")).default;
+  const authService = (await import("../../services/auth.ts")).default;
   const redirects = [];
   const res = { redirect: (u) => redirects.push(u) };
   await oauthFinish("google", res, null, { id: 1, username: "x", email: "x@e.t", status: "banned", role: "buyer" });
@@ -103,9 +103,9 @@ test("OAuth callback guard: banned users are redirected without a token, normal 
 });
 
 test("OAuth link by email claims an unverified account (pre-hijack) but leaves a verified one alone", async () => {
-  const accountSecurity = (await import("../../services/accountSecurity.js")).default;
-  const userService = (await import("../../services/user.js")).default;
-  const authService = (await import("../../services/auth.js")).default;
+  const accountSecurity = (await import("../../services/accountSecurity.ts")).default;
+  const userService = (await import("../../services/user.ts")).default;
+  const authService = (await import("../../services/auth.ts")).default;
   const squatter = await t.createUser("squatter", { isVerified: false, role: "unauthorized" });
   const squatterToken = t.tokenFor(squatter);
   const claimed = await accountSecurity.linkProvider(await userService.getByEmail(squatter.email), { googleId: "g-1" });

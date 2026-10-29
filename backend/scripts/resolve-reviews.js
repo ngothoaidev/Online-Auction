@@ -1,7 +1,7 @@
 // Usage: node scripts/resolve-reviews.js [--apply]   (default: dry run)
 import dotenv from "dotenv";
 import postgres from "postgres";
-import { planReviewRepair, applyReviewRepair } from "../services/reviewRepair.js";
+import { planReviewRepair, applyReviewRepair } from "../services/reviewRepair.ts";
 dotenv.config();
 
 const sql = postgres(process.env.DATABASE_URL, { max: 1 });

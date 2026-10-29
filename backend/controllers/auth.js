@@ -1,8 +1,8 @@
-import userService from "../services/user.js";
-import authService from "../services/auth.js";
-import sellerRequestService from "../services/sellerRequest.js";
+import userService from "../services/user.ts";
+import authService from "../services/auth.ts";
+import sellerRequestService from "../services/sellerRequest.ts";
 import { sendWelcomeEmail, sendPasswordResetOTP, sendChangePasswordOTP } from "../utils/email.ts";
-import accountSecurity from "../services/accountSecurity.js";
+import accountSecurity from "../services/accountSecurity.ts";
 import passport from "passport";
 
 const controller = {

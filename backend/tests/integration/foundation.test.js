@@ -2,8 +2,8 @@ import { test, before, after } from "node:test";
 import assert from "node:assert/strict";
 import { drizzle } from "drizzle-orm/postgres-js";
 import { connect, resetDatabase, wipeDatabase, applyMigrations } from "../helpers/db.js";
-import { runIdempotent, compactResults } from "../../services/idempotency.js";
-import { planMaximaBackfill, applyMaximaBackfill } from "../../services/legacyBackfill.js";
+import { runIdempotent, compactResults } from "../../services/idempotency.ts";
+import { planMaximaBackfill, applyMaximaBackfill } from "../../services/legacyBackfill.ts";
 
 let sql, db;
 before(() => { sql = connect(); db = drizzle(sql); });

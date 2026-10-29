@@ -1,4 +1,4 @@
-import systemService from "../services/system.js";
+import systemService from "../services/system.ts";
 
 const controller = {
     

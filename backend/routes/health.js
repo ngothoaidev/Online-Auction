@@ -8,8 +8,8 @@ import { Router } from "express";
 import fs from "node:fs";
 import { sql } from "drizzle-orm";
 import db from "../db/index.ts";
-import { stats as outboxStats } from "../services/outbox.js";
-import { connectionCount } from "../services/realtime.js";
+import { stats as outboxStats } from "../services/outbox.ts";
+import { connectionCount } from "../services/realtime.ts";
 import { render } from "../utils/metrics.ts";
 
 const route = new Router();

@@ -11,7 +11,7 @@ import fs from "node:fs";
 import bcrypt from "bcrypt";
 import { sql } from "drizzle-orm";
 import db, { client } from "../db/index.ts";
-import authService from "../services/auth.js";
+import authService from "../services/auth.ts";
 
 const API = process.env.LOAD_API || "http://localhost:3002";
 const SECONDS = Number(process.env.LOAD_SECONDS || 20);

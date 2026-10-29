@@ -6,7 +6,7 @@ let t, seller, sellerToken, categoryId, users, tokens, settle;
 
 before(async () => {
   t = await startApp({ BID_RATE_LIMIT_MAX: "100000" });
-  settle = await import("../../services/settlement.js");
+  settle = await import("../../services/settlement.ts");
   seller = await t.createUser("seller", { role: "seller" });
   sellerToken = await t.tokenFor(seller);
   [{ id: categoryId }] = await t.sql`INSERT INTO categories (name) VALUES ('c') RETURNING category_id AS id`;

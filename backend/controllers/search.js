@@ -1,4 +1,4 @@
-import searchService from "../services/search.js";
+import searchService from "../services/search.ts";
 
 const controller = {
     

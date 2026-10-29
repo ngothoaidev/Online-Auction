@@ -8,7 +8,7 @@ let t, db, outbox;
 before(async () => {
   t = await startApp();
   db = (await import("../../db/index.ts")).default;
-  outbox = await import("../../services/outbox.js");
+  outbox = await import("../../services/outbox.ts");
   await t.sql`CREATE TABLE test_effects (event_id uuid PRIMARY KEY)`;
 });
 after(() => t.stop());

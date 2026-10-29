@@ -1,6 +1,6 @@
-import * as moderation from "../services/moderation.js";
-import { keyFrom } from "../services/idempotency.js";
-import userService from "../services/user.js";
+import * as moderation from "../services/moderation.ts";
+import { keyFrom } from "../services/idempotency.ts";
+import userService from "../services/user.ts";
 import { selfUser } from "../serializers/index.ts";
 import { AppError } from "../utils/errors.ts";
 

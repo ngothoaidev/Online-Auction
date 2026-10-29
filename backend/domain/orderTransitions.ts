@@ -6,9 +6,9 @@ export type OrderStatus = (typeof orderStatusEnum.enumValues)[number];
 export type OrderCommand =
   | "submit_payment" | "confirm_with_shipping" | "submit_shipping" | "payment_succeeded"
   | "confirm_receipt" | "cancel" | "expire" | "complete";
-export type Actor = { type: "user" | "system" | "adapter"; id?: number; role?: string | null };
+export type Actor = { type: "user" | "system" | "adapter"; id?: number | null; role?: string | null };
 export type OrderLike = {
-  status: OrderStatus; buyerId: number; sellerId: number; paymentMode: string; paymentDueAt: Date | string | null;
+  status: OrderStatus | null; buyerId: number; sellerId: number; paymentMode: string; paymentDueAt: Date | string | null;
 };
 export type TransitionPayload = {
   paymentProofUrl?: string; shippingAddress?: string; buyerPhone?: string;
@@ -21,14 +21,14 @@ export type Plan = {
 export const PAYMENT_WINDOW_HOURS = Number(process.env.PAYMENT_WINDOW_HOURS || 48);
 export const paymentDueAt = (from: Date | string | number): Date => new Date(new Date(from).getTime() + PAYMENT_WINDOW_HOURS * 3600 * 1000);
 
-export const TERMINAL = new Set<OrderStatus>(["completed", "cancelled", "payment_expired"]);
+export const TERMINAL = new Set<OrderStatus | null>(["completed", "cancelled", "payment_expired"]);
 
 export const need = (value: unknown, field: string): string => {
   if (typeof value !== "string" || value.trim() === "") throw new AppError(400, "VALIDATION_ERROR", `${field} is required`);
   return value.trim();
 };
 
-const invalid = (order: OrderLike, command: string) => new AppError(409, "INVALID_TRANSITION", `Cannot ${command.replace(/_/g, " ")} while the order is ${order.status.replace(/_/g, " ")}`);
+const invalid = (order: OrderLike, command: string) => new AppError(409, "INVALID_TRANSITION", `Cannot ${command.replace(/_/g, " ")} while the order is ${String(order.status).replace(/_/g, " ")}`);
 const forbidden = (message: string) => new AppError(403, "FORBIDDEN", message);
 
 /**
@@ -83,9 +83,9 @@ export function planTransition(order: OrderLike, command: OrderCommand, actor: A
       if (!isSeller && !isAdmin) throw forbidden("Only the seller or an admin can cancel an order"); // authorise before validating input
       const reason = need(payload.reason, "reason");
       const sellerOk = isSeller && order.status === "pending_payment";
-      const adminOk = isAdmin && (["pending_payment", "pending_confirmation", "pending_delivery"] as OrderStatus[]).includes(order.status);
+      const adminOk = isAdmin && (["pending_payment", "pending_confirmation", "pending_delivery"] as (OrderStatus | null)[]).includes(order.status);
       if (TERMINAL.has(order.status)) throw invalid(order, command);
-      if (!sellerOk && !adminOk) throw new AppError(409, "INVALID_TRANSITION", `A${isAdmin ? "n admin" : " seller"} cannot cancel an order that is ${order.status.replace(/_/g, " ")}`);
+      if (!sellerOk && !adminOk) throw new AppError(409, "INVALID_TRANSITION", `A${isAdmin ? "n admin" : " seller"} cannot cancel an order that is ${String(order.status).replace(/_/g, " ")}`);
       return { to: "cancelled", auction: "cancel_if_sold", reason, set: { cancelledAt: now, cancelledBy: actor.id, cancelReason: reason, closeReason: "cancelled" } };
     }
     case "expire": { // worker: unpaid orders only, only after the deadline

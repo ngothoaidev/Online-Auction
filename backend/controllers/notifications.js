@@ -1,4 +1,4 @@
-import * as notifications from "../services/notifications.js";
+import * as notifications from "../services/notifications.ts";
 import { AppError } from "../utils/errors.ts";
 
 const handler = (fn) => async (req, res, next) => {

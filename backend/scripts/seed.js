@@ -46,7 +46,7 @@ const seller = await user("demo_seller");
 const existing = await db.select().from(s.auctions).where(eq(s.auctions.sellerId, seller.id));
 // re-runnable for demos: once every seeded lot has closed, add a fresh batch (closed lots stay as history)
 if (!existing.some((a) => a.status === "active" && a.endTime > new Date())) {
-  const { commands } = await import("../services/auctionCommands.js");
+  const { commands } = await import("../services/auctionCommands.ts");
   const hours = (h) => new Date(Date.now() + h * 3600 * 1000);
   const lots = [
     ["Omega Seamaster 1968, steel, serviced", sub.vintage, 18_000_000, 500_000, 40_000_000, hours(6), true],
