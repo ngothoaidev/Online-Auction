@@ -88,7 +88,7 @@ test("order resources: an outsider is denied every read and write; participants 
 });
 
 test("OAuth callback guard: banned users are redirected without a token, normal users receive a valid one", async () => {
-  const { oauthFinish } = await import("../../controllers/auth.js");
+  const { oauthFinish } = await import("../../controllers/auth.ts");
   const authService = (await import("../../services/auth.ts")).default;
   const redirects = [];
   const res = { redirect: (u) => redirects.push(u) };

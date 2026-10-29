@@ -8,8 +8,8 @@ flowchart LR
   SPA -- "SSE /auction/:id/events" --> API
   Provider[Payment provider<br/>mock adapter] -- "signed webhook (raw body)" --> API
   subgraph Node
-    API[API process<br/>Express app.js]
-    W[Worker process<br/>worker.js]
+    API[API process<br/>Express app.ts]
+    W[Worker process<br/>worker.ts]
   end
   API <--> PG[(PostgreSQL 16)]
   W <--> PG
@@ -17,11 +17,11 @@ flowchart LR
   Ops[Monitoring] -- "/health/*, /metrics" --> API
 ```
 
-- **API** (`backend/app.js`, `server.js`): HTTP + SSE. Stateless apart from per-process metrics and open SSE streams; can run as several instances.
-- **Worker** (`backend/worker.js`): one loop running jobs in order — settlement, payment reconciliation, payment expiry, payment reminders, media cleanup, outbox dispatch. Several workers may run at once: every job claims work with row locks (`FOR UPDATE SKIP LOCKED` or leases). It never imports the HTTP app.
+- **API** (`backend/app.ts`, `server.ts`): HTTP + SSE. Stateless apart from per-process metrics and open SSE streams; can run as several instances.
+- **Worker** (`backend/worker.ts`): one loop running jobs in order — settlement, payment reconciliation, payment expiry, payment reminders, media cleanup, outbox dispatch. Several workers may run at once: every job claims work with row locks (`FOR UPDATE SKIP LOCKED` or leases). It never imports the HTTP app.
 - **PostgreSQL** is the single source of truth: state, history, idempotency keys, audit, outbox, heartbeats.
 
-Code layout in `backend/`: `domain/` holds pure rules (bidding math, eligibility, money, order transitions) with no I/O; `services/*Commands.js` are the only places that change state; `routes/` + `controllers/` are thin HTTP adapters; `jobs/` are worker steps; `adapters/payments/` isolates the provider.
+Code layout in `backend/`: `domain/` holds pure rules (bidding math, eligibility, money, order transitions) with no I/O; `services/*Commands.ts` are the only places that change state; `routes/` + `controllers/` are thin HTTP adapters; `jobs/` are worker steps; `adapters/payments/` isolates the provider.
 
 ## 2. Data model (main tables)
 
@@ -39,7 +39,7 @@ Money is `numeric(15,0)` in the database, `BigInt` in the domain and a digit str
 
 ## 3. How a command runs
 
-Every state change follows the same shape (`services/auctionCommands.js`, `orderCommands.js`, `payments.js`, `moderation.js`):
+Every state change follows the same shape (`services/auctionCommands.ts`, `orderCommands.ts`, `payments.ts`, `moderation.ts`):
 
 ```mermaid
 sequenceDiagram
@@ -60,7 +60,7 @@ Nothing external (email, provider calls) happens inside the transaction. Retryin
 
 ## 4. Proxy bidding
 
-Each bidder has one private maximum. The public price is `max(start, min(topMax, secondMax + step))`; equal maxima are won by the earlier `priority_sequence`; a leader raising their own maximum changes neither price nor deadline. A public price change inside the last 5 minutes extends the lot once by 5 minutes when `auto_extend` is on. Rejecting a bidder (seller) disqualifies their maximum and recomputes leader and price from the remaining ceilings (price may go down — recorded as an `adjust` bid). Pure engine: `domain/bidding.js`.
+Each bidder has one private maximum. The public price is `max(start, min(topMax, secondMax + step))`; equal maxima are won by the earlier `priority_sequence`; a leader raising their own maximum changes neither price nor deadline. A public price change inside the last 5 minutes extends the lot once by 5 minutes when `auto_extend` is on. Rejecting a bidder (seller) disqualifies their maximum and recomputes leader and price from the remaining ceilings (price may go down — recorded as an `adjust` bid). Pure engine: `domain/bidding.ts`.
 
 ## 5. Events: outbox → consumers and live updates
 
@@ -72,9 +72,9 @@ flowchart LR
   OB -->|"each SSE connection reads its auction's committed events by version"| S[SSE streams in API]
 ```
 
-- **Dispatcher** (`services/outbox.js`): claims committed events under a lease (`attempts` is the fencing token), calls consumers, marks delivered; failures back off exponentially and dead-letter after 10 attempts. Delivery is **at least once**; consumers dedupe by event id.
-- **Notifications** (`services/notifications.js`): unique per `(recipient, channel, eventId:kind)`; email failures make the outbox retry; a crash after the provider accepted a message can resend it (documented, tested in `faults.test.js`).
-- **Realtime** (`services/realtime.js`): SSE ids are `auctionId:version`; `Last-Event-ID` replays what was missed; too far behind ⇒ `reset` and the client refetches. Every API instance reads the outbox itself, so no event is "consumed" away from another instance. Public payload only: `{auctionId, version, status, currentPrice, bidCount, endTime, serverTime}`.
+- **Dispatcher** (`services/outbox.ts`): claims committed events under a lease (`attempts` is the fencing token), calls consumers, marks delivered; failures back off exponentially and dead-letter after 10 attempts. Delivery is **at least once**; consumers dedupe by event id.
+- **Notifications** (`services/notifications.ts`): unique per `(recipient, channel, eventId:kind)`; email failures make the outbox retry; a crash after the provider accepted a message can resend it (documented, tested in `faults.test.js`).
+- **Realtime** (`services/realtime.ts`): SSE ids are `auctionId:version`; `Last-Event-ID` replays what was missed; too far behind ⇒ `reset` and the client refetches. Every API instance reads the outbox itself, so no event is "consumed" away from another instance. Public payload only: `{auctionId, version, status, currentPrice, bidCount, endTime, serverTime}`.
 
 ## 6. Worker jobs
 
@@ -104,7 +104,7 @@ stateDiagram-v2
 
 `close_reason`: `ended`, `buy_now`, `no_bids`, `no_eligible_bidder`, `cancelled`, `order_cancelled`, `cancelled_after_payment`.
 
-### Order (`domain/orderTransitions.js`)
+### Order (`domain/orderTransitions.ts`)
 
 ```mermaid
 stateDiagram-v2
@@ -125,7 +125,7 @@ Every transition is written to `order_transitions` with actor and reason, bumps 
 
 ## 8. Observability
 
-JSON logs on stdout/stderr (`utils/log.js`, keys such as password/token/email/address/maximum/proof redacted), request id per request (incoming `X-Request-Id` kept when well-formed), `GET /health/live`, `GET /health/ready` (DB + migrations; worker reported), `GET /metrics` (Prometheus text: HTTP rate/latency per route pattern, auction lock wait, overdue unsettled auctions, settlement lag p95, outbox backlog/retries/dead letters, payment exceptions, email delivery failures, worker heartbeat age, SSE connections).
+JSON logs on stdout/stderr (`utils/log.ts`, keys such as password/token/email/address/maximum/proof redacted), request id per request (incoming `X-Request-Id` kept when well-formed), `GET /health/live`, `GET /health/ready` (DB + migrations; worker reported), `GET /metrics` (Prometheus text: HTTP rate/latency per route pattern, auction lock wait, overdue unsettled auctions, settlement lag p95, outbox backlog/retries/dead letters, payment exceptions, email delivery failures, worker heartbeat age, SSE connections).
 
 ## 9. Design decisions
 

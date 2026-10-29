@@ -19,6 +19,9 @@ export const validate = ({ params, query, body }: Schemas = {}): RequestHandler 
   }
 };
 
+/** What validate() stored on req.params/query/body, typed by the schema that produced it. */
+export const parsed = <S extends z.ZodTypeAny>(_schema: S, value: unknown) => value as z.infer<S>;
+
 export const idParam = z.object({ id: z.coerce.number().int().positive() }).passthrough();
 export const pageQuery = z.object({
   page: z.coerce.number().int().min(1).max(10000).default(1),

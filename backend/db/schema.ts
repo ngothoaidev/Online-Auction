@@ -258,7 +258,7 @@ export const notifications = pgTable('notifications', {
 }));
 
 // Admin audit trail. Append-only: a trigger (migration 0010) rejects UPDATE/DELETE. No FK on actor/target ids so
-// the trail outlives accounts. before/after hold an allowlisted subset of fields (services/adminAudit.js), never secrets.
+// the trail outlives accounts. before/after hold an allowlisted subset of fields (services/adminAudit.ts), never secrets.
 export const adminAudit = pgTable('admin_audit', {
   id: serial('id').primaryKey(),
   actorId: integer('actor_id').notNull(),
@@ -398,7 +398,7 @@ export const auctionCommandAudit = pgTable('auction_command_audit', {
   byAuction: index('auction_command_audit_auction_idx').on(t.auctionId, t.sequence),
 }));
 
-// --- Transactional outbox: rows are written atomically with the domain change; services/outbox.js dispatches them ---
+// --- Transactional outbox: rows are written atomically with the domain change; services/outbox.ts dispatches them ---
 export const outboxEvents = pgTable('outbox_events', {
   eventId: uuid('event_id').primaryKey().defaultRandom(),
   aggregateType: varchar('aggregate_type', { length: 32 }).notNull(),
