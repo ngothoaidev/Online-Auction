@@ -11,10 +11,13 @@ import {
 import ImageUploadModal from '../../components/ImageUploadModal';
 import ChangePasswordModal from '../../components/ChangePasswordModal';
 import { formatDate } from '../../utils/format';
+import type { ApiError } from '../../services/apiClient';
+import type { ChangeEvent } from 'react';
+import type { UserProfile } from '../../types/api';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
-export default function ProfileSidebar({ userData, isOwnProfile }) {
+export default function ProfileSidebar({ userData, isOwnProfile }: { userData: UserProfile; isOwnProfile: boolean }) {
   const { notify } = useFeedback();
     const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
     const [isChangePasswordModalOpen, setIsChangePasswordModalOpen] = useState(false);
@@ -30,7 +33,7 @@ export default function ProfileSidebar({ userData, isOwnProfile }) {
     const { logout } = useAuth();
     const nav = useNav();
     
-    const handleAvatarUpload = async (file) => {
+    const handleAvatarUpload = async (file: File) => {
         try {
             const formData = new FormData();
             formData.append('avatar', file);
@@ -55,7 +58,7 @@ export default function ProfileSidebar({ userData, isOwnProfile }) {
 
         } catch (error) {
             console.error("Upload error:", error);
-            notify(error.message, 'error');
+            notify((error as ApiError).message, 'error');
         }
     };
 
@@ -66,7 +69,7 @@ export default function ProfileSidebar({ userData, isOwnProfile }) {
     };
 
     // Handle input changes
-    const handleChange = (e) => {
+    const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
     };
 
@@ -101,7 +104,7 @@ export default function ProfileSidebar({ userData, isOwnProfile }) {
 
         } catch (error) {
             console.error("Profile update error:", error);
-            notify(error.message || "Failed to save profile changes.", 'error');
+            notify((error as ApiError).message || "Failed to save profile changes.", 'error');
         }
     };
 
@@ -161,7 +164,7 @@ export default function ProfileSidebar({ userData, isOwnProfile }) {
                             <label className="block text-xs font-bold text-(--text-muted) uppercase mb-1">Bio</label>
                             <textarea 
                                 name="bio"
-                                rows="3"
+                                rows={3}
                                 value={formData.bio}
                                 onChange={handleChange}
                                 className="w-full px-3 py-2 rounded-lg border bg-(--input-bg) text-(--text) focus:ring-2 focus:ring-(--accent) outline-none resize-none"

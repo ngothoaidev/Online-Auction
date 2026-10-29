@@ -5,6 +5,7 @@ import { useNav } from '../hooks/useNavigate';
 import { Store, CheckCircle, Clock, XCircle, Star, TrendingUp, Users, ShieldCheck } from 'lucide-react';
 import { becomeSellerSchema } from '../schemas/user.schemas';
 import { validateForm } from '../utils/validation';
+import type { ApiError } from '../services/apiClient';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
@@ -90,7 +91,7 @@ export default function BecomeSeller() {
             setSuccessMessage('Your request has been submitted successfully! We will review it shortly.');
             setExistingRequest(data.request);
         } catch (err) {
-            setError(err.message || 'Failed to submit request. Please try again.');
+            setError((err as ApiError).message || 'Failed to submit request. Please try again.');
         } finally {
             setLoading(false);
         }

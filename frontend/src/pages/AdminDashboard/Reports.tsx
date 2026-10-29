@@ -4,6 +4,7 @@ import { apiFetch } from '../../services/apiClient';
 import { Button, EmptyState, Skeleton, StatusBadge } from '../../components/ui';
 import { useFeedback } from '../../components/ui/Feedback';
 import { formatTimeAgo } from '../../utils/format';
+import type { ApiError } from '../../services/apiClient';
 
 const FILTERS = [['open', 'Open'], ['actioned', 'Actioned'], ['dismissed', 'Dismissed'], ['all', 'All']];
 const REASONS = { counterfeit: 'Counterfeit', prohibited: 'Prohibited item', misleading: 'Misleading', offensive: 'Offensive', other: 'Other' };
@@ -46,7 +47,7 @@ export default function Reports() {
       notify(r.message);
       await load();
     } catch (err) {
-      notify(err.message || 'Could not resolve the report', 'error');
+      notify((err as ApiError).message || 'Could not resolve the report', 'error');
     } finally {
       setBusy(null);
     }

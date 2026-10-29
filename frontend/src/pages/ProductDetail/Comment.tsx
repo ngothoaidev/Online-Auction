@@ -4,7 +4,10 @@ import { Reply, X } from 'lucide-react';
 import { commentSchema } from '../../schemas/auction.schemas';
 import { validateForm } from '../../utils/validation';
 
-export default function Comment({ comment, onReplySubmit }) {
+/** A comment as the section renders it (names and text already resolved). */
+export type CommentView = { id: number; user: string; avatar: string; text: string; content?: string; time?: string; isOwner?: boolean; replies: CommentView[] };
+
+export default function Comment({ comment, onReplySubmit }: { comment: CommentView; onReplySubmit: (parentId: number, content: string) => void }) {
   const { notify } = useFeedback();
   const [isReplying, setIsReplying] = useState(false);
   const [replyText, setReplyText] = useState("");

@@ -116,3 +116,29 @@ export type CatalogAuction = {
 
 /** GET /categories: top-level categories with their children. */
 export type CategoryNode = { id: number; name: string; subcategories: { id: number; name: string }[] };
+
+/** GET /users/profile?username= */
+export type UserProfile = {
+  id: number;
+  username: string;
+  name: string | null;
+  role: Role;
+  avatar: string | null;
+  bio: string | null;
+  birthDate: string | null;
+  createdAt: string | null;
+  rating: { positive: number; negative: number; percentage: number | null };
+  counts: ProfileCounts;
+};
+
+type ReviewTally = { total: number; positive: number; negative: number };
+export type ProfileCounts = {
+  totalBids: number; totalAuctions: number; totalActiveListings: number; totalSoldItems: number;
+  totalWonAuctions: number; totalActiveBids: number; totalFavoriteProducts: number;
+  reviewsReceived: ReviewTally & { positiveRate: number | null };
+  reviewsGiven: ReviewTally;
+};
+export type CountKey = Exclude<keyof ProfileCounts, 'reviewsReceived' | 'reviewsGiven'>;
+
+/** An in-app notification of the signed-in user. */
+export type AppNotification = { id: number; kind: string; title: string; body: string; link: string | null; createdAt: string; read: boolean };

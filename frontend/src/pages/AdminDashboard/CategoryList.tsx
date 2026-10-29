@@ -4,6 +4,7 @@ import { Plus, Edit2, Trash2, Package, ChevronDown, ChevronRight, FolderPlus } f
 import { categorySchema } from '../../schemas/admin.schemas';
 import { validateForm } from '../../utils/validation';
 import { Dialog } from '../../components/ui';
+import type { ApiError } from '../../services/apiClient';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
@@ -46,7 +47,7 @@ export default function CategoryList() {
       const data = await response.json();
       setCategories(data || []);
     } catch (err) {
-      setError(err.message || 'Failed to load categories');
+      setError((err as ApiError).message || 'Failed to load categories');
     } finally {
       setLoading(false);
     }
@@ -107,7 +108,7 @@ export default function CategoryList() {
       setNewCategoryDescription('');
       fetchCategories();
     } catch (err) {
-      setModalError(err.message);
+      setModalError((err as ApiError).message);
     } finally {
       setModalLoading(false);
     }
@@ -160,7 +161,7 @@ export default function CategoryList() {
       setExpandedCategories(prev => ({ ...prev, [selectedParentCategory.id]: true }));
       fetchCategories();
     } catch (err) {
-      setModalError(err.message);
+      setModalError((err as ApiError).message);
     } finally {
       setModalLoading(false);
     }
@@ -193,7 +194,7 @@ export default function CategoryList() {
 
       fetchCategories();
     } catch (err) {
-      setError(err.message || 'Failed to delete category');
+      setError((err as ApiError).message || 'Failed to delete category');
     } finally {
       setActionLoading(null);
     }

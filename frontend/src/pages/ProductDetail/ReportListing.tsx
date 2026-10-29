@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { Flag } from 'lucide-react';
 import { apiFetch } from '../../services/apiClient';
 import { Button, Dialog, Field } from '../../components/ui';
+import type { ApiError } from '../../services/apiClient';
+import type { FormEvent } from 'react';
 
 const REASONS = [
   ['counterfeit', 'Counterfeit or replica'],
@@ -12,7 +14,7 @@ const REASONS = [
 ];
 
 /** Signed-in, non-owner users can flag a lot for the moderators. One open report per person per lot (server-enforced). */
-export default function ReportListing({ auctionId }) {
+export default function ReportListing({ auctionId }: { auctionId: number | string }) {
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState('');
   const [details, setDetails] = useState('');
@@ -21,7 +23,7 @@ export default function ReportListing({ auctionId }) {
   const [done, setDone] = useState('');
 
   const close = () => { if (!pending) { setOpen(false); setError(''); } };
-  const submit = async (e) => {
+  const submit = async (e: FormEvent) => {
     e.preventDefault();
     if (!reason) return setError('Choose a reason');
     if (reason === 'other' && !details.trim()) return setError('Describe the problem');
@@ -32,8 +34,8 @@ export default function ReportListing({ auctionId }) {
       setDone('Thanks. An admin will review this listing.');
       setOpen(false);
     } catch (err) {
-      if (err.code === 'ALREADY_REPORTED') { setDone('You already reported this listing. An admin will review it.'); setOpen(false); }
-      else setError(err.message || 'The report could not be sent. Try again.');
+      if ((err as ApiError).code === 'ALREADY_REPORTED') { setDone('You already reported this listing. An admin will review it.'); setOpen(false); }
+      else setError((err as ApiError).message || 'The report could not be sent. Try again.');
     } finally {
       setPending(false);
     }

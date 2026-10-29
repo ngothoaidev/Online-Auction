@@ -1,6 +1,7 @@
 import { useFeedback } from '../../components/ui/Feedback';
 import { useState, useEffect } from "react";
 import { CheckCircle, XCircle, Eye, Star, Trophy, Clock, RefreshCw } from "lucide-react";
+import type { ApiError } from '../../services/apiClient';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
@@ -31,7 +32,7 @@ export default function UpgradeRequests() {
       const data = await response.json();
       setRequests(data.requests || []);
     } catch (err) {
-      setError(err.message || 'Failed to load requests');
+      setError((err as ApiError).message || 'Failed to load requests');
     } finally {
       setLoading(false);
     }
@@ -71,7 +72,7 @@ export default function UpgradeRequests() {
         req.id === id ? { ...req, status: "approved" } : req
       ));
     } catch (err) {
-      notify(err.message, 'error');
+      notify((err as ApiError).message, 'error');
     } finally {
       setActionLoading(null);
     }
@@ -103,7 +104,7 @@ export default function UpgradeRequests() {
         req.id === id ? { ...req, status: "rejected" } : req
       ));
     } catch (err) {
-      notify(err.message, 'error');
+      notify((err as ApiError).message, 'error');
     } finally {
       setActionLoading(null);
     }

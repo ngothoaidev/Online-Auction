@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useNav } from '../../hooks/useNavigate';
+import type { ApiError } from '../../services/apiClient';
+import type { FormEvent } from 'react';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
@@ -17,7 +19,7 @@ export default function Validation() {
     const [loading, setLoading] = useState(false);
     const [successMessage, setSuccessMessage] = useState('');
     console.log('Validation email:', email);
-    const handleSubmit = async (e) => {
+    const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
         setError('');
         setSuccessMessage('');
@@ -49,7 +51,7 @@ export default function Validation() {
             }, 1500);
         } catch (err) {
             console.error(err);
-            setError(err.message || 'Validation failed. Please check your code and try again.');
+            setError((err as ApiError).message || 'Validation failed. Please check your code and try again.');
         } finally {
             setLoading(false);
         }

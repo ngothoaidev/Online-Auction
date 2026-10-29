@@ -3,6 +3,7 @@ import { reviewService } from '../../services/reviewService';
 import Pagination from '../../components/Pagination';
 import { Button, EmptyState } from '../../components/ui';
 import './Reviews.css';
+import type { ApiError } from '../../services/apiClient';
 
 const Reviews = () => {
   const [reviews, setReviews] = useState([]);
@@ -52,7 +53,7 @@ const Reviews = () => {
         setStats(response.data.stats);
       }
     } catch (err) {
-      setError(err.message || 'Không thể tải đánh giá');
+      setError((err as ApiError).message || 'Không thể tải đánh giá');
     } finally {
       setLoading(false);
     }

@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from "react";
 import { Eye, Trash2, Filter, ChevronDown } from "lucide-react";
 import Pagination from "../../components/Pagination";
 import { formatVnd } from '../../utils/money';
+import type { ApiError } from '../../services/apiClient';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
@@ -80,7 +81,7 @@ export default function ProductList() {
         setTotalItems(responseData.metadata?.totalItems || 0);
       } catch (err) {
         console.error("Error fetching products:", err);
-        setError(err.message);
+        setError((err as ApiError).message);
       } finally {
         setLoading(false);
       }
@@ -128,7 +129,7 @@ export default function ProductList() {
       // Refresh the list
       setProducts(products.map(p => (p.id === id ? { ...p, status: 'cancelled' } : p)));
     } catch (err) {
-      notify(err.message || 'Could not cancel the listing', 'error');
+      notify((err as ApiError).message || 'Could not cancel the listing', 'error');
     }
   };
 

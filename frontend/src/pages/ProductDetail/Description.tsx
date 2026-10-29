@@ -6,7 +6,7 @@ import { FileText, Pencil, Save, X } from 'lucide-react';
 import auctionService from '../../services/auctionService';
 const RichTextEditor = lazy(() => import('../../components/RichTextEditor')); // editor code loads only for the owner, on edit
 
-export default function Description({ productId, isOwner = false }) {
+export default function Description({ productId, isOwner = false }: { productId: number | string; isOwner?: boolean }) {
   const { notify } = useFeedback();
   const [content, setContent] = useState("");
   const [newContent, setNewContent] = useState(""); // Only for NEW additions
@@ -17,7 +17,7 @@ export default function Description({ productId, isOwner = false }) {
   const [isEditing, setIsEditing] = useState(false);
 
   // Format date as D/M/YYYY
-  const formatDate = (date) => {
+  const formatDate = (date: string | number | Date) => {
     const d = new Date(date);
     return `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
   };

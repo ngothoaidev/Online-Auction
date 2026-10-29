@@ -1,9 +1,11 @@
-// What this participant should do now, from the order state machine (backend/domain/orderTransitions.js).
+// What this participant should do now, from the order state machine (backend/domain/orderTransitions.ts).
 // Manual:  pending_payment -> (buyer sends proof) pending_confirmation -> (seller confirms + ships) pending_receipt
 // Gateway: pending_payment -> (payment recorded)  pending_delivery     -> (seller ships)            pending_receipt
 // Then:    pending_receipt -> (buyer confirms receipt) pending_review -> (both reviewed) completed
 // `yourTurn` marks the steps that wait on THIS person, so the page can lead with them.
-export function nextStep(order, role) {
+type StepOrder = { status: string; buyerReviewSubmitted?: boolean; sellerReviewSubmitted?: boolean; cancelReason?: string | null };
+
+export function nextStep(order: StepOrder, role: 'buyer' | 'seller' | string) {
   const buyer = role === 'buyer';
   const reviewed = buyer ? order.buyerReviewSubmitted : order.sellerReviewSubmitted;
   switch (order.status) {

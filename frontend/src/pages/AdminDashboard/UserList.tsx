@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { Link } from 'react-router-dom';
 import { Button, Dialog } from '../../components/ui';
 import { Search, Eye, Ban, CheckCircle, UserPlus, Filter, ChevronLeft, ChevronRight, X, User } from "lucide-react";
+import type { ApiError } from '../../services/apiClient';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
@@ -78,7 +79,7 @@ export default function UserList() {
       setTotalPages(data.pagination.totalPages);
       setTotalCount(data.pagination.totalCount);
     } catch (err) {
-      setError(err.message);
+      setError((err as ApiError).message);
     } finally {
       setLoading(false);
     }

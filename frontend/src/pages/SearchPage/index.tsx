@@ -6,14 +6,15 @@ import Pagination from '../../components/Pagination';
 import FilterPanel from './FilterPanel';
 import { Button, Dialog, EmptyState, Skeleton } from '../../components/ui';
 import { apiFetch, isAbort } from '../../services/apiClient';
+import type { CatalogAuction, CategoryNode } from '../../types/api';
 
 const FILTER_KEYS = ['category', 'minPrice', 'maxPrice', 'sortBy'];
 
 export default function SearchPage() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const [categories, setCategories] = useState([]);
+  const [categories, setCategories] = useState<CategoryNode[]>([]);
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const [state, setState] = useState({ status: 'loading', items: [], totalPages: 1, totalItems: 0 });
+  const [state, setState] = useState<{ status: 'loading' | 'ready' | 'error'; items: CatalogAuction[]; totalPages: number; totalItems: number; message?: string }>({ status: 'loading', items: [], totalPages: 1, totalItems: 0 });
   const [attempt, setAttempt] = useState(0);
 
   const query = searchParams.get('q') || '';
@@ -31,11 +32,11 @@ export default function SearchPage() {
     setState((s) => ({ ...s, status: 'loading' }));
     apiFetch(`/search?${paramString}`, { signal: controller.signal })
       .then((res) => { if (!controller.signal.aborted) setState({ status: 'ready', items: res.data ?? [], totalPages: res.metadata?.totalPages ?? 1, totalItems: res.metadata?.totalItems ?? 0 }); })
-      .catch((error) => { if (!controller.signal.aborted && !isAbort(error)) setState({ status: 'error', items: [], totalPages: 1, totalItems: 0, message: error.message }); });
+      .catch((error) => { if (!controller.signal.aborted && !isAbort(error)) setState({ status: 'error', items: [], totalPages: 1, totalItems: 0, message: (error as Error).message }); });
     return () => controller.abort();
   }, [paramString, attempt]);
 
-  const apply = useCallback((draft) => {
+  const apply = useCallback((draft: Record<string, string | undefined>) => {
     const next = new URLSearchParams(searchParams);
     FILTER_KEYS.forEach((k) => { if (draft[k]) next.set(k, draft[k]); else next.delete(k); });
     next.delete('page'); // a new filter always starts at page 1
@@ -50,7 +51,7 @@ export default function SearchPage() {
     setFiltersOpen(false);
   }, [query, setSearchParams]);
 
-  const goToPage = (p) => {
+  const goToPage = (p: number) => {
     const next = new URLSearchParams(searchParams);
     next.set('page', String(p));
     setSearchParams(next);

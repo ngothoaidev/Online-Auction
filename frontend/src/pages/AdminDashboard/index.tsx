@@ -16,10 +16,10 @@ export const ADMIN_NAV = [
   { to: 'audit', label: 'Audit log', icon: ScrollText },
 ];
 
-const linkClass = ({ isActive }) =>
+const linkClass = ({ isActive }: { isActive: boolean }) =>
   `flex min-h-11 items-center gap-3 rounded-(--radius-control) px-3 text-sm font-medium ${isActive ? 'bg-(--ink) text-(--on-ink)' : 'text-(--ink) hover:bg-(--surface-hover)'}`;
 
-function SidebarContents({ onNavigate, onHome, onLogout }) {
+function SidebarContents({ onNavigate, onHome, onLogout }: { onNavigate?: () => void; onHome: () => void; onLogout: () => void }) {
   return (
     <div className="flex h-full flex-col">
       <nav aria-label="Admin" className="flex-1 space-y-1">

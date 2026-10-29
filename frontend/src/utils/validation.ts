@@ -9,7 +9,11 @@ import type { z } from 'zod';
  * @param {Object} data - The form data to validate
  * @returns {Object} - { success: boolean, data?: any, errors?: Array, message?: string }
  */
-export const validateForm = <S extends z.ZodTypeAny>(schema: S, data: unknown) => {
+export type FormValidation<T> =
+  | { success: true; data: T }
+  | { success: false; errors: z.core.$ZodIssue[]; messages: string[]; fieldErrors: Record<string, string>; message: string };
+
+export const validateForm = <S extends z.ZodTypeAny>(schema: S, data: unknown): FormValidation<z.infer<S>> => {
   const result = schema.safeParse(data);
   if (result.success) return { success: true, data: result.data };
 

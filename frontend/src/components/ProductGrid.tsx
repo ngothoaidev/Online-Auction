@@ -7,7 +7,7 @@ export default function ProductGrid({
   emptyState, 
   columns = "grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4",
   cardVariant,
-}: { items?: CatalogAuction[]; emptyState?: ReactNode; columns?: string; cardVariant?: 'won' }) {
+}: { items?: CatalogAuction[]; emptyState?: ReactNode; columns?: string; cardVariant?: string }) {
 
   if (!items || items.length === 0) {
     return (

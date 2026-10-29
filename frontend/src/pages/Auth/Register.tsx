@@ -6,6 +6,7 @@ import { validateForm } from '../../utils/validation';
 import { apiFetch } from '../../services/apiClient';
 import { Button, Field } from '../../components/ui';
 import SocialButtons from '../../components/auth/SocialButtons';
+import type { ApiError } from '../../services/apiClient';
 
 export default function Register() {
   const nav = useNav();
@@ -27,8 +28,8 @@ export default function Register() {
       nav.go('/login', { state: { message: 'Account created. Check your email for the verification code, then sign in.' } });
     } catch (err) {
       // the API answers 409 for a taken email/username: show it on the field it belongs to
-      if (err.status === 409) setFieldErrors(/email/i.test(err.message) ? { email: err.message } : { username: err.message });
-      else setError(err.message || 'Registration failed. Please try again.');
+      if ((err as ApiError).status === 409) setFieldErrors(/email/i.test((err as ApiError).message) ? { email: (err as ApiError).message } : { username: (err as ApiError).message });
+      else setError((err as ApiError).message || 'Registration failed. Please try again.');
     } finally {
       setLoading(false);
     }

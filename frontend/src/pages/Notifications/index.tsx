@@ -3,11 +3,12 @@ import { Link, useNavigate } from 'react-router-dom';
 import notificationService from '../../services/notificationService';
 import { Button, EmptyState, Skeleton } from '../../components/ui';
 import { formatTimeAgo } from '../../utils/format';
+import type { AppNotification } from '../../types/api';
 
 /** The signed-in user's in-app notifications: newest first, unread marked in text (not only colour), opening one marks it read. */
 export default function Notifications() {
   const navigate = useNavigate();
-  const [state, setState] = useState({ status: 'loading', items: [], unread: 0 });
+  const [state, setState] = useState<{ status: 'loading' | 'ready' | 'error'; items: AppNotification[]; unread: number }>({ status: 'loading', items: [], unread: 0 });
   const [busy, setBusy] = useState(false);
 
   const load = useCallback(async () => {
@@ -20,7 +21,7 @@ export default function Notifications() {
   }, []);
   useEffect(() => { load(); }, [load]);
 
-  const open = async (n) => {
+  const open = async (n: AppNotification) => {
     if (!n.read) await notificationService.markRead(n.id).catch(() => {});
     if (n.link) navigate(n.link); else load();
   };

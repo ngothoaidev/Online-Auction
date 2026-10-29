@@ -6,13 +6,14 @@ import { useNav } from '../../hooks/useNavigate';     // Import Nav
 import Comment from './Comment';
 import auctionService from '../../services/auctionService';
 import { Button, EmptyState } from '../../components/ui';
+import type { CommentView } from './Comment';
 
-export default function CommentsSection({ productId }) {
+export default function CommentsSection({ productId }: { productId: number | string }) {
   const { notify } = useFeedback();
   const { user } = useAuth(); 
   const nav = useNav();
   
-  const [comments, setComments] = useState([]);
+  const [comments, setComments] = useState<CommentView[]>([]);
   const [loading, setLoading] = useState(true);
   const [failed, setFailed] = useState(false);
   const [attempt, setAttempt] = useState(0);
@@ -90,7 +91,7 @@ export default function CommentsSection({ productId }) {
   };
 
   // --- 3. TRẢ LỜI COMMENT (REPLY) ---
-  const handleReply = async (parentId, replyText) => {
+  const handleReply = async (parentId: number, replyText: string) => {
     if (!user) {
         if(window.confirm("Please login to reply")) {
             nav.login();
@@ -113,7 +114,7 @@ export default function CommentsSection({ productId }) {
         setComments(prevComments => 
             prevComments.map(c => 
                 c.id === parentId 
-                ? { ...c, replies: [...(c.replies || c.children || []), formattedReply] } 
+                ? { ...c, replies: [...(c.replies || []), formattedReply] } 
                 : c
             )
         );

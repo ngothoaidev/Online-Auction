@@ -5,6 +5,7 @@ import { useNav } from '../../hooks/useNavigate';
 
 import {validateForm} from '../../utils/validation';
 import { forgotPasswordEmailSchema, forgotPasswordOtpSchema, resetPasswordSchema } from '../../schemas/auth.schemas';
+import type { ApiError } from '../../services/apiClient';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
@@ -61,7 +62,7 @@ export default function ForgetPassword() {
             setSuccessMessage('OTP has been sent to your email!');
             setStep('otp');
         } catch (err) {
-            setError(err.message || 'Failed to send OTP. Please try again.');
+            setError((err as ApiError).message || 'Failed to send OTP. Please try again.');
         } finally {
             setLoading(false);
         }
@@ -103,7 +104,7 @@ export default function ForgetPassword() {
             setSuccessMessage('OTP verified! Please enter your new password.');
             setStep('reset');
         } catch (err) {
-            setError(err.message || 'Invalid OTP. Please try again.');
+            setError((err as ApiError).message || 'Invalid OTP. Please try again.');
         } finally {
             setLoading(false);
         }
@@ -146,7 +147,7 @@ export default function ForgetPassword() {
                 nav.go('/login', { state: { message: 'Password has been reset successfully. Please login with your new password.' } });
             }, 2000);
         } catch (err) {
-            setError(err.message || 'Failed to reset password. Please try again.');
+            setError((err as ApiError).message || 'Failed to reset password. Please try again.');
         } finally {
             setLoading(false);
         }
@@ -176,7 +177,7 @@ export default function ForgetPassword() {
             setSuccessMessage('A new OTP has been sent to your email!');
             setOtp('');
         } catch (err) {
-            setError(err.message || 'Failed to resend OTP. Please try again.');
+            setError((err as ApiError).message || 'Failed to resend OTP. Please try again.');
         } finally {
             setLoading(false);
         }

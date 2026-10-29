@@ -13,6 +13,7 @@ import { validateForm } from '../../utils/validation';
 import MockPaymentPanel from './MockPaymentPanel';
 import { Dialog } from '../../components/ui';
 import { nextStep } from './nextStep';
+import type { ApiError } from '../../services/apiClient';
 
 // Status -> step. Step 2 is the seller's turn in both payment paths: confirm a manual payment and ship
 // (pending_confirmation), or ship after the gateway recorded the payment (pending_delivery).
@@ -140,7 +141,7 @@ export default function OrderCompletion() {
         setPayment(orderData.payment ?? null);
       }
     } catch (err) {
-      setError(err.message);
+      setError((err as ApiError).message);
     } finally {
       setLoading(false);
     }
@@ -174,7 +175,7 @@ export default function OrderCompletion() {
       await loadMessages();
     } catch (err) {
       console.error('Error sending message:', err);
-      notify(err.message || 'Failed to send message', 'error');
+      notify((err as ApiError).message || 'Failed to send message', 'error');
     } finally {
       setSendingMessage(false);
     }
@@ -196,7 +197,7 @@ export default function OrderCompletion() {
       const result = await orderService.submitPayment(order.id, validation.data);
       setOrder(result.order);
     } catch (err) {
-      notify(err.message, 'error');
+      notify((err as ApiError).message, 'error');
     } finally {
       setSubmitting(false);
     }
@@ -222,7 +223,7 @@ export default function OrderCompletion() {
       setOrder(result.order);
       loadData({ silent: true });
     } catch (err) {
-      notify(err.message, 'error');
+      notify((err as ApiError).message, 'error');
     } finally {
       setSubmitting(false);
     }
@@ -238,7 +239,7 @@ export default function OrderCompletion() {
       const result = await orderService.confirmReceipt(order.id);
       setOrder(result.order);
     } catch (err) {
-      notify(err.message, 'error');
+      notify((err as ApiError).message, 'error');
     } finally {
       setSubmitting(false);
     }
@@ -262,7 +263,7 @@ export default function OrderCompletion() {
       // Reload the full order data to get updated status
       await loadData();
     } catch (err) {
-      notify(err.message, 'error');
+      notify((err as ApiError).message, 'error');
     } finally {
       setSubmitting(false);
     }
@@ -281,7 +282,7 @@ export default function OrderCompletion() {
       }
     } catch (error) {
       console.error('Image upload error:', error);
-      notify('Failed to upload image: ' + error.message, 'error');
+      notify('Failed to upload image: ' + (error as ApiError).message, 'error');
       throw error;
     }
   };
@@ -308,7 +309,7 @@ export default function OrderCompletion() {
       setOrder(result.order);
       setShowCancelModal(false);
     } catch (err) {
-      notify(err.message, 'error');
+      notify((err as ApiError).message, 'error');
     } finally {
       setSubmitting(false);
     }

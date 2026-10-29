@@ -1,8 +1,9 @@
 // Privacy policy + data deletion instructions (required by Facebook/Google sign-in). Keep it true to what the app stores.
+import type { ReactNode } from 'react';
 const CONTACT_EMAIL = 'thoai.ngo.dev@gmail.com';
 const UPDATED = '2026-10-26';
 
-const Section = ({ id, title, children }) => (
+const Section = ({ id, title, children }: { id?: string; title: string; children: ReactNode }) => (
   <section id={id} className="scroll-mt-24 space-y-3">
     <h2 className="font-display text-2xl font-semibold">{title}</h2>
     {children}

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Button, Field } from '../../components/ui';
 import { formatVnd } from '../../utils/money';
 import orderService from '../../services/orderService';
+import type { ApiError } from '../../services/apiClient';
 
 const EXCEPTION_TEXT = {
   amount_mismatch: 'the amount reported by the gateway did not match this order',
@@ -28,7 +29,7 @@ export default function MockPaymentPanel({ order, payment, onChanged }) {
       setStatus(await fn());
       await onChanged();
     } catch (err) {
-      setStatus(err.message || 'Something went wrong. Try again.');
+      setStatus((err as ApiError).message || 'Something went wrong. Try again.');
       await onChanged();
     } finally {
       setPending(null);

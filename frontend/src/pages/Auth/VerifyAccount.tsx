@@ -5,6 +5,8 @@ import { useAuth } from '../../contexts/AuthContext';
 import { ShieldCheck, Mail, ArrowRight } from 'lucide-react';
 import { validateForm } from '../../utils/validation';
 import { verificationCodeSchema } from '../../schemas/auth.schemas';
+import type { ApiError } from '../../services/apiClient';
+import type { FormEvent } from 'react';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
@@ -21,7 +23,7 @@ export default function VerifyAccount() {
     
     const email = user?.email || localStorage.getItem('userEmail') || '';
 
-    const handleSubmit = async (e) => {
+    const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
         setError('');
         setSuccessMessage('');
@@ -66,7 +68,7 @@ export default function VerifyAccount() {
             }, 1500);
         } catch (err) {
             console.error(err);
-            setError(err.message || 'Verification failed. Please check your code and try again.');
+            setError((err as ApiError).message || 'Verification failed. Please check your code and try again.');
         } finally {
             setLoading(false);
         }
@@ -96,7 +98,7 @@ export default function VerifyAccount() {
             setSuccessMessage('A new verification code has been sent to your email.');
             setOtp('');
         } catch (err) {
-            setError(err.message || 'Failed to resend verification code.');
+            setError((err as ApiError).message || 'Failed to resend verification code.');
         } finally {
             setResending(false);
         }

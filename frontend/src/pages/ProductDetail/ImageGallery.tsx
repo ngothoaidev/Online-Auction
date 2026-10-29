@@ -3,8 +3,10 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import auctionService from '../../services/auctionService';
 import { Button, IconButton, Skeleton } from '../../components/ui';
 
-export default function ImageGallery({ productId, title = 'Lot' }) {
-  const [images, setImages] = useState([]);
+type GalleryImage = { id?: number; imageUrl: string; isPrimary?: boolean | null };
+
+export default function ImageGallery({ productId, title = 'Lot' }: { productId: number | string; title?: string }) {
+  const [images, setImages] = useState<GalleryImage[]>([]);
   const [selected, setSelected] = useState(0);
   const [loading, setLoading] = useState(true);
   const [failed, setFailed] = useState(false);
@@ -30,7 +32,7 @@ export default function ImageGallery({ productId, title = 'Lot' }) {
   );
   if (!images.length) return <div className="flex aspect-square items-center justify-center rounded-(--radius-card) border border-(--line) bg-(--surface-sunken) text-(--muted)">No images</div>;
 
-  const step = (d) => setSelected((i) => (i + d + images.length) % images.length);
+  const step = (d: number) => setSelected((i) => (i + d + images.length) % images.length);
 
   return (
     <div className="space-y-3" role="group" aria-roledescription="gallery" aria-label={`${title} photos`}>

@@ -4,6 +4,7 @@ import { ThumbsUp, ThumbsDown, MessageCircle, Calendar, User } from 'lucide-reac
 import { reviewService } from '../../services/reviewService';
 import Pagination from '../../components/Pagination';
 import { Button, EmptyState } from '../../components/ui';
+import type { ApiError } from '../../services/apiClient';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
@@ -84,7 +85,7 @@ export default function UserReviews() {
         setStats(response.data.stats);
       }
     } catch (err) {
-      setError(err.message || 'Failed to load reviews');
+      setError((err as ApiError).message || 'Failed to load reviews');
     } finally {
       setLoading(false);
     }

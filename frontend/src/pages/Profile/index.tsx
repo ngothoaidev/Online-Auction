@@ -7,6 +7,7 @@ import ProductGrid from "../../components/ProductGrid";
 import FilterBar from "../../components/Filter/FilterBar";
 import userService from "../../services/userService";
 import auctionService  from "../../services/auctionService";
+import type { CatalogAuction, CountKey, UserProfile } from "../../types/api";
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
@@ -18,11 +19,11 @@ export default function Profile() {
   const activeTab = searchParams.get("tab") || "active-bids";
   const category = searchParams.get("category") || "All Categories";
 
-  const isOwnProfile = (authUser && authUser.username === username);
-  const [userData, setUserData] = useState(null);
+  const isOwnProfile = Boolean(authUser && authUser.username === username);
+  const [userData, setUserData] = useState<UserProfile | null>(null);
   const [loadingProfile, setLoadingProfile] = useState(true);
 
-  const [tabData, setTabData] = useState([]);
+  const [tabData, setTabData] = useState<CatalogAuction[]>([]);
   const [loadingTab, setLoadingTab] = useState(false);
 
   useEffect(() => {
@@ -88,14 +89,14 @@ export default function Profile() {
     fetchTabData();
   }, [activeTab, category, userData]);
 
-  const handleTabChange = (newTabId) => {
+  const handleTabChange = (newTabId: string) => {
     setSearchParams(prev => {
         prev.set("tab", newTabId);
         return prev;
     });
   };
 
-  const getCount = (key) => userData?.counts?.[key] || 0;
+  const getCount = (key: CountKey) => userData?.counts?.[key] || 0;
 
   // --- TAB CONFIGURATION ---
   const tabs = [
@@ -130,9 +131,9 @@ export default function Profile() {
             <div className="max-w-7xl mx-auto px-4 mt-8 text-(--text-muted) animate-pulse">
               Loading profile...
             </div>
-          ) : (
+          ) : userData ? (
             <ProfileSidebar userData={userData} isOwnProfile={isOwnProfile} />
-          )}
+          ) : null}
         </div>
 
         <div className="flex-1 mt-4 lg:mt-0">

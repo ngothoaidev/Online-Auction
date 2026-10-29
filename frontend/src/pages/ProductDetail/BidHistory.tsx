@@ -4,6 +4,7 @@ import auctionService from '../../services/auctionService';
 import { formatBidderName, formatTimeAgo } from '../../utils/format';
 import { formatVnd } from '../../utils/money';
 import { Button, Dialog, EmptyState, StatusBadge } from '../../components/ui';
+import type { ApiError } from '../../services/apiClient';
 
 const FILTERS = [['all', 'All'], ['mine', 'Mine'], ['recent', 'Last hour']];
 
@@ -35,7 +36,7 @@ export default function BidHistory({ productId, sellerId, refreshKey = 0, active
       setReject(null);
       onChanged?.();
     } catch (error) {
-      setReject((r) => ({ ...r, pending: false, error: error.message || 'Could not remove this bidder' }));
+      setReject((r) => ({ ...r, pending: false, error: (error as ApiError).message || 'Could not remove this bidder' }));
     }
   };
 

@@ -7,6 +7,7 @@ import { formatVnd } from '../../utils/money';
 import { formatTimeLeft } from '../../utils/format';
 import { searchUrl } from '../../utils/searchUrl';
 import { Skeleton } from '../../components/ui';
+import type { CatalogAuction, SessionUser } from '../../types/api';
 
 const STEPS = [
   ['Create an account', 'Register and confirm your email. Selling needs a short approval.'],
@@ -15,7 +16,7 @@ const STEPS = [
 ];
 
 /** Editorial hero built from a real lot (the one ending soonest); without inventory it is just text. */
-function Hero({ lot, user }) {
+function Hero({ lot, user }: { lot: CatalogAuction | null | undefined; user: SessionUser | null }) {
   return (
     <section className="mx-auto grid max-w-7xl items-center gap-8 px-4 py-10 sm:px-6 md:py-16 lg:grid-cols-12 lg:px-10">
       <div className="lg:col-span-5">
@@ -48,8 +49,8 @@ function Hero({ lot, user }) {
               <h2 className="text-xl font-semibold text-(--ink) group-hover:underline">{lot.title}</h2>
             </div>
             <div className="text-right">
-              <p className="text-sm text-(--muted)">{lot.bidCount > 0 ? 'Current bid' : 'Starting price'}</p>
-              <p className="font-lot text-lg font-semibold text-(--ink)">{formatVnd(lot.bidCount > 0 && lot.bids ? lot.bids.amount : lot.currentPrice)}</p>
+              <p className="text-sm text-(--muted)">{(lot.bidCount ?? 0) > 0 ? 'Current bid' : 'Starting price'}</p>
+              <p className="font-lot text-lg font-semibold text-(--ink)">{formatVnd((lot.bidCount ?? 0) > 0 && lot.bids ? lot.bids.amount : lot.currentPrice)}</p>
               <p className="text-sm text-(--muted)">{formatTimeLeft(lot.endTime).timeLeft}</p>
             </div>
           </div>
@@ -61,7 +62,7 @@ function Hero({ lot, user }) {
 
 export default function HomePage() {
   const { user } = useAuth();
-  const [lot, setLot] = useState(undefined); // undefined = loading, null = no lot to feature
+  const [lot, setLot] = useState<CatalogAuction | null | undefined>(undefined); // undefined = loading, null = no lot to feature
 
   useEffect(() => {
     let cancelled = false;

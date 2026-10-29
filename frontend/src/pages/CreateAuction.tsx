@@ -7,6 +7,7 @@ import auctionService from '../services/auctionService';
 import { validateListing } from '../utils/listing';
 import { formatVnd } from '../utils/money';
 import { Button, Field, IconButton } from '../components/ui';
+import type { ApiError } from '../services/apiClient';
 
 const Section = ({ title, hint, children }) => (
   <fieldset className="rounded-(--radius-card) border border-(--line) bg-(--surface) p-5">
@@ -58,7 +59,7 @@ export default function CreateAuction() {
       await auctionService.create(payload);
       nav.home();
     } catch (err) {
-      setFormError(err.message || 'The listing could not be created.');
+      setFormError((err as ApiError).message || 'The listing could not be created.');
       document.getElementById('listing-errors')?.focus();
     } finally {
       setLoading(false);

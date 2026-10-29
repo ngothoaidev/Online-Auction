@@ -16,7 +16,7 @@ const URGENCY_TONE: Record<string, Tone> = { critical: 'danger', warning: 'warni
  * favourite button; nothing is hover-only and the whole card is NOT a clickable div.
  */
 /** variant 'won' (profile Wins / Sold tabs): the lot is settled and the viewer is a participant, so the card links to its order. */
-export default function AuctionCard({ product, variant }: { product: CatalogAuction; variant?: 'won' }) {
+export default function AuctionCard({ product, variant }: { product: CatalogAuction; variant?: string }) {
   const { user } = useAuth() ?? {};
   const watchlist = useWatchlist();
   const [time, setTime] = useState(() => formatTimeLeft(product.endTime));

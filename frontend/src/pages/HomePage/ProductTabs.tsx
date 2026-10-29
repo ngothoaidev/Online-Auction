@@ -5,6 +5,7 @@ import AuctionCard from '../../components/AuctionCard';
 import { EmptyState, Skeleton, Button } from '../../components/ui';
 import auctionService from '../../services/auctionService';
 import { searchUrl, TAB_SEARCH_SORT } from '../../utils/searchUrl';
+import type { CatalogAuction } from '../../types/api';
 
 const TABS = [
   { id: 'endingSoon', label: 'Ending soon' },
@@ -15,7 +16,7 @@ const TABS = [
 /** The three buttons filter the SAME list (aria-pressed), so they are toggle buttons rather than a tablist. */
 export default function ProductTabs() {
   const [activeTab, setActiveTab] = useState('endingSoon');
-  const [state, setState] = useState({ status: 'loading', items: [] });
+  const [state, setState] = useState<{ status: 'loading' | 'ready' | 'error'; items: CatalogAuction[] }>({ status: 'loading', items: [] });
   const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
@@ -27,7 +28,7 @@ export default function ProductTabs() {
     return () => { cancelled = true; };
   }, [activeTab, attempt]);
 
-  const label = TABS.find((t) => t.id === activeTab).label;
+  const label = TABS.find((t) => t.id === activeTab)?.label ?? '';
 
   return (
     <section aria-labelledby="featured-lots" className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-10">
