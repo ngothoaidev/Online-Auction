@@ -24,7 +24,7 @@ export const pageQuery = z.object({
 
 /** multipart/form-data booleans arrive as strings; only the literals 'true'/'false' are accepted ('false' is NOT truthy). */
 export const formBoolean = z.union([z.boolean(), z.enum(["true", "false"]).transform((v) => v === "true")]);
-/** Money input accepted at the API edge: positive integer, up to 15 digits (B01), as number or digit string. */
+/** Money input accepted at the API edge: positive integer, up to 15 digits, as number or digit string. */
 export const moneyInput = z.union([z.number(), z.string()]).transform((v, ctx) => {
   const s = String(v).trim();
   if (!/^[1-9]\d{0,14}$/.test(s)) {

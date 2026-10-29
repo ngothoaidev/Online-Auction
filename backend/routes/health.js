@@ -1,4 +1,4 @@
-// Liveness, readiness and metrics (T24).
+// Liveness, readiness and metrics.
 //  GET /health/live   200 while the process can answer (no dependencies checked).
 //  GET /health/ready  200 when the DB answers and every migration is applied; 503 otherwise. The worker is reported
 //                     (ok | stale | missing) but does not fail API readiness: the API can serve without it.

@@ -17,7 +17,7 @@ function play(steps, state = fresh()) {
   return out;
 }
 
-test("design D4.1 worked example", () => {
+test("worked example from the bidding rules", () => {
   const r = play([["A", 2000], ["B", 1500], ["A", 2500], ["B", 2500], ["C", 2600]]);
   assert.deepEqual(r.map((x) => [x.leaderId, Number(x.currentPrice), x.outcome]), [
     ["A", 1000, "success"], ["A", 1600, "outbid"], ["A", 1600, "updated"], ["A", 2500, "outbid"], ["C", 2600, "success"],
@@ -119,7 +119,7 @@ test("property: 500 random sequences keep the proxy-bidding invariants", () => {
   }
 });
 
-test("eligibility (B05) and Buy Now availability (B06)", () => {
+test("eligibility and Buy Now availability", () => {
   const auction = { id: 1, sellerId: 9, allowNewbies: true, status: "active", buyNowPrice: "5000", currentPrice: "4000", endTime: new Date(Date.now() + 1000) };
   const ok = { id: 1, status: "active", isVerified: true, role: "buyer", ratingCount: 0, positiveRatingCount: 0 };
   assert.equal(checkBidderEligibility(ok, auction), null);

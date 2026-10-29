@@ -1,4 +1,4 @@
-// Notifications (D9.4, T21). An outbox consumer turns committed domain events into in-app rows and emails.
+// Notifications. An outbox consumer turns committed domain events into in-app rows and emails.
 // - Idempotent: rows are unique per (recipient, channel, `<eventId>:<kind>`), so a redelivered event adds nothing.
 // - Email failures throw, so the OUTBOX retries the event with backoff and finally dead-letters it; rows already sent are
 //   skipped on retry. The domain transaction that produced the event has long committed: delivery can never undo it.
@@ -132,7 +132,7 @@ export async function handle(event) {
 
 export const consumer = { name: "notifications", handle };
 
-const REMINDER_WINDOWS_HOURS = [24, 2]; // B08: 48h window -> remind at 24h and 2h left
+const REMINDER_WINDOWS_HOURS = [24, 2]; // 48h window -> remind at 24h and 2h left
 
 /**
  * Worker job: one reminder per order per window. The outbox row's unique (aggregate, version, type) is the dedupe key:

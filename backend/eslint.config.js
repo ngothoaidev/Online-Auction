@@ -6,7 +6,7 @@ export default [
   js.configs.recommended,
   {
     languageOptions: { ecmaVersion: "latest", sourceType: "module", globals: globals.node },
-    // Legacy unused imports/args are reported as warnings (cleaned as each module is touched, T03–T12);
+    // Legacy unused imports/args are reported as warnings;
     // real defects (no-undef, case declarations, ...) stay errors.
     rules: { "no-unused-vars": ["warn", { argsIgnorePattern: "^_|^next$", caughtErrors: "none" }] },
   },

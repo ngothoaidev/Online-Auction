@@ -1,4 +1,4 @@
-// Automatic settlement (B07/B12, design D5.1). Runs from the worker, never from a GET.
+// Automatic settlement. Runs from the worker, never from a GET.
 // Same lock + clock discipline as the interactive commands: one short transaction per auction.
 import { and, eq, sql } from "drizzle-orm";
 import db from "../db/index.js";
@@ -31,7 +31,7 @@ export async function settleOne(tx, auctionId, { lock = "skip" } = {}) {
     disqualifiedAt: bidderMaxima.disqualifiedAt, userStatus: users.status,
   }).from(bidderMaxima).innerJoin(users, eq(users.id, bidderMaxima.bidderId)).where(eq(bidderMaxima.auctionId, auctionId));
 
-  // B12: banned (or disqualified) bidders cannot win; leader and price are recomputed from the remaining ceilings.
+  // banned (or disqualified) bidders cannot win; leader and price are recomputed from the remaining ceilings.
   const eligible = maximaRows.filter((m) => !m.disqualifiedAt && m.userStatus !== "banned")
     .map((m) => ({ bidderId: m.bidderId, max: fromDb(m.maxAmount), priority: m.prioritySequence }));
   const skippedBanned = maximaRows.filter((m) => !m.disqualifiedAt && m.userStatus === "banned").map((m) => m.bidderId);

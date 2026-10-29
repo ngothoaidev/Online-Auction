@@ -75,7 +75,7 @@ test("no bids: ended without an order and a clear reason; participants get 404",
   assert.equal((await t.call("GET", `/order/auction/${a}`, { token: sellerToken })).status, 404);
 });
 
-test("banned winner (B12): recomputed from the remaining ceilings; nobody left -> ended, no order", async () => {
+test("banned winner: recomputed from the remaining ceilings; nobody left -> ended, no order", async () => {
   const a = await newAuction();
   await bid(a, 2, 6000); await bid(a, 3, 4000); await bid(a, 4, 4500);
   await t.sql`UPDATE users SET status = 'banned' WHERE user_id = ${users[2].id}`;

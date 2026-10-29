@@ -49,7 +49,7 @@ test("terminal states accept nothing (fulfilment, cancel, payment)", () => {
   }
 });
 
-test("cancel (B09): seller only while unpaid, admin until shipping, reason mandatory", () => {
+test("cancel: seller only while unpaid, admin until shipping, reason mandatory", () => {
   const cancel = (status, actor, reason = "item lost") => planTransition(order(status), "cancel", actor, NOW, { reason });
   assert.equal(cancel("pending_payment", seller).to, "cancelled");
   assert.equal(cancel("pending_payment", admin).to, "cancelled");
@@ -64,7 +64,7 @@ test("cancel (B09): seller only while unpaid, admin until shipping, reason manda
   assert.equal(cancel("pending_confirmation", admin).auction, "cancel_if_sold");
 });
 
-test("payment deadline (B08): proof and adapter payments are refused after dueAt; expiry only after dueAt", () => {
+test("payment deadline: proof and adapter payments are refused after dueAt; expiry only after dueAt", () => {
   const late = order("pending_payment", { paymentDueAt: new Date(NOW.getTime() - 1) });
   assert.throws(() => planTransition(late, "submit_payment", buyer, NOW, proof), (e) => e.code === "PAYMENT_WINDOW_CLOSED");
   assert.throws(() => planTransition(late, "payment_succeeded", adapter, NOW, {}), (e) => e.code === "PAYMENT_WINDOW_CLOSED");
@@ -84,7 +84,7 @@ test("payload validation: proof needs address+phone, shipping needs tracking or 
   assert.equal(planTransition(order("pending_confirmation"), "confirm_with_shipping", seller, NOW, { shippingProofUrl: "https://x/s.png" }).to, "pending_receipt");
 });
 
-test("auction mapping (B07): sold when payment is recorded, untouched on proof submission and expiry", () => {
+test("auction mapping: sold when payment is recorded, untouched on proof submission and expiry", () => {
   assert.equal(planTransition(order("pending_confirmation"), "confirm_with_shipping", seller, NOW, ship).auction, "sold");
   assert.equal(planTransition(order("pending_payment"), "payment_succeeded", adapter, NOW).auction, "sold");
   assert.equal(planTransition(order("pending_payment"), "submit_payment", buyer, NOW, proof).auction, "keep");

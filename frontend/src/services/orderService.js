@@ -162,7 +162,7 @@ const orderService = {
   },
 };
 
-// --- private proofs (T11) ---
+// --- private proofs ---
 orderService.uploadProof = async (orderId, purpose, file) => {
   const token = localStorage.getItem('authToken');
   const form = new FormData();
@@ -192,7 +192,7 @@ orderService.submitShipping = async (orderId, data) => {
   return handleResponse(response);
 };
 
-// --- online payment through the configured adapter (T20; mock = demo, no real money) ---
+// --- online payment through the configured adapter (mock = demo, no real money) ---
 orderService.createPaymentAttempt = (orderId, data) => apiFetch(`/order/${orderId}/payment-attempts`, { method: 'POST', body: data, auth: 'required' });
 orderService.simulateMockPayment = (reference, outcome, deliver = true) =>
   apiFetch(`/payments/mock/${encodeURIComponent(reference)}/simulate`, { method: 'POST', body: { outcome, deliver }, auth: 'required' });

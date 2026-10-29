@@ -308,7 +308,7 @@ const service = {
         };
     },
 
-    /** What the viewer may do right now, decided by the same rules the commands enforce (B05/B06). */
+    /** What the viewer may do right now, decided by the same rules the commands enforce. */
     capabilitiesFor: async function(auction, viewer, now) {
         const open = auction.status === 'active' && new Date(now) < new Date(auction.endTime);
         const reasons = {};

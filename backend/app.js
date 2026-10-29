@@ -1,6 +1,5 @@
 import express from "express";
 import { STATUS_CODES } from "node:http";
-import bodyParser from "body-parser";
 import cors from "cors";
 import helmet from "helmet";
 import requestId from "./middleware/request_id.js";
@@ -61,7 +60,7 @@ app.use(healthRoute);
 // Payment webhooks need the exact raw bytes for signature verification, so they are mounted before the JSON parser.
 app.post('/payments/webhook/:provider', express.raw({ type: '*/*', limit: '64kb' }), paymentsController.webhook);
 
-app.use(bodyParser.json({ limit: '100kb' }));
+app.use(express.json({ limit: '100kb' }));
 
 // Session for Passport
 app.use(session({

@@ -189,14 +189,14 @@ export const orders = pgTable('orders', {
   createdAt: timestamp('created_at').defaultNow(),
   updatedAt: timestamp('updated_at').defaultNow(),
 
-  // State machine (T10)
+  // State machine
   version: integer('version').notNull().default(0),
-  paymentDueAt: timestamp('payment_due_at', { withTimezone: true }), // B08: createdAt + PAYMENT_WINDOW_HOURS
-  paymentMode: varchar('payment_mode', { length: 16 }).notNull().default('manual'), // manual | mock | sandbox (T20)
+  paymentDueAt: timestamp('payment_due_at', { withTimezone: true }), // createdAt + PAYMENT_WINDOW_HOURS
+  paymentMode: varchar('payment_mode', { length: 16 }).notNull().default('manual'), // manual | mock | sandbox
   closeReason: varchar('close_reason', { length: 32 }),
 });
 
-// Payment adapter (T20). One row per checkout attempt; amount/currency are copied from the order at creation (server truth).
+// Payment adapter. One row per checkout attempt; amount/currency are copied from the order at creation (server truth).
 // `status` is OUR processing state; `providerStatus` is what the provider reports (for the mock adapter it is the
 // provider's own store, so a lost webhook can be recovered by reconciliation).
 export const paymentAttempts = pgTable('payment_attempts', {
@@ -233,7 +233,7 @@ export const paymentEvents = pgTable('payment_events', {
   eventId: uniqueIndex('payment_events_event_uniq').on(t.provider, t.eventId),
 }));
 
-// Notifications (T21): one row per (recipient, channel, logical notification). `dedupe_key` is `<outbox eventId>:<kind>`,
+// Notifications: one row per (recipient, channel, logical notification). `dedupe_key` is `<outbox eventId>:<kind>`,
 // so a redelivered event never creates a second row. in_app rows are read by their recipient only; email rows carry
 // delivery status (pending | sent | failed | skipped) and the last error.
 export const notifications = pgTable('notifications', {
@@ -257,7 +257,7 @@ export const notifications = pgTable('notifications', {
   delivery: index('notifications_delivery_idx').on(t.status, t.createdAt).where(sql`channel = 'email'`),
 }));
 
-// Admin audit trail (T22). Append-only: a trigger (migration 0010) rejects UPDATE/DELETE. No FK on actor/target ids so
+// Admin audit trail. Append-only: a trigger (migration 0010) rejects UPDATE/DELETE. No FK on actor/target ids so
 // the trail outlives accounts. before/after hold an allowlisted subset of fields (services/adminAudit.js), never secrets.
 export const adminAudit = pgTable('admin_audit', {
   id: serial('id').primaryKey(),
@@ -274,7 +274,7 @@ export const adminAudit = pgTable('admin_audit', {
   byTime: index('admin_audit_time_idx').on(t.createdAt),
 }));
 
-// Listing reports (T22): one OPEN report per reporter per lot; an admin resolves all open reports of a lot together.
+// Listing reports: one OPEN report per reporter per lot; an admin resolves all open reports of a lot together.
 export const listingReports = pgTable('listing_reports', {
   id: serial('id').primaryKey(),
   auctionId: integer('auction_id').notNull().references(() => auctions.id, { onDelete: 'cascade' }),
@@ -291,7 +291,7 @@ export const listingReports = pgTable('listing_reports', {
   byStatus: index('listing_reports_status_idx').on(t.status, t.createdAt),
 }));
 
-// Worker liveness (T24): each worker process upserts its row after every pass; /health/ready and /metrics read it.
+// Worker liveness: each worker process upserts its row after every pass; /health/ready and /metrics read it.
 export const workerHeartbeats = pgTable('worker_heartbeats', {
   workerId: varchar('worker_id', { length: 100 }).primaryKey(), // host:pid
   startedAt: timestamp('started_at', { withTimezone: true }).notNull().defaultNow(),

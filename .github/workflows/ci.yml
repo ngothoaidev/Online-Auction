@@ -37,7 +37,7 @@ jobs:
       - run: npm test
       - run: npm run build
 
-  # Full browser journeys against a real API + worker + PostgreSQL (T23). The E2E database is disposable and separate
+  # Full browser journeys against a real API + worker + PostgreSQL. The E2E database is disposable and separate
   # from the integration-test database; specs list their own lots, so they never depend on (or exhaust) seeded data.
   e2e:
     runs-on: ubuntu-latest

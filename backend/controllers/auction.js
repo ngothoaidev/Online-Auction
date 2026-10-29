@@ -3,7 +3,7 @@ import { commands } from "../services/auctionCommands.js";
 import { keyFrom } from "../services/idempotency.js";
 import { streamAuction } from "../services/realtime.js";
 
-// Optional for now: the SPA starts sending one key per reviewed intent in T15, after which the header becomes mandatory.
+// Idempotency-Key is optional on the API; the SPA always sends one per reviewed bid.
 const idempotencyKey = keyFrom;
 
 const controller = {
@@ -130,7 +130,7 @@ const controller = {
         }
     },
 
-    // DELETE /auction/reject?auctionId=&bidId=[&reason=]  (kept for compatibility; semantics = disqualify the bidder, B11)
+    // DELETE /auction/reject?auctionId=&bidId=[&reason=]  (kept for compatibility; semantics = disqualify the bidder)
     rejectBid: async (req, res, next) => {
         try {
             const { auctionId, bidId, reason } = req.query;

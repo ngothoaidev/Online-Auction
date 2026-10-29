@@ -1,4 +1,4 @@
-// Pure proxy-bidding engine (B02-B04, design D4.1). No I/O, no clock, no DB: money is BigInt, order is explicit.
+// Pure proxy-bidding engine. No I/O, no clock, no DB: money is BigInt, order is explicit.
 import { max as maxBig, min as minBig } from "./money.js";
 
 export class BidRejection extends Error {
@@ -95,7 +95,7 @@ export function recompute({ startingPrice: S, step: I, maxima }) {
     : { leaderId: ranked[0].bidderId, currentPrice: competitivePrice(S, I, ranked) };
 }
 
-/** Anti-sniping (B04): a public bid inside the final 5 minutes extends the ORIGINAL deadline by 5 minutes. */
+/** Anti-sniping: a public bid inside the final 5 minutes extends the ORIGINAL deadline by 5 minutes. */
 export const FIVE_MIN_MS = 5 * 60 * 1000;
 export function extendedEndTime({ endTime, autoExtend, now, producedPublicEvent }) {
   const end = new Date(endTime);

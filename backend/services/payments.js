@@ -1,4 +1,4 @@
-// Payment adapter flow (D9.3, T20). Mock mode only: no real money moves.
+// Payment adapter flow. Mock mode only: no real money moves.
 // - A buyer opens an attempt for their own unpaid order; the order's payment mode is fixed to the adapter from then on
 //   (manual proof is refused), and amount/currency are copied from the order (never from the client).
 // - Provider events are verified, stored once per provider event id (duplicates acknowledged, never re-applied) and

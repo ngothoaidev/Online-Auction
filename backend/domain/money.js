@@ -1,4 +1,4 @@
-// Exact money (B01): positive whole VND, at most 15 digits, handled as BigInt. Never parseFloat/Number for amounts.
+// Exact money: positive whole VND, at most 15 digits, handled as BigInt. Never parseFloat/Number for amounts.
 export const MAX_MONEY = 999_999_999_999_999n;
 
 export class MoneyError extends Error {}

@@ -1,4 +1,4 @@
-// Order state machine (design D5.2, B07-B10). Pure: decides whether a command is legal and what it changes.
+// Order state machine. Pure: decides whether a command is legal and what it changes.
 import { AppError } from "../utils/errors.js";
 
 export const PAYMENT_WINDOW_HOURS = Number(process.env.PAYMENT_WINDOW_HOURS || 48);
@@ -51,7 +51,7 @@ export function planTransition(order, command, actor, now, payload = {}) {
       if (!shippingProofUrl && !trackingNumber) throw new AppError(400, "VALIDATION_ERROR", "A tracking number or shipping proof is required");
       return { to: "pending_receipt", auction: "sold", set: { shippingProofUrl, trackingNumber, shippingSubmittedAt: now } };
     }
-    case "payment_succeeded": { // adapter only (T20)
+    case "payment_succeeded": { // adapter only
       if (actor.type !== "adapter") throw forbidden("Only the payment adapter can record a payment");
       if (order.status !== "pending_payment") throw invalid(order, command);
       if (pastDue) throw new AppError(409, "PAYMENT_WINDOW_CLOSED", "The payment window for this order has closed");
@@ -62,7 +62,7 @@ export function planTransition(order, command, actor, now, payload = {}) {
       if (order.status !== "pending_receipt") throw invalid(order, command);
       return { to: "pending_review", auction: "keep", set: { receiptConfirmedAt: now } };
     }
-    case "cancel": { // B09: seller only while unpaid; admin until shipping. A reason is mandatory; no automatic negative review.
+    case "cancel": { // seller only while unpaid; admin until shipping. A reason is mandatory; no automatic negative review.
       if (!isSeller && !isAdmin) throw forbidden("Only the seller or an admin can cancel an order"); // authorise before validating input
       const reason = need(payload.reason, "reason");
       const sellerOk = isSeller && order.status === "pending_payment";
@@ -77,7 +77,7 @@ export function planTransition(order, command, actor, now, payload = {}) {
       if (!order.paymentDueAt || !pastDue) throw new AppError(409, "NOT_DUE", "The payment window is still open");
       return { to: "payment_expired", auction: "keep", reason: "payment window elapsed", set: { closeReason: "payment_expired" } };
     }
-    case "complete": { // both reviews exist (T12 decides when to call it)
+    case "complete": { // both reviews exist (reviewCommands decides when to call it)
       if (actor.type !== "system" && !isBuyer && !isSeller) throw forbidden("Access denied");
       if (order.status !== "pending_review") throw invalid(order, command);
       return { to: "completed", auction: "keep", set: {} };

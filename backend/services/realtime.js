@@ -1,4 +1,4 @@
-// Public per-auction Server-Sent Events (D9.2). Every connection reads the committed outbox of ONE auction by version,
+// Public per-auction Server-Sent Events. Every connection reads the committed outbox of ONE auction by version,
 // independently of the dispatcher and of other API instances, so each instance/subscriber sees every event.
 // Only `public_payload` ever leaves this module. Ids are `auctionId:version`; a version gap is legal (some changes do
 // not publish), clients simply refetch. Too far behind -> `reset`, the client refetches the snapshot.
@@ -70,7 +70,7 @@ export async function streamAuction(req, res, auctionId) {
     }
   };
 
-  // ponytail: one indexed query per connection per poll; share one poller per auction if connections reach the thousands
+  // Note: one indexed query per connection per poll; share one poller per auction if connections reach the thousands
   const pollTimer = setInterval(poll, num("SSE_POLL_MS", 1000));
   const beat = setInterval(() => res.write(": ping\n\n"), num("SSE_HEARTBEAT_MS", 15_000));
   poll();

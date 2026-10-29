@@ -58,7 +58,7 @@ sequenceDiagram
 
 Nothing external (email, provider calls) happens inside the transaction. Retrying with the same key returns the stored result; the same key with a different payload is `409 IDEMPOTENCY_CONFLICT`.
 
-## 4. Proxy bidding (D4)
+## 4. Proxy bidding
 
 Each bidder has one private maximum. The public price is `max(start, min(topMax, secondMax + step))`; equal maxima are won by the earlier `priority_sequence`; a leader raising their own maximum changes neither price nor deadline. A public price change inside the last 5 minutes extends the lot once by 5 minutes when `auto_extend` is on. Rejecting a bidder (seller) disqualifies their maximum and recomputes leader and price from the remaining ceilings (price may go down — recorded as an `adjust` bid). Pure engine: `domain/bidding.js`.
 
@@ -80,7 +80,7 @@ flowchart LR
 
 | Job | Claims work with | Result |
 |---|---|---|
-| `settleDue` | `FOR UPDATE SKIP LOCKED` on due active auctions, re-checked under the lock | `ended` + exactly one order (UNIQUE `orders.auction_id`) + `auction.ended` event; banned/disqualified bidders skipped (B12) |
+| `settleDue` | `FOR UPDATE SKIP LOCKED` on due active auctions, re-checked under the lock | `ended` + exactly one order (UNIQUE `orders.auction_id`) + `auction.ended` event; banned/disqualified bidders skipped |
 | `reconcilePayments` | open payment attempts older than `PAYMENT_RECONCILE_AFTER_MS` | asks the provider; applies through the same deduplicated path as webhooks |
 | `expirePayments` | `pending_payment` orders past `payment_due_at` | `payment_expired` through the state machine; a late payment becomes an exception, never reopens |
 | `paymentReminders` | orders due within 24 h / 2 h | one outbox reminder per order per window |
@@ -125,8 +125,31 @@ Every transition is written to `order_transitions` with actor and reason, bumps 
 
 ## 8. Observability
 
-JSON logs on stdout/stderr (`utils/log.js`, keys such as password/token/email/address/maximum/proof redacted), request id per request (incoming `X-Request-Id` kept when well-formed), `GET /health/live`, `GET /health/ready` (DB + migrations; worker reported), `GET /metrics` (Prometheus text: HTTP rate/latency per route pattern, auction lock wait, overdue unsettled auctions, settlement lag p95, outbox backlog/retries/dead letters, payment exceptions, email delivery failures, worker heartbeat age, SSE connections). Operating procedures: [runbook.md](runbook.md).
+JSON logs on stdout/stderr (`utils/log.js`, keys such as password/token/email/address/maximum/proof redacted), request id per request (incoming `X-Request-Id` kept when well-formed), `GET /health/live`, `GET /health/ready` (DB + migrations; worker reported), `GET /metrics` (Prometheus text: HTTP rate/latency per route pattern, auction lock wait, overdue unsettled auctions, settlement lag p95, outbox backlog/retries/dead letters, payment exceptions, email delivery failures, worker heartbeat age, SSE connections).
 
-## 9. Decisions
+## 9. Design decisions
 
-Business policies: [adr/0001-business-policies.md](adr/0001-business-policies.md). Technical decisions and their alternatives: [adr/0002-architecture-decisions.md](adr/0002-architecture-decisions.md).
+| Decision | Rejected alternative | Why |
+|---|---|---|
+| Row lock per auction, decide on `clock_timestamp()` after the lock | Optimistic retries on version conflict; app-server clock | In a bidding war most optimistic attempts would retry; clock skew would decide deadline races. Cost: one hot lot is bounded (~67 bids/s on a laptop). |
+| Private maxima in their own table (`bidder_maxima`) | Maxima stored in `bids` (the original design) | It leaked losing bidders' ceilings and made "who leads" a query over rows. |
+| Idempotency key claimed inside the business transaction | Separate key check before the transaction | A crash between check and write loses or duplicates the command. |
+| Transactional outbox, at-least-once, consumers dedupe | Publish to a broker / send email in or after the transaction | Lost events on crash, or side effects for rolled-back changes. No broker needed at this scale. |
+| SSE, each API instance reads committed events by version | WebSockets; a shared queue consumed by API instances | Only server→client push is needed; a queue would deliver each event to one instance only. |
+| Separate worker process for time-driven work | Settle on read (the original `GET` created orders); in-API timers | Lots nobody viewed never closed; several API instances would race. |
+| Order state machine as a pure function | Status updates per endpoint | Illegal transitions and no audit trail. |
+| Money as `numeric(15,0)` / `BigInt` / digit strings | JS numbers | Precision loss and rounding. |
+| Append-only audit enforced by a DB trigger | Immutability in application code only | A later code path could rewrite history silently. |
+| Hand-rolled JSON logger and Prometheus text (~80 lines) | `pino`, `prom-client` | Not worth two dependencies at this size; call sites make a swap easy. |
+
+## 10. Business rules
+
+- Money: positive whole VND, at most 15 digits.
+- First bid ≥ starting price, later bids ≥ current price + step. Equal maxima: the earlier one wins; a leader raising their own maximum does not move the price.
+- A bid counts only if the database time is before the deadline; a price change in the last 5 minutes adds 5 minutes when the lot has auto-extend.
+- Bidders must be active and verified, not the seller, and have ≥ 80 % positive ratings (or the lot allows newcomers).
+- Buy Now is available while the lot is active and the current price is below the Buy Now price.
+- The worker ends due lots; a lot becomes `sold` once payment is recorded. A banned or disqualified winner is replaced by the next eligible ceiling; nobody left means the lot ends without an order.
+- The buyer has 48 hours (configurable) to pay. The seller may cancel while unpaid, an admin until shipping; a reason is required and no automatic negative review is created.
+- Reviews open after the buyer confirms receipt; when both sides have reviewed, the order is completed. Reviews stay editable.
+- A seller "rejecting" a bidder disqualifies them: history is kept, leader and price are recomputed.

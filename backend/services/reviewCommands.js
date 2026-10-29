@@ -1,4 +1,4 @@
-// Reviews (B10): one per (auction, reviewer), only for the counterpart, only once the buyer has confirmed receipt.
+// Reviews: one per (auction, reviewer), only for the counterpart, only once the buyer has confirmed receipt.
 // Review row, rating counters and the pending_review -> completed transition commit together under the lock order
 // auction -> order -> target user.
 import { and, eq, sql } from "drizzle-orm";

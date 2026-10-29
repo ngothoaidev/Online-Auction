@@ -36,7 +36,7 @@ button {
 /* --- FONTS (self-hosted, OFL; latin + vietnamese subsets load on demand) --- */
 @import './fonts.css';
 
-/* --- SEMANTIC TOKENS (AURUM, design D8.1) ---
+/* --- SEMANTIC TOKENS (AURUM) ---
    Roles: canvas / surface / ink / muted / line / brand / success / danger / warning / focus.
    Legacy names (--bg, --text, --accent ...) are BRIDGED to these roles so unmigrated screens follow the palette;
    remove a bridge once its last consumer has moved to the semantic name. */
