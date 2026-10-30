@@ -44,6 +44,22 @@ const dueLotWithBid = async () => {
 };
 // the dispatcher handles the oldest event first: make the settlement's event the only one pending before a crash run
 const onlySettlementEventPending = () => t.sql`UPDATE outbox_events SET dispatched_at = now() WHERE dispatched_at IS NULL`;
+// Docker Desktop's VM clock (seen on Windows/WSL2) can step back by hundreds of ms, so short real-time windows are
+// unreliable: a just-created event can look not yet due, an expired lease not yet expired. The tests below therefore
+// move time explicitly instead of sleeping, and repeat a crash run that found nothing to claim.
+const makeDue = (eventId) => t.sql`UPDATE outbox_events SET next_attempt_at = next_attempt_at - interval '1 hour',
+  lease_until = CASE WHEN lease_until IS NOT NULL THEN clock_timestamp() - interval '1 hour' END WHERE event_id = ${eventId}`;
+const crashRun = async (lotId, env) => {
+  for (let i = 0; i < 5; i++) {
+    const run = await worker(env);
+    if (run.code !== 0) return run;
+    // exited normally: the dispatcher claimed nothing; make the settlement event due and try again
+    const [ev] = await t.sql`SELECT event_id FROM outbox_events WHERE aggregate_id = ${lotId} AND event_type = 'auction.ended' AND attempts = 0`;
+    if (!ev) return run;
+    await makeDue(ev.event_id);
+  }
+  assert.fail("the crash run never claimed the settlement event");
+};
 const state = async (id) => ({
   status: (await t.sql`SELECT status FROM auctions WHERE auction_id = ${id}`)[0].status,
   orders: (await t.sql`SELECT count(*)::int AS n FROM orders WHERE auction_id = ${id}`)[0].n,
@@ -66,7 +82,7 @@ test("worker killed just before the settlement commit: nothing is half-written; 
 test("dispatcher killed after the notification consumer ran but before marking the event: redelivered after the lease, no duplicate notification rows", async () => {
   const id = await dueLotWithBid();
   await onlySettlementEventPending();
-  const crashed = await worker({ FAULT_POINT: "outbox.after_consumer", OUTBOX_LEASE_MS: "300" });
+  const crashed = await crashRun(id, { FAULT_POINT: "outbox.after_consumer", OUTBOX_LEASE_MS: "300" });
   assert.equal(crashed.code, 86, crashed.output);
   const [ev] = await t.sql`SELECT * FROM outbox_events WHERE aggregate_id = ${id} AND event_type = 'auction.ended'`;
   assert.equal(ev.dispatched_at, null, "not marked: the process died first");
@@ -75,7 +91,7 @@ test("dispatcher killed after the notification consumer ran but before marking t
   const afterCrash = await rows();
   assert.ok(afterCrash.length > 0, "the consumer's side effect happened before the crash");
 
-  await new Promise((r) => setTimeout(r, 400)); // lease expires
+  await makeDue(ev.event_id); // the lease has run out
   const next = await worker();
   assert.equal(next.code, 0, next.output);
   const [done] = await t.sql`SELECT dispatched_at, attempts FROM outbox_events WHERE event_id = ${ev.event_id}`;
@@ -88,13 +104,13 @@ test("dispatcher killed after the notification consumer ran but before marking t
 test("killed after an email left but before it was recorded: the email is resent on recovery (documented at-least-once)", async () => {
   const id = await dueLotWithBid();
   await onlySettlementEventPending();
-  const crashed = await worker({ FAULT_POINT: "notify.after_send", OUTBOX_LEASE_MS: "300" });
+  const crashed = await crashRun(id, { FAULT_POINT: "notify.after_send", OUTBOX_LEASE_MS: "300" });
   assert.equal(crashed.code, 86, crashed.output);
   const [ev] = await t.sql`SELECT event_id FROM outbox_events WHERE aggregate_id = ${id} AND event_type = 'auction.ended'`;
   const emailRows = () => t.sql`SELECT status, attempts FROM notifications WHERE dedupe_key LIKE ${`${ev.event_id}:%`} AND channel = 'email' ORDER BY id`;
   assert.ok((await emailRows()).some((r) => r.status === "pending" && r.attempts === 0), "the sent email is not recorded: our records cannot know it left");
 
-  await new Promise((r) => setTimeout(r, 400));
+  await makeDue(ev.event_id);
   assert.equal((await worker()).code, 0);
   const final = await emailRows();
   assert.ok(final.every((r) => r.status === "sent" && r.attempts === 1), JSON.stringify(final));
