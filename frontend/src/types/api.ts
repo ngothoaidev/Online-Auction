@@ -3,9 +3,8 @@
 export type Role = 'unauthorized' | 'buyer' | 'seller' | 'admin';
 
 /**
- * The signed-in user. /auth/login returns { userId, username, email, fullName, role, status, isVerified, imgUrl };
- * /auth/me (used after a reload) only { userId, username, email, role }. `id` appears on users handed over by other
- * flows, so read the id with `sessionUserId()`.
+ * The signed-in user, as /auth/login (`user`) and /auth/me both return it. `id` appears on users handed over by
+ * other flows, so read the id with `sessionUserId()`.
  */
 export type SessionUser = {
   userId?: number;

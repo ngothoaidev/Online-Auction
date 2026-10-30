@@ -6,6 +6,19 @@ import sellerRequestService from "../services/sellerRequest.ts";
 import { sendWelcomeEmail, sendPasswordResetOTP, sendChangePasswordOTP } from "../utils/email.ts";
 import accountSecurity from "../services/accountSecurity.ts";
 import passport from "passport";
+import type { UserRow } from "../db/index.ts";
+
+// The session user the SPA keeps; login and /auth/me return the same shape so a reload loses nothing.
+const sessionUser = (u: UserRow) => ({
+    userId: u.id,
+    username: u.username,
+    email: u.email,
+    fullName: u.fullName,
+    role: u.role,
+    status: u.status,
+    isVerified: u.isVerified,
+    imgUrl: u.avatarUrl,
+});
 
 const controller = {
     getUser: async function(req: Request, res: Response, next: NextFunction){
@@ -41,16 +54,7 @@ const controller = {
             const token = await authService.generateUserToken(found);
             res.status(200).json({
                 token,
-                user: {
-                    imgUrl: found.avatarUrl,
-                    userId: found.id,
-                    username: found.username,
-                    email: found.email,
-                    fullName: found.fullName,
-                    role: found.role,
-                    status: found.status,
-                    isVerified: found.isVerified,
-                }
+                user: sessionUser(found),
             });
         } catch (error) {
             next(error);
@@ -138,13 +142,7 @@ const controller = {
     },
 
     verifyUser: async function(req: Request, res: Response){
-        const user = req.user!;
-        res.status(200).json({
-            userId: user.id,
-            username: user.username,
-            email: user.email,
-            role: user.role,
-        });
+        res.status(200).json(sessionUser(req.user!));
     },
 
     // Forgot password - send OTP to email
