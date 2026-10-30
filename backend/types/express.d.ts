@@ -4,6 +4,8 @@ import type { OrderRow, UserRow } from "../db/index.ts";
 
 declare global {
   namespace Express {
+    // Declaration merging into passport's empty Express.User: no members of its own on purpose.
+    // eslint-disable-next-line @typescript-eslint/no-empty-object-type
     interface User extends UserRow {}
     interface Request {
       /** Set by middleware/request_id for every request. */

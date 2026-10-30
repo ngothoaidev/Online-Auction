@@ -2,7 +2,6 @@ import type { Request, Response, NextFunction } from "express";
 import * as moderation from "../services/moderation.ts";
 import { keyFrom } from "../services/idempotency.ts";
 import categoryService from "../services/category.ts";
-import authService from "../services/auth.ts";
 
 const controller = {
     

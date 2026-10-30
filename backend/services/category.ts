@@ -2,13 +2,16 @@ import db from "../db/index.ts";
 import { categories, auctions } from "../db/schema.ts";
 import { eq, isNull, count } from "drizzle-orm";
 
+type Sub = { id: number; name: string };
+type SubWithCount = Sub & { description: string | null; productCount: number };
+
 const service = {
     findAll: async function(){
         const mainCategories = await db.select({
             id: categories.id,
             name: categories.name,
         }).from(categories).where(isNull(categories.parentId));
-        const categoriesWithSub = [];
+        const categoriesWithSub: (Sub & { subcategories: Sub[] })[] = [];
         for (const mainCat of mainCategories) {
             const subCategories = await db.select({
                 id: categories.id,
@@ -31,7 +34,7 @@ const service = {
             description: categories.description,
         }).from(categories).where(isNull(categories.parentId));
 
-        const result = [];
+        const result: (SubWithCount & { subcategories: SubWithCount[] })[] = [];
         
         for (const mainCat of mainCategories) {
             // Get subcategories for this main category
@@ -42,7 +45,7 @@ const service = {
             }).from(categories).where(eq(categories.parentId, mainCat.id));
 
             // Get product count for each subcategory
-            const subcategoriesWithCount = [];
+            const subcategoriesWithCount: SubWithCount[] = [];
             let totalProductCount = 0;
 
             for (const subCat of subCategories) {

@@ -3,21 +3,21 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "test": "node --test --test-concurrency=1 \"tests/**/*.test.js\"",
+    "test": "node --test --test-concurrency=1 \"tests/**/*.test.ts\"",
     "start": "node server.ts",
     "start:render": "npm run db:migrate && (node worker.ts & node server.ts)",
-    "typecheck": "tsc",
+    "typecheck": "tsc && tsc -p tsconfig.test.json",
     "dev": "node --watch server.ts",
-    "test:unit": "node --test \"tests/unit/**/*.test.js\"",
-    "test:integration": "node --test --test-concurrency=1 \"tests/integration/**/*.test.js\"",
+    "test:unit": "node --test \"tests/unit/**/*.test.ts\"",
+    "test:integration": "node --test --test-concurrency=1 \"tests/integration/**/*.test.ts\"",
     "lint": "eslint .",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "node scripts/migrate.js",
-    "db:seed": "node scripts/seed.js",
-    "db:backfill-maxima": "node scripts/backfill-maxima.js",
+    "db:migrate": "node scripts/migrate.ts",
+    "db:seed": "node scripts/seed.ts",
+    "db:backfill-maxima": "node scripts/backfill-maxima.ts",
     "worker": "node worker.ts",
-    "db:audit-proofs": "node scripts/audit-legacy-proofs.js",
-    "db:resolve-reviews": "node scripts/resolve-reviews.js"
+    "db:audit-proofs": "node scripts/audit-legacy-proofs.ts",
+    "db:resolve-reviews": "node scripts/resolve-reviews.ts"
   },
   "dependencies": {
     "bcrypt": "^5.1.1",
@@ -55,7 +55,8 @@
     "drizzle-kit": "^0.31.8",
     "eslint": "^9.39.5",
     "globals": "^17.13.0",
-    "typescript": "^7.0.2"
+    "typescript": "~5.9",
+    "typescript-eslint": "^8.72.1"
   },
   "overrides": {
     "multer-storage-cloudinary": {

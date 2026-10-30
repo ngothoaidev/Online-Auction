@@ -1,6 +1,7 @@
 import db from "../db/index.ts";
-import { reviews, users, auctions } from "../db/schema.ts";
+import { reviews, auctions } from "../db/schema.ts";
 import { eq, desc, sql, and } from "drizzle-orm";
+import type { SQL } from "drizzle-orm";
 
 type ReviewFilters = { reviewerId?: number; targetId?: number; auctionId?: number };
 
@@ -17,7 +18,7 @@ export const reviewService = {
     const offset = (page - 1) * limit;
 
     // Build where conditions
-    const conditions = [];
+    const conditions: SQL[] = [];
     if (reviewerId) conditions.push(eq(reviews.reviewerId, reviewerId));
     if (targetId) conditions.push(eq(reviews.targetId, targetId));
     if (auctionId) conditions.push(eq(reviews.auctionId, auctionId));
@@ -85,7 +86,7 @@ export const reviewService = {
     const { reviewerId, targetId, auctionId } = filters;
 
     // Build where conditions
-    const conditions = [];
+    const conditions: SQL[] = [];
     if (reviewerId) conditions.push(eq(reviews.reviewerId, reviewerId));
     if (targetId) conditions.push(eq(reviews.targetId, targetId));
     if (auctionId) conditions.push(eq(reviews.auctionId, auctionId));

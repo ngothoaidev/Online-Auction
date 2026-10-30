@@ -2,7 +2,6 @@ import type { Request, Response, NextFunction } from "express";
 import orderService from "../services/order.ts";
 import userService from "../services/user.ts";
 import auctionService from "../services/auction.ts";
-import { sendEmail } from "../utils/email.ts";
 import { transitionOrder } from "../services/orderCommands.ts";
 import { submitReview } from "../services/reviewCommands.ts";
 import { keyFrom } from "../services/idempotency.ts";

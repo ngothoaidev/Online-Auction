@@ -8,6 +8,7 @@ import { checkBidderEligibility, buyNowAvailable } from "../domain/eligibility.t
 import { AppError } from "../utils/errors.ts";
 import { sanitizeRichText } from "../utils/sanitize.ts";
 import { sql, and, eq, gte, asc, desc, inArray, isNull, isNotNull } from "drizzle-orm";
+import type { SQL } from "drizzle-orm";
 
 // "Won" = the lot is closed and settled with this user as winner. While a lot is active `winnerId` is only the
 // current leader, so it must never count as a win. Shared by the profile counter and the Wins tab.
@@ -48,7 +49,7 @@ const service = {
         }
 
         // Dynamic Conditions
-        const whereConditions = [];
+        const whereConditions: SQL[] = [];
 
         if (status) {
             whereConditions.push(eq(auctions.status, status));
@@ -108,7 +109,7 @@ const service = {
 
         const userId = user.id;
 
-        const conditions = [];
+        const conditions: (SQL | undefined)[] = [];
 
         if (category && category !== 'All Categories') {
             const categoryFilter = await db.query.categories.findFirst({
