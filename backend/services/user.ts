@@ -1,6 +1,6 @@
 import db from "../db/index.ts"
 
-import { users, bids, auctions, userFavorites, categories, reviews, userRoleEnum, userStatusEnum } from "../db/schema.ts"
+import { users, bids, auctions, userFavorites, reviews, userRoleEnum, userStatusEnum } from "../db/schema.ts"
 import type { SQL } from "drizzle-orm";
 
 import { eq, or, ilike, and, sql, count, desc } from "drizzle-orm";
@@ -78,7 +78,7 @@ const service = {
     },
 
     // Get user stats (bids count, auctions count)
-    getUserStats: async function(userId: number, role?: string | null) {
+    getUserStats: async function(userId: number, _role?: string | null) {
         // Total bids
         const bidsResult = await db
             .select({ count: count() })

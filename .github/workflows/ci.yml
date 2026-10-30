@@ -75,8 +75,8 @@ jobs:
           npm ci
           npm run db:migrate
           npm run db:seed
-          nohup node server.js > ../api.log 2>&1 &
-          nohup node worker.js > ../worker.log 2>&1 &
+          nohup node server.ts > ../api.log 2>&1 &
+          nohup node worker.ts > ../worker.log 2>&1 &
           for i in $(seq 1 30); do curl -sf http://localhost:3000/categories > /dev/null && break; sleep 1; done
       - name: Playwright
         working-directory: frontend

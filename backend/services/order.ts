@@ -71,7 +71,7 @@ const service = {
         };
     },
 
-    // All order state changes live in services/orderCommands.js (state machine, locking, audit).
+    // All order state changes live in services/orderCommands.ts (state machine, locking, audit).
 
     // ============ MESSAGES ============
 

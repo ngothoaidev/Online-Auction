@@ -12,7 +12,7 @@ export type OrderLike = {
 };
 export type TransitionPayload = {
   paymentProofUrl?: string; shippingAddress?: string; buyerPhone?: string;
-  shippingProofUrl?: string | null; trackingNumber?: string | null; reason?: string;
+  shippingProofUrl?: string | null; trackingNumber?: string | null; reason?: string | null;
 };
 export type Plan = {
   to: OrderStatus; auction: "keep" | "sold" | "cancel_if_sold"; set: Record<string, unknown>; reason?: string;
