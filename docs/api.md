@@ -94,7 +94,7 @@ Admin: `GET /`, `GET /stats`, `GET /:id`, `POST /:id/ban {reason}` (required), `
 | POST | `/order/:id/proofs?purpose=payment|shipping|message` | buyer/seller per purpose | `multipart` `file` (JPEG/PNG/WebP ≤5 MiB; authorised **before** the body is read) → `{assetId}` |
 | GET | `/order/:id/proofs/:assetId` | participants | Private file, `Cache-Control: private, no-store` |
 | POST | `/order/:id/payment` | buyer, `pending_payment`, manual mode | `{paymentProofAssetId, shippingAddress, buyerPhone}` |
-| POST | `/order/:id/payment-attempts` | buyer, `pending_payment` | Mock gateway: `{shippingAddress, buyerPhone}` → `201 {attempt {reference, amount, currency, status}}`; locks the order to gateway mode |
+| POST | `/order/:id/payment-attempts` | buyer, `pending_payment` | `{shippingAddress, buyerPhone}` → `201 {attempt {reference, amount, currency, status}, checkoutUrl}`; locks the order to gateway mode. `checkoutUrl` is Stripe's hosted page (null for the mock); an expired Stripe session is closed and a new one opened |
 | POST | `/order/:id/confirm` | seller, `pending_confirmation` | `{trackingNumber? , shippingProofAssetId?}` (one required) |
 | POST | `/order/:id/shipping` | seller, `pending_delivery` | same body |
 | POST | `/order/:id/receipt` | buyer, `pending_receipt` | |
@@ -108,7 +108,7 @@ All order commands accept `Idempotency-Key` and optional `expectedVersion` (`409
 
 | Method | Path | |
 |---|---|---|
-| POST | `/payments/webhook/:provider` | Provider → API. Raw body, signature checked **before** parsing (`X-Mock-Signature: sha256=<hmac>` for the mock). `200 {received, duplicate, outcome}`; outcomes `applied`, `failed_recorded`, `duplicate`, `ignored:*`, `exception:*` (late/mismatched payments never reopen an order) |
+| POST | `/payments/webhook/:provider` | Provider → API. Raw body, signature checked **before** parsing (`X-Mock-Signature: sha256=<hmac>` for the mock, `Stripe-Signature` for Stripe; Stripe events other than checkout completed/expired are acknowledged as `ignored`). `200 {received, duplicate, outcome}`; outcomes `applied`, `failed_recorded`, `duplicate`, `ignored:*`, `exception:*` (late/mismatched payments never reopen an order) |
 | POST | `/payments/mock/:reference/simulate` | Buyer of the attempt, **mock adapter only** (404 otherwise): `{outcome: succeeded|failed, deliver?: false}` (`deliver:false` = lost webhook, recovered by the worker) |
 
 ## Notifications — `/notifications` (auth, own only)

@@ -1,4 +1,4 @@
-// Payment adapter flow. Mock mode only: no real money moves.
+// Payment adapter flow: the mock gateway or Stripe in test mode. No real money moves.
 // - A buyer opens an attempt for their own unpaid order; the order's payment mode is fixed to the adapter from then on
 //   (manual proof is refused), and amount/currency are copied from the order (never from the client).
 // - Provider events are verified, stored once per provider event id (duplicates acknowledged, never re-applied) and
@@ -12,11 +12,20 @@ import { auctions, orders, paymentAttempts, paymentEvents } from "../db/schema.t
 import { AppError } from "../utils/errors.ts";
 import { need } from "../domain/orderTransitions.ts";
 import * as mock from "../adapters/payments/mock.ts";
-import type { PaymentEvent } from "../adapters/payments/mock.ts";
+import * as stripe from "../adapters/payments/stripe.ts";
+import type { PaymentEvent, ProviderStatus } from "../adapters/payments/mock.ts";
 import { applyTransition } from "./orderCommands.ts";
 import { runIdempotent } from "./idempotency.ts";
 
-const ADAPTERS: Record<string, typeof mock> = { mock };
+/** What a provider adapter offers. `checkoutUrl` exists for hosted checkouts (Stripe); the mock has none. */
+type Adapter = {
+  name: string;
+  createAttempt(input: { orderId: number; auctionId: number; amount: string; currency: string; title: string }): { reference: string } | Promise<{ reference: string }>;
+  checkoutUrl?(reference: string): Promise<string | null>;
+  verifyEvent(rawBody: Buffer, headers: Record<string, string | string[] | undefined>): PaymentEvent | null;
+  getAttemptStatus(reference: string): Promise<{ status: ProviderStatus; amount: string; currency: string } | null>;
+};
+const ADAPTERS: Record<string, Adapter> = { mock, stripe };
 
 /** Configured adapter or null (manual proof only). Mock is the default outside production. Read per call. */
 export const activeAdapter = () => ADAPTERS[process.env.PAYMENT_ADAPTER ?? (process.env.NODE_ENV === "production" ? "" : "mock")] ?? null;
@@ -51,18 +60,28 @@ export async function createAttempt({ orderId, actor, payload = {}, key }: {
     const shippingAddress = need(payload.shippingAddress, "shippingAddress");
     const buyerPhone = need(payload.buyerPhone, "buyerPhone");
 
-    // one open attempt per order: starting again returns it instead of opening a second checkout
-    let [attempt] = await tx.select().from(paymentAttempts)
+    // One open attempt per order: starting again returns it instead of opening a second checkout, unless the
+    // provider's hosted checkout can no longer be paid (an expired Stripe session), which closes it as failed.
+    // ponytail: the provider call runs while the order row is locked (~0.3 s for Stripe); fine at demo traffic
+    let [attempt]: (typeof paymentAttempts.$inferSelect | undefined)[] = await tx.select().from(paymentAttempts)
       .where(and(eq(paymentAttempts.orderId, orderId), eq(paymentAttempts.status, "created"), eq(paymentAttempts.provider, adapter.name)));
+    let checkoutUrl = attempt && adapter.checkoutUrl ? await adapter.checkoutUrl(attempt.reference) : null;
+    if (attempt && adapter.checkoutUrl && !checkoutUrl) {
+      await tx.update(paymentAttempts).set({ status: "failed", providerStatus: "failed", updatedAt: new Date() }).where(eq(paymentAttempts.id, attempt.id));
+      attempt = undefined;
+    }
     if (!attempt) {
+      const [lot] = await tx.select({ title: auctions.title }).from(auctions).where(eq(auctions.id, order.auctionId));
+      const { reference } = await adapter.createAttempt({ orderId, auctionId: order.auctionId, amount: String(order.finalPrice), currency: "VND", title: lot?.title ?? `Order ${orderId}` });
       [attempt] = await tx.insert(paymentAttempts).values({
-        orderId, buyerId: actor.id, provider: adapter.name, reference: adapter.createAttempt().reference, amount: order.finalPrice, currency: "VND",
+        orderId, buyerId: actor.id, provider: adapter.name, reference, amount: order.finalPrice, currency: "VND",
       }).returning();
+      checkoutUrl = adapter.checkoutUrl ? await adapter.checkoutUrl(reference) : null;
     }
     const [updated] = await tx.update(orders)
       .set({ paymentMode: adapter.name, shippingAddress, buyerPhone, version: order.version + 1, updatedAt: new Date() })
       .where(eq(orders.id, orderId)).returning();
-    return { status: 201, resourceId: attempt.id, body: { attempt: attemptDto(attempt), order: updated } };
+    return { status: 201, resourceId: attempt.id, body: { attempt: attemptDto(attempt), order: updated, checkoutUrl } };
   }));
 }
 
@@ -124,7 +143,9 @@ async function processEvent(provider: string, e: PaymentEvent) {
 export async function handleWebhook(providerName: string, rawBody: Buffer, headers: Record<string, string | string[] | undefined>) {
   const adapter = activeAdapter();
   if (!adapter || adapter.name !== providerName) throw new AppError(404, "NOT_FOUND", "Unknown payment provider");
-  return processEvent(adapter.name, adapter.verifyEvent(rawBody, headers));
+  const event = adapter.verifyEvent(rawBody, headers);
+  if (!event) return { duplicate: false, outcome: "ignored" }; // a provider event this app does not act on
+  return processEvent(adapter.name, event);
 }
 
 /**
