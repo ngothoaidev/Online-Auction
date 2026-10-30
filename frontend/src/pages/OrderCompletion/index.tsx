@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useParams, Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import orderService from '../../services/orderService';
@@ -22,13 +23,33 @@ const MAX_SETTLEMENT_POLLS = 24;
 export default function OrderCompletion() {
   const { auctionId } = useParams();
   const { user } = useAuth();
-  const [order, setOrder] = useState<OrderView | null>(null);
-  const [auction, setAuction] = useState<OrderView['auction'] | null>(null);
-  const [payment, setPayment] = useState<PaymentSummary | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  // Settlement runs in the background worker: while it has not produced an order the API answers 202 and we poll.
-  const [settlement, setSettlement] = useState<{ attempts: number; retryAfter?: number } | null>(null);
+  const queryClient = useQueryClient();
+  const key = ['order', auctionId];
+  // Settlement runs in the background worker: while it has not produced an order the API answers 202 and we poll,
+  // up to MAX_SETTLEMENT_POLLS times (dataUpdateCount counts the answers received).
+  const query = useQuery({
+    queryKey: key,
+    queryFn: () => orderService.getByAuctionId(auctionId),
+    refetchInterval: (q) => (q.state.data?.status === 'settlement_pending' && q.state.dataUpdateCount <= MAX_SETTLEMENT_POLLS
+      ? Math.max(1, q.state.data.retryAfter || 5) * 1000 : false),
+    notifyOnChangeProps: 'all', // each 202 answer is identical; re-render anyway so the poll count advances
+  });
+  const data = query.data;
+  const settlement = data?.status === 'settlement_pending' ? { attempts: (queryClient.getQueryState(key)?.dataUpdateCount ?? 1) - 1 } : null;
+  // The API nests { order, auction, buyer, seller, ...ReviewSubmitted } under `order`; the page keeps one flat order.
+  const order: OrderView | null = data?.order ? {
+    ...data.order.order,
+    auction: data.order.auction,
+    buyer: data.order.buyer,
+    seller: data.order.seller,
+    buyerReviewSubmitted: data.order.buyerReviewSubmitted,
+    sellerReviewSubmitted: data.order.sellerReviewSubmitted,
+  } : null;
+  const auction: OrderView['auction'] | null = data?.order?.auction ?? null;
+  const payment: PaymentSummary | null = data?.payment ?? null;
+  const loading = query.isPending && !query.isError;
+  const error = query.isError ? (query.error as ApiError).message : null;
+  const reload = () => queryClient.invalidateQueries({ queryKey: key });
   const [channelChoice, setChannelChoice] = useState<string | null>(null); // buyer's pick while the server has not locked a payment mode
   const [showCancel, setShowCancel] = useState(false);
 
@@ -41,44 +62,6 @@ export default function OrderCompletion() {
   // and from then on the server refuses the other channel.
   const lockedMode = payment?.mode && payment.mode !== 'manual' ? payment.mode : null;
   const channel = lockedMode ?? (channels.length === 1 ? channels[0] : channelChoice);
-
-  const loadData = async ({ attempts = 0, silent = attempts > 0 }: { attempts?: number; silent?: boolean } = {}) => {
-    try {
-      if (!silent) setLoading(true);
-      const data = await orderService.getByAuctionId(auctionId);
-      if (data.status === 'settlement_pending') {
-        setSettlement({ attempts, retryAfter: data.retryAfter });
-        return;
-      }
-      setSettlement(null);
-      // The API nests { order, auction, buyer, seller, ...ReviewSubmitted } under `order`; the page keeps one flat order.
-      if (data.order) {
-        setOrder({
-          ...data.order.order,
-          auction: data.order.auction,
-          buyer: data.order.buyer,
-          seller: data.order.seller,
-          buyerReviewSubmitted: data.order.buyerReviewSubmitted,
-          sellerReviewSubmitted: data.order.sellerReviewSubmitted,
-        });
-        setAuction(data.order.auction);
-        setPayment(data.payment ?? null);
-      }
-    } catch (err) {
-      setError((err as ApiError).message);
-    } finally {
-      setLoading(false);
-    }
-  };
-  const reloadQuietly = () => loadData({ silent: true });
-
-  useEffect(() => { loadData(); }, [auctionId]);
-
-  useEffect(() => {
-    if (!settlement || settlement.attempts >= MAX_SETTLEMENT_POLLS) return undefined;
-    const timer = setTimeout(() => loadData({ attempts: settlement.attempts + 1 }), Math.max(1, settlement.retryAfter || 5) * 1000);
-    return () => clearTimeout(timer);
-  }, [settlement]);
 
   if (loading) {
     return (
@@ -98,7 +81,7 @@ export default function OrderCompletion() {
           <p className="text-(--text-muted) mb-4">
             {slow ? 'The result has not been recorded yet. Your bid is safe; you can check again in a moment.' : 'The auction has closed and the result is being recorded. This page updates automatically.'}
           </p>
-          {slow && <button onClick={() => { setSettlement(null); loadData(); }} className="px-5 py-2 rounded-xl bg-(--ink) text-(--on-ink) hover:opacity-90">Check again</button>}
+          {slow && <button onClick={() => queryClient.resetQueries({ queryKey: key })} className="px-5 py-2 rounded-xl bg-(--ink) text-(--on-ink) hover:opacity-90">Check again</button>}
         </div>
       </div>
     );
@@ -217,8 +200,8 @@ export default function OrderCompletion() {
                 </div>
               </fieldset>
             )}
-            {status === 'pending_payment' && isBuyer && channel === 'mock' && <MockPaymentPanel order={order} payment={payment} onChanged={reloadQuietly} />}
-            {status === 'pending_payment' && isBuyer && channel === 'manual' && <PaymentForm order={order} onOrder={setOrder} />}
+            {status === 'pending_payment' && isBuyer && channel === 'mock' && <MockPaymentPanel order={order} payment={payment} onChanged={reload} />}
+            {status === 'pending_payment' && isBuyer && channel === 'manual' && <PaymentForm order={order} onChanged={reload} />}
             {status === 'pending_payment' && isSeller && (
               <div className={card}>
                 <h2 className="text-lg font-semibold text-(--text) mb-4">Waiting for Payment</h2>
@@ -227,7 +210,7 @@ export default function OrderCompletion() {
             )}
 
             {/* Step 2: Shipping */}
-            {(status === 'pending_confirmation' || status === 'pending_delivery') && isSeller && <ShippingForm order={order} onOrder={setOrder} reload={reloadQuietly} />}
+            {(status === 'pending_confirmation' || status === 'pending_delivery') && isSeller && <ShippingForm order={order} onChanged={reload} />}
             {status === 'pending_confirmation' && isBuyer && (
               <div className={card}>
                 <h2 className="text-lg font-semibold text-(--text) mb-4">Payment Submitted</h2>
@@ -248,10 +231,10 @@ export default function OrderCompletion() {
             )}
 
             {/* Step 3: Receipt */}
-            {status === 'pending_receipt' && <ReceiptPanel order={order} isBuyer={isBuyer} onOrder={setOrder} />}
+            {status === 'pending_receipt' && <ReceiptPanel order={order} isBuyer={isBuyer} onChanged={reload} />}
 
             {/* Step 4: Reviews */}
-            {(status === 'pending_review' || status === 'completed') && <ReviewPanel order={order} isBuyer={isBuyer} reload={loadData} />}
+            {(status === 'pending_review' || status === 'completed') && <ReviewPanel order={order} isBuyer={isBuyer} onChanged={reload} />}
           </div>
 
           <div className="lg:col-span-1">
@@ -260,7 +243,7 @@ export default function OrderCompletion() {
         </div>
       </div>
 
-      <CancelOrderDialog order={order} open={showCancel} onClose={() => setShowCancel(false)} onOrder={setOrder} />
+      <CancelOrderDialog order={order} open={showCancel} onClose={() => setShowCancel(false)} onChanged={reload} />
     </div>
   );
 }

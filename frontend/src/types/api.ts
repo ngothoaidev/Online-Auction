@@ -211,3 +211,9 @@ export type SellerRequestRow = {
   createdAt: string; updatedAt: string;
   user: { id: number; username: string; email: string; fullName: string | null; avatarUrl: string | null; createdAt: string | null; ratingCount: number | null; positiveRatingCount: number | null } | null;
 };
+
+/** GET /seller/my-request: the signed-in user's latest seller request and, once approved, how long access lasts. */
+export type MySellerRequest = {
+  request: { id: number; status: 'pending' | 'approved' | 'rejected'; adminNote: string | null; createdAt: string } | null;
+  statusInfo: { isActive?: boolean; expired?: boolean; canReapply?: boolean; expiryDate?: string; canReapplyDate?: string; daysRemaining?: number } | null;
+};

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Upload, X } from 'lucide-react';
 import { useNav } from '../hooks/useNavigate';
 import ImageUploadModal from '../components/ImageUploadModal';
@@ -10,6 +10,7 @@ import { Button, Field, IconButton } from '../components/ui';
 import type { ApiError } from '../services/apiClient';
 import type { ChangeEvent, FormEvent, ReactNode } from 'react';
 import type { CategoryNode } from '../types/api';
+import { useCategories } from '../services/queries';
 
 type CreateForm = {
   title: string; description: string; categoryId: string; startingPrice: string; stepPrice: string; buyNowPrice: string;
@@ -26,18 +27,17 @@ const Section = ({ title, hint, children }: { title: string; hint?: ReactNode; c
 
 export default function CreateAuction() {
   const nav = useNav();
-  const [categories, setCategories] = useState<CategoryNode[]>([]);
+  const categoriesQuery = useCategories();
+  const categories = categoriesQuery.data ?? [];
   const [uploadOpen, setUploadOpen] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState('');
+  const formMessage = formError || (categoriesQuery.isError ? 'Categories could not be loaded. Refresh the page.' : '');
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState<CreateForm>({ title: '', description: '', categoryId: '', startingPrice: '', stepPrice: '', buyNowPrice: '', endTime: '', autoExtend: true, allowNewbies: true, images: [] });
   const set = (k: keyof CreateForm) => (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
     setForm((f) => ({ ...f, [k]: e.target.type === 'checkbox' ? (e.target as HTMLInputElement).checked : e.target.value }));
 
-  useEffect(() => {
-    auctionService.getCategories().then((d) => setCategories(Array.isArray(d) ? d : [])).catch(() => setFormError('Categories could not be loaded. Refresh the page.'));
-  }, []);
 
   const addImage = async (file: File) => setForm((f) => ({ ...f, images: [...f.images, { file, preview: URL.createObjectURL(file) }] }));
   const removeImage = (i: number) => setForm((f) => ({ ...f, images: f.images.filter((_, idx) => idx !== i) }));
@@ -89,9 +89,9 @@ export default function CreateAuction() {
       <p className="mt-1 text-(--muted)">Prices are whole amounts in ₫. Bids and the deadline cannot be changed after the first bid.</p>
 
       <div id="listing-errors" tabIndex={-1} role="alert" className="outline-none">
-        {(formError || errorList.length > 0) && (
+        {(formMessage || errorList.length > 0) && (
           <div className="mt-4 rounded-(--radius-control) bg-(--danger-soft) p-4 text-sm text-(--danger)">
-            {formError && <p>{formError}</p>}
+            {formMessage && <p>{formMessage}</p>}
             {errorList.length > 0 && <><p className="font-semibold">Please fix {errorList.length} {errorList.length === 1 ? 'field' : 'fields'}:</p><ul className="ml-5 list-disc">{errorList.map((m) => <li key={m}>{m}</li>)}</ul></>}
           </div>
         )}

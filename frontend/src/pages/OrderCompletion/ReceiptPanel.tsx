@@ -7,7 +7,7 @@ import type { ApiError } from '../../services/apiClient';
 import type { OrderView } from '../../types/api';
 
 /** Step 3: the item is on its way; the buyer confirms receipt. */
-export default function ReceiptPanel({ order, isBuyer, onOrder }: { order: OrderView; isBuyer: boolean; onOrder: (order: OrderView) => void }) {
+export default function ReceiptPanel({ order, isBuyer, onChanged }: { order: OrderView; isBuyer: boolean; onChanged: () => void }) {
   const { confirm, notify } = useFeedback();
   const [submitting, setSubmitting] = useState(false);
 
@@ -16,7 +16,8 @@ export default function ReceiptPanel({ order, isBuyer, onOrder }: { order: Order
     if (!(await confirm({ title: 'Confirm receipt?', message: 'Confirm only once the item has arrived as described. The seller is then asked to review you.', confirmLabel: 'I received it' }))) return;
     try {
       setSubmitting(true);
-      onOrder((await orderService.confirmReceipt(order.id)).order);
+      await orderService.confirmReceipt(order.id);
+      onChanged();
     } catch (err) {
       notify((err as ApiError).message, 'error');
     } finally {

@@ -2,14 +2,14 @@ import { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { LogOut, Clock } from 'lucide-react';
 import { accountLinks } from './accountLinks';
+import { useSellerRequest } from '../../services/queries';
 import type { SessionUser } from '../../types/api';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 /** Account disclosure: a button that reveals a group of links/actions (not an ARIA menu). Escape / outside click close it. */
 export default function ProfileDropper({ user, logout }: { user: SessionUser; logout: () => void }) {
   const [isOpen, setIsOpen] = useState(false);
-  const [sellerStatus, setSellerStatus] = useState<{ isActive?: boolean; daysRemaining?: number } | null>(null);
+  const seller = useSellerRequest(user.role === 'seller');
+  const sellerStatus = seller.data?.request?.status === 'approved' && seller.data.statusInfo?.isActive ? seller.data.statusInfo : null;
   const rootRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const name = user.fullName || user.username;
@@ -20,16 +20,6 @@ export default function ProfileDropper({ user, logout }: { user: SessionUser; lo
     document.addEventListener('mousedown', onPointer);
     return () => document.removeEventListener('mousedown', onPointer);
   }, [isOpen]);
-
-  useEffect(() => {
-    if (user?.role !== 'seller') return;
-    const token = localStorage.getItem('authToken');
-    if (!token) return;
-    fetch(`${API_URL}/seller/my-request`, { headers: { Authorization: `Bearer ${token}` } })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => { if (data?.request?.status === 'approved' && data.statusInfo?.isActive) setSellerStatus(data.statusInfo); })
-      .catch(() => {});
-  }, [user?.role]);
 
   const close = (restoreFocus?: boolean) => { setIsOpen(false); if (restoreFocus) triggerRef.current?.focus(); };
 

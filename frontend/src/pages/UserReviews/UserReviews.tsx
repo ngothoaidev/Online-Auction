@@ -1,4 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import { useQuery, keepPreviousData } from '@tanstack/react-query';
+import { useProfile } from '../../services/queries';
 import { useParams, Link } from 'react-router-dom';
 import { ThumbsUp, ThumbsDown, MessageCircle, Calendar, User } from 'lucide-react';
 import { reviewService } from '../../services/reviewService';
@@ -8,8 +10,6 @@ import type { ApiError } from '../../services/apiClient';
 import type { ReviewFilters } from '../../services/reviewService';
 import type { ReviewRow, UserProfile } from '../../types/api';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-
 function Avatar({ src, size }: { src: string | null | undefined; size: string }) {
   return src
     ? <img src={src} alt="" className={`${size} rounded-full border-2 border-(--border) object-cover`} />
@@ -18,81 +18,31 @@ function Avatar({ src, size }: { src: string | null | undefined; size: string })
 
 export default function UserReviews() {
   const { username } = useParams();
-  const [userData, setUserData] = useState<UserProfile | null>(null);
-  const [profileStatus, setProfileStatus] = useState('loading'); // loading | ready | missing | error
-  const [profileAttempt, setProfileAttempt] = useState(0);
   const [activeTab, setActiveTab] = useState('received'); // 'received' or 'given'
-  const [reviews, setReviews] = useState<ReviewRow[]>([]);
-  const [stats, setStats] = useState({
-    totalReviews: 0,
-    positiveReviews: 0,
-    negativeReviews: 0,
-    positivePercentage: null,
-  });
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [pagination, setPagination] = useState({
-    page: 1,
-    limit: 10,
-    total: 0,
-    totalPages: 0,
-  });
+  const [page, setPage] = useState(1);
+  const profile = useProfile(username);
+  const userData: UserProfile | null = profile.data ?? null;
+  const profileStatus = profile.data ? 'ready'
+    : profile.isError && !profile.isFetching ? ((profile.error as ApiError).status === 404 ? 'missing' : 'error') : 'loading';
 
-  // Fetch user data
-  useEffect(() => {
-    let cancelled = false;
-    setProfileStatus('loading');
-    (async () => {
-      try {
-        const response = await fetch(`${API_URL}/users/profile?username=${encodeURIComponent(username ?? '')}`);
-        if (cancelled) return;
-        if (response.status === 404) return setProfileStatus('missing');
-        if (!response.ok) return setProfileStatus('error');
-        setUserData(await response.json());
-        setProfileStatus('ready');
-      } catch {
-        if (!cancelled) setProfileStatus('error');
-      }
-    })();
-    return () => { cancelled = true; };
-  }, [username, profileAttempt]);
-
-  // Fetch reviews
-  useEffect(() => {
-    if (!userData?.id) return;
-    fetchReviews();
-  }, [userData, activeTab, pagination.page]);
-
-  const fetchReviews = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      const filterParams: ReviewFilters = {
-        page: pagination.page,
-        limit: pagination.limit,
-      };
-
-      const profileId = userData?.id;
-      if (activeTab === 'received') {
-        filterParams.targetId = profileId;
-      } else {
-        filterParams.reviewerId = profileId;
-      }
-
+  const reviewsQuery = useQuery({
+    queryKey: ['reviews', activeTab, userData?.id, page],
+    queryFn: async () => {
+      const filterParams: ReviewFilters = { page, limit: 10 };
+      if (activeTab === 'received') filterParams.targetId = userData?.id;
+      else filterParams.reviewerId = userData?.id;
       const response = await reviewService.getReviews(filterParams);
-
-      if (response.success) {
-        setReviews(response.data.reviews);
-        setPagination(response.data.pagination);
-        setStats(response.data.stats);
-      }
-    } catch (err) {
-      setError((err as ApiError).message || 'Failed to load reviews');
-    } finally {
-      setLoading(false);
-    }
-  };
+      if (!response.success) throw new Error('Failed to load reviews');
+      return response.data;
+    },
+    enabled: Boolean(userData?.id),
+    placeholderData: keepPreviousData,
+  });
+  const reviews: ReviewRow[] = reviewsQuery.data?.reviews ?? [];
+  const stats = reviewsQuery.data?.stats ?? { totalReviews: 0, positiveReviews: 0, negativeReviews: 0, positivePercentage: null };
+  const pagination = reviewsQuery.data?.pagination ?? { page, limit: 10, total: 0, totalPages: 0 };
+  const loading = reviewsQuery.isFetching;
+  const error = reviewsQuery.isError ? (reviewsQuery.error as ApiError).message || 'Failed to load reviews' : null;
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -112,7 +62,7 @@ export default function UserReviews() {
           </EmptyState>
         )}
         {profileStatus === 'error' && (
-          <EmptyState title="This profile could not be loaded" action={<Button onClick={() => setProfileAttempt((n) => n + 1)}>Try again</Button>} />
+          <EmptyState title="This profile could not be loaded" action={<Button onClick={() => profile.refetch()}>Try again</Button>} />
         )}
       </div>
     );
@@ -158,7 +108,7 @@ export default function UserReviews() {
         <button
           onClick={() => {
             setActiveTab('received');
-            setPagination(prev => ({ ...prev, page: 1 }));
+            setPage(1);
           }}
           className={`pb-4 px-6 font-bold transition-colors relative ${
             activeTab === 'received'
@@ -174,7 +124,7 @@ export default function UserReviews() {
         <button
           onClick={() => {
             setActiveTab('given');
-            setPagination(prev => ({ ...prev, page: 1 }));
+            setPage(1);
           }}
           className={`pb-4 px-6 font-bold transition-colors relative ${
             activeTab === 'given'
@@ -195,7 +145,7 @@ export default function UserReviews() {
           <div className="animate-pulse text-(--text-muted)">Loading reviews...</div>
         </div>
       ) : error ? (
-        <EmptyState title="Reviews could not be loaded" action={<Button onClick={fetchReviews}>Try again</Button>}>{error}</EmptyState>
+        <EmptyState title="Reviews could not be loaded" action={<Button onClick={() => reviewsQuery.refetch()}>Try again</Button>}>{error}</EmptyState>
       ) : reviews.length === 0 ? (
         <div className="text-center py-12">
           <MessageCircle size={48} className="mx-auto mb-4 text-(--text-muted) opacity-50" />
@@ -270,7 +220,7 @@ export default function UserReviews() {
             <Pagination
               currentPage={pagination.page}
               totalPages={pagination.totalPages}
-              onPageChange={(page) => setPagination((prev) => ({ ...prev, page }))}
+              onPageChange={setPage}
             />
           )}
         </>

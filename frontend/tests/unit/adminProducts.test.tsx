@@ -14,10 +14,8 @@ afterEach(() => vi.unstubAllGlobals())
 
 describe('admin product table', () => {
   it('reads the catalog DTO and shows exact VND, never dollars', async () => {
-    vi.stubGlobal('fetch', vi.fn(async (url) => ({
-      ok: true,
-      json: async () => (String(url).includes('/categories') ? [] : { data: [lot], metadata: { totalPages: 1, totalItems: 1 } }),
-    })))
+    const body = (url) => (String(url).includes('/categories') ? [] : { data: [lot], metadata: { totalPages: 1, totalItems: 1 } })
+    vi.stubGlobal('fetch', vi.fn(async (url) => ({ ok: true, json: async () => body(url), text: async () => JSON.stringify(body(url)) })))
     render(<FeedbackProvider><ProductList /></FeedbackProvider>)
 
     expect(await screen.findByText('22.100.000 ₫')).toBeInTheDocument()
