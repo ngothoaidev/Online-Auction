@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useFeedback } from '../../components/ui/Feedback';
 import { MessageSquare, Send } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext'; // Import Auth
@@ -8,52 +9,31 @@ import auctionService from '../../services/auctionService';
 import { Button, EmptyState } from '../../components/ui';
 import type { CommentView } from './Comment';
 
+// API rows -> what <Comment> renders: display name, avatar, text and nested replies.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const normalize = (data: any): CommentView[] => (Array.isArray(data) ? data.map((c) => ({
+  ...c,
+  user: c.user?.fullName || c.user?.username || c.user || 'User',
+  avatar: c.user?.avatarUrl || c.avatar || 'https://ui-avatars.com/api/?name=User',
+  text: c.content || c.text,
+  content: c.content || c.text,
+  replies: c.children || c.replies || [],
+})) : []);
+
 export default function CommentsSection({ productId }: { productId: number | string }) {
   const { notify } = useFeedback();
   const { user } = useAuth(); 
   const nav = useNav();
   
-  const [comments, setComments] = useState<CommentView[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [failed, setFailed] = useState(false);
-  const [attempt, setAttempt] = useState(0);
+  const queryClient = useQueryClient();
+  const key = ['auction', String(productId), 'comments'];
+  const query = useQuery({ queryKey: key, queryFn: () => auctionService.getComments(productId), select: normalize });
+  const comments: CommentView[] = query.data ?? [];
+  const loading = query.isPending && !query.isError;
+  const failed = query.isError && query.data === undefined;
+  const refresh = () => queryClient.invalidateQueries({ queryKey: key });
   const [commentText, setCommentText] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // --- 1. FETCH & CHUẨN HÓA DỮ LIỆU ---
-  useEffect(() => {
-    let cancelled = false;
-    const fetchComments = async () => {
-        setLoading(true);
-        setFailed(false);
-        try {
-            const data = await auctionService.getComments(productId);
-            // Để tránh lỗi nếu <Comment> component mong đợi 'user' là string
-            const formattedData = Array.isArray(data) ? data.map(c => ({
-                ...c,
-                // Ưu tiên hiển thị Tên đầy đủ -> Username -> 'Unknown'
-                user: c.user?.fullName || c.user?.username || c.user || 'User',
-                // Đảm bảo avatar luôn có giá trị
-                avatar: c.user?.avatarUrl || c.avatar || 'https://ui-avatars.com/api/?name=User',
-                // Backend trả về 'content', 
-                text: c.content || c.text,
-                content: c.content || c.text,
-                // Đảm bảo có mảng replies
-                replies: c.children || c.replies || [] 
-            })) : [];
-
-            if (!cancelled) setComments(formattedData);
-        } catch (err) {
-            console.error("Error fetching comments:", err);
-            if (!cancelled) setFailed(true);
-        } finally {
-            if (!cancelled) setLoading(false);
-        }
-    };
-    
-    if (productId) fetchComments();
-    return () => { cancelled = true; };
-  }, [productId, attempt]);
 
   // --- 2. GỬI COMMENT MỚI ---
   const handleComment = async () => {
@@ -67,20 +47,8 @@ export default function CommentsSection({ productId }: { productId: number | str
 
     setIsSubmitting(true);
     try {
-      // Gọi API thật
-      const newComment = await auctionService.addComment(productId, commentText);
-      
-      // Chuẩn hóa object trả về ngay lập tức để UI không bị lỗi
-      const formattedComment = {
-        ...newComment,
-        user: user.fullName || user.username, // Dùng info của user hiện tại
-        avatar: user.avatarUrl || 'https://ui-avatars.com/api/?name=Me',
-        text: newComment.content,
-        content: newComment.content,
-        replies: []
-      };
-
-      setComments(prev => [formattedComment, ...prev]); 
+      await auctionService.addComment(productId, commentText);
+      await refresh();
       setCommentText('');
     } catch (error) {
       notify('Failed to post comment. Please try again.', 'error');
@@ -100,24 +68,8 @@ export default function CommentsSection({ productId }: { productId: number | str
     }
 
     try {
-        const newReply = await auctionService.addComment(productId, replyText, parentId);
-        
-        const formattedReply = {
-            ...newReply,
-            user: user.fullName || user.username,
-            avatar: user.avatarUrl,
-            text: newReply.content,
-            content: newReply.content
-        };
-
-        // Cập nhật UI lồng nhau
-        setComments(prevComments => 
-            prevComments.map(c => 
-                c.id === parentId 
-                ? { ...c, replies: [...(c.replies || []), formattedReply] } 
-                : c
-            )
-        );
+        await auctionService.addComment(productId, replyText, parentId);
+        await refresh();
     } catch (error) {
         notify("Failed to reply. Please try again.", 'error');
     }
@@ -163,7 +115,7 @@ export default function CommentsSection({ productId }: { productId: number | str
       {/* COMMENTS LIST */}
       <div className="space-y-6 max-h-[600px] overflow-y-auto pb-2 custom-scrollbar">
         {failed ? (
-          <EmptyState title="Questions could not be loaded" action={<Button variant="secondary" onClick={() => setAttempt((n) => n + 1)}>Try again</Button>} />
+          <EmptyState title="Questions could not be loaded" action={<Button variant="secondary" onClick={() => query.refetch()}>Try again</Button>} />
         ) : comments && comments.length > 0 ? (
           comments.map((commentItem) => (
             <Comment 

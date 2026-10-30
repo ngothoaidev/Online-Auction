@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import ProductTabs from './ProductTabs';
 import { useAuth } from '../../contexts/AuthContext';
@@ -62,15 +62,9 @@ function Hero({ lot, user }: { lot: CatalogAuction | null | undefined; user: Ses
 
 export default function HomePage() {
   const { user } = useAuth();
-  const [lot, setLot] = useState<CatalogAuction | null | undefined>(undefined); // undefined = loading, null = no lot to feature
-
-  useEffect(() => {
-    let cancelled = false;
-    auctionService.getTopAuctions({ sortBy: 'endingSoon', limit: 1 })
-      .then((rows) => { if (!cancelled) setLot(Array.isArray(rows) ? rows[0] ?? null : null); })
-      .catch(() => { if (!cancelled) setLot(null); });
-    return () => { cancelled = true; };
-  }, []);
+  const top = useQuery({ queryKey: ['auctions', 'top', 'endingSoon', 1], queryFn: () => auctionService.getTopAuctions({ sortBy: 'endingSoon', limit: 1 }) });
+  // undefined = loading, null = no lot to feature (or it could not be loaded)
+  const lot: CatalogAuction | null | undefined = top.isPending ? undefined : (Array.isArray(top.data) ? top.data[0] ?? null : null);
 
   return (
     <div className="pb-12">

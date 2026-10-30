@@ -1,33 +1,24 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import auctionService from '../../services/auctionService';
 import { Button, IconButton, Skeleton } from '../../components/ui';
+import { loadStatus } from '../../services/queries';
 
 type GalleryImage = { id?: number; imageUrl: string; isPrimary?: boolean | null };
 
 export default function ImageGallery({ productId, title = 'Lot' }: { productId: number | string; title?: string }) {
-  const [images, setImages] = useState<GalleryImage[]>([]);
   const [selected, setSelected] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [failed, setFailed] = useState(false);
-  const [attempt, setAttempt] = useState(0);
+  const query = useQuery({ queryKey: ['auction', String(productId), 'images'], queryFn: () => auctionService.getImages(productId) });
+  const images: GalleryImage[] = Array.isArray(query.data) ? query.data : [];
 
-  useEffect(() => {
-    let cancelled = false;
-    setLoading(true);
-    setFailed(false);
-    auctionService.getImages(productId)
-      .then((data) => { if (!cancelled) { setImages(Array.isArray(data) ? data : []); setSelected(0); } })
-      .catch(() => { if (!cancelled) setFailed(true); })
-      .finally(() => { if (!cancelled) setLoading(false); });
-    return () => { cancelled = true; };
-  }, [productId, attempt]);
+  const status = loadStatus(query);
 
-  if (loading) return <div className="space-y-3"><Skeleton className="aspect-square w-full" /><Skeleton className="h-[72px] w-64" /></div>; // same height as the loaded gallery
-  if (failed) return (
+  if (status === 'loading') return <div className="space-y-3"><Skeleton className="aspect-square w-full" /><Skeleton className="h-[72px] w-64" /></div>; // same height as the loaded gallery
+  if (status === 'error') return (
     <div className="flex aspect-square flex-col items-center justify-center gap-3 rounded-(--radius-card) border border-(--line) bg-(--surface-sunken) text-(--muted)">
       <p>Photos could not be loaded</p>
-      <Button variant="secondary" onClick={() => setAttempt((n) => n + 1)}>Try again</Button>
+      <Button variant="secondary" onClick={() => query.refetch()}>Try again</Button>
     </div>
   );
   if (!images.length) return <div className="flex aspect-square items-center justify-center rounded-(--radius-card) border border-(--line) bg-(--surface-sunken) text-(--muted)">No images</div>;

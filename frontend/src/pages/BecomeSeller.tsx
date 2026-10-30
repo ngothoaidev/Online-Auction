@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useNav } from '../hooks/useNavigate';
@@ -7,10 +8,12 @@ import { becomeSellerSchema } from '../schemas/user.schemas';
 import { validateForm } from '../utils/validation';
 import type { ApiError } from '../services/apiClient';
 import type { FormEvent, ReactNode } from 'react';
+import type { MySellerRequest } from '../types/api';
+import { useSellerRequest } from '../services/queries';
 
-type SellerRequest = { id: number; status: 'pending' | 'approved' | 'rejected'; adminNote: string | null; createdAt: string };
+type SellerRequest = NonNullable<MySellerRequest['request']>;
 /** What /seller/my-request says about the caller's seller access or reapplication window. */
-type SellerStatusInfo = { isActive?: boolean; expired?: boolean; canReapply?: boolean; expiryDate?: string; canReapplyDate?: string; daysRemaining?: number };
+type SellerStatusInfo = NonNullable<MySellerRequest['statusInfo']>;
 type StatusDisplay = {
   icon: ReactNode; title: string; description: string; bgColor: string;
   canReapply?: boolean; isActive?: boolean; expiryDate?: string; canReapplyDate?: string; daysRemaining?: number; effectiveDate?: string;
@@ -26,40 +29,11 @@ export default function BecomeSeller() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [successMessage, setSuccessMessage] = useState('');
-    const [existingRequest, setExistingRequest] = useState<SellerRequest | null>(null);
-    const [statusInfo, setStatusInfo] = useState<SellerStatusInfo | null>(null);
-    const [checkingRequest, setCheckingRequest] = useState(true);
-
-    // Check if user already has a request
-    useEffect(() => {
-        const checkExistingRequest = async () => {
-            try {
-                const token = localStorage.getItem('authToken');
-                if (!token) {
-                    setCheckingRequest(false);
-                    return;
-                }
-
-                const response = await fetch(`${API_URL}/seller/my-request`, {
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                    },
-                });
-
-                if (response.ok) {
-                    const data = await response.json();
-                    setExistingRequest(data.request);
-                    setStatusInfo(data.statusInfo);
-                }
-            } catch (err) {
-                console.error('Error checking request:', err);
-            } finally {
-                setCheckingRequest(false);
-            }
-        };
-
-        checkExistingRequest();
-    }, []);
+    const queryClient = useQueryClient();
+    const existing = useSellerRequest(Boolean(localStorage.getItem('authToken')));
+    const existingRequest: SellerRequest | null = existing.data?.request ?? null;
+    const statusInfo: SellerStatusInfo | null = existing.data?.statusInfo ?? null;
+    const checkingRequest = existing.isPending && existing.fetchStatus !== 'idle';
 
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
@@ -98,7 +72,7 @@ export default function BecomeSeller() {
             }
 
             setSuccessMessage('Your request has been submitted successfully! We will review it shortly.');
-            setExistingRequest(data.request);
+            queryClient.setQueryData<MySellerRequest>(['seller-request'], (old) => ({ statusInfo: old?.statusInfo ?? null, request: data.request }));
         } catch (err) {
             setError((err as ApiError).message || 'Failed to submit request. Please try again.');
         } finally {
