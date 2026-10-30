@@ -50,7 +50,9 @@ test("full reset: OTP -> grant -> new password; old password and old JWT stop wo
   const stale = await t.call("GET", "/auth/me", { token: oldToken });
   assert.equal(stale.status, 401);
   assert.equal(stale.body.code, "TOKEN_REVOKED");
-  assert.equal((await t.call("GET", "/auth/me", { token: newLogin.body.token })).status, 200);
+  const me = await t.call("GET", "/auth/me", { token: newLogin.body.token });
+  assert.equal(me.status, 200);
+  assert.deepEqual(me.body, newLogin.body.user, "/auth/me returns the same user shape as login");
 
   // a grant works once
   const replay = await t.call("POST", "/auth/reset-password", { body: { email: bob.email, newPassword: "Again12345", resetToken } });
