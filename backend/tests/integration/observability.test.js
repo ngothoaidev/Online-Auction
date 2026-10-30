@@ -38,7 +38,7 @@ test("live is always 200; ready checks the database and migrations and reports t
 });
 
 test("worker heartbeat: a real worker pass makes it ok; an old beat is reported stale (API stays ready)", async () => {
-  const w = start(["worker.js"], { DATABASE_URL: TEST_DATABASE_URL, WORKER_ONCE: "1", EMAIL_TRANSPORT: "local" });
+  const w = start(["worker.ts"], { DATABASE_URL: TEST_DATABASE_URL, WORKER_ONCE: "1", EMAIL_TRANSPORT: "local" });
   await new Promise((r) => w.child.once("exit", r));
   let ready = await t.call("GET", "/health/ready");
   assert.equal(ready.body.checks.worker.status, "ok", w.output());
@@ -56,7 +56,7 @@ test("worker heartbeat: a real worker pass makes it ok; an old beat is reported 
 
 test("database down (simulated with a dead port): the API stays live, readiness is 503, the access log is JSON without query strings", async () => {
   const port = 39000 + Math.floor(Math.random() * 1000);
-  const api = start(["server.js"], { DATABASE_URL: "postgres://auction:auction@127.0.0.1:1/nowhere", PORT: String(port), READY_DB_TIMEOUT_MS: "1500" });
+  const api = start(["server.ts"], { DATABASE_URL: "postgres://auction:auction@127.0.0.1:1/nowhere", PORT: String(port), READY_DB_TIMEOUT_MS: "1500" });
   try {
     let up = false;
     for (let i = 0; i < 50 && !up; i++) { await sleep(100); up = await fetch(`http://127.0.0.1:${port}/health/live`).then((r) => r.ok).catch(() => false); }

@@ -1,4 +1,4 @@
-// Fault injection with REAL process deaths: the actual worker (node worker.js) is started as a child process and killed
+// Fault injection with REAL process deaths: the actual worker (node worker.ts) is started as a child process and killed
 // at a named point around a commit (utils/fault.js). A fresh worker process must then finish the job exactly once.
 import { test, before, after } from "node:test";
 import assert from "node:assert/strict";
@@ -22,7 +22,7 @@ after(() => t.stop());
 /** One worker pass in a separate process; resolves { code, output }. */
 function worker(env = {}) {
   return new Promise((resolve, reject) => {
-    const child = spawn(process.execPath, ["worker.js"], {
+    const child = spawn(process.execPath, ["worker.ts"], {
       cwd: backend,
       env: { ...process.env, DATABASE_URL: TEST_DATABASE_URL, WORKER_ONCE: "1", EMAIL_TRANSPORT: "local", OUTBOX_RETRY_BASE_MS: "0", FAULT_POINT: "", ...env },
     });

@@ -17,7 +17,7 @@ export async function startApp(env = {}) {
   const sql = connect();
   await resetDatabase(sql);
   const dbModule = await import("../../db/index.ts");
-  const { default: app } = await import("../../app.js");
+  const { default: app } = await import("../../app.ts");
   const email = await import("../../utils/email.ts");
   const authService = (await import("../../services/auth.ts")).default;
   const server = await new Promise((r) => { const s = app.listen(0, () => r(s)); });

@@ -1,0 +1,71 @@
+import { Router } from "express";
+import type { RequestHandler } from "express";
+import { requireAuth, requireSeller, requireVerified } from "../middleware/auth.ts";
+import auctionController from "../controllers/auction.ts"
+import moderationController from "../controllers/moderation.ts";
+import { validate, idParam } from "../validation/index.ts";
+import { createAuctionBody, updateAuctionBody, descriptionBody, commentBody, bidBody, bidHistoryQuery } from "../validation/auction.ts";
+import { topQuery, profileQuery, rejectQuery } from "../validation/search.ts";
+import { actionLimiter } from "../middleware/rateLimit.ts";
+import { uploadProductImage } from "../config/cloudinary.ts";
+
+import { localImages, cloudinaryConfigured } from "../middleware/localUpload.ts";
+
+// Cloudinary when configured; otherwise validated local storage (dev/test). Same limits either way.
+const productImages: RequestHandler = (req, res, next) => (cloudinaryConfigured() ? uploadProductImage.array('images', 10) : localImages('images', 10))(req, res, next);
+
+const route = Router();
+
+// GET: Top Auctions
+route.get('/top', validate({ query: topQuery }), auctionController.listTop);
+
+// GET: Personal Auctions
+route.get('/profile', validate({ query: profileQuery }), auctionController.listProfile);
+
+// GET: Auction Images
+route.get('/images/:id', validate({ params: idParam }), auctionController.getImages);
+
+// GET: Auction Bids
+route.get('/bids/:id', validate({ params: idParam, query: bidHistoryQuery }), auctionController.getBidHistory);
+
+// GET: Auction Description
+route.get('/description/:id', validate({ params: idParam }), auctionController.getDescription);
+
+// GET: Auction Comments
+route.get('/comments/:id', validate({ params: idParam }), auctionController.getComments);
+
+// Get: Specific Auction
+route.get('/:id', validate({ params: idParam }), auctionController.getById);
+
+// GET: public live updates (SSE) for one auction; public payload only, no auth
+route.get('/:id/events', validate({ params: idParam }), auctionController.events);
+
+route.use(requireAuth);
+
+// POST: Create New Auction
+route.post('/', requireSeller, actionLimiter('upload'), productImages, validate({ body: createAuctionBody }), auctionController.create);
+
+route.delete('/reject', validate({ query: rejectQuery }), auctionController.rejectBid);
+
+// PUT: Update Specific Auction
+route.put('/:id', requireSeller, validate({ params: idParam, body: updateAuctionBody }), auctionController.update);
+
+// PUT: Update Auction Description (seller only)
+route.put('/:id/description', requireSeller, validate({ params: idParam, body: descriptionBody }), auctionController.updateDescription);
+
+// DELETE: Remove Specific Auction
+route.delete('/:id', validate({ params: idParam }), auctionController.delete);
+
+// POST: Place a bid (Auto Bidding supported)
+route.post('/:id/bid', requireVerified, actionLimiter('bid'), validate({ params: idParam, body: bidBody }), auctionController.placeBid);
+
+// POST: report a listing to the moderators (one open report per user per lot)
+route.post('/:id/reports', requireVerified, actionLimiter('comment'), validate({ params: idParam }), moderationController.createReport);
+
+//Route đăng comment
+route.post('/:id/comments', requireVerified, actionLimiter('comment'), validate({ params: idParam, body: commentBody }), auctionController.postComment);
+
+// POST: Buy Now - End auction immediately at buyNowPrice
+route.post('/:id/buy-now', requireVerified, actionLimiter('bid'), validate({ params: idParam }), auctionController.buyNow);
+
+export default route;

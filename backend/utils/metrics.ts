@@ -1,5 +1,5 @@
 // Minimal in-process metrics in Prometheus text format (no dependency). Counters and histograms live per process;
-// DB-derived gauges (outbox, settlement lag, ...) are computed at scrape time in routes/health.js.
+// DB-derived gauges (outbox, settlement lag, ...) are computed at scrape time in routes/health.ts.
 const BUCKETS = [5, 10, 25, 50, 100, 250, 500, 1000, 2500, 5000];
 export type Labels = Record<string, string | number>;
 type Histogram = { buckets: number[]; sum: number; count: number };

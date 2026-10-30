@@ -74,7 +74,7 @@ const service = {
     },
 
     // Check if user can reapply (7 days after rejection)
-    canReapplyAfterRejection: async function(userId: number) {
+    canReapplyAfterRejection: async function(userId: number): Promise<{ canReapply: true } | { canReapply: false; canReapplyDate: Date; daysRemaining: number }> {
         const result = await db
             .select()
             .from(sellerRequests)
