@@ -13,6 +13,7 @@ import os from "node:os";
 import { sql } from "drizzle-orm";
 import db, { client } from "./db/index.ts";
 import logger from "./utils/log.ts";
+import { report } from "./utils/sentry.ts";
 import type { LogFields } from "./utils/log.ts";
 
 /** The fields tick() reads from a job report; each job returns more, but only these drive logging and heartbeats. */
@@ -49,6 +50,7 @@ async function tick() {
     } catch (error) {
       failures += 1;
       log(`${job.name} crashed`, { error: (error as Error).message });
+      report(error, { job: job.name, workerId });
     }
   }
   lastBeat = Date.now();
