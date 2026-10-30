@@ -204,7 +204,7 @@ export const paymentAttempts = pgTable('payment_attempts', {
   orderId: integer('order_id').notNull().references(() => orders.id, { onDelete: 'cascade' }),
   buyerId: integer('buyer_id').notNull().references(() => users.id),
   provider: varchar('provider', { length: 16 }).notNull(),
-  reference: varchar('reference', { length: 64 }).notNull(),
+  reference: varchar('reference', { length: 255 }).notNull(),
   amount: decimal('amount', { precision: 15, scale: 0 }).notNull(),
   currency: varchar('currency', { length: 3 }).notNull().default('VND'),
   status: varchar('status', { length: 16 }).notNull().default('created'), // created | succeeded | failed | exception
@@ -223,7 +223,7 @@ export const paymentEvents = pgTable('payment_events', {
   id: serial('id').primaryKey(),
   provider: varchar('provider', { length: 16 }).notNull(),
   eventId: varchar('event_id', { length: 100 }).notNull(),
-  reference: varchar('reference', { length: 64 }).notNull(),
+  reference: varchar('reference', { length: 255 }).notNull(),
   type: varchar('type', { length: 32 }).notNull(),
   amount: decimal('amount', { precision: 15, scale: 0 }),
   currency: varchar('currency', { length: 3 }),
