@@ -11,6 +11,8 @@ import type { ApiError } from '../services/apiClient';
 import type { ChangeEvent, FormEvent, ReactNode } from 'react';
 import type { CategoryNode } from '../types/api';
 import { useCategories } from '../services/queries';
+import ListingAssistant from '../components/ListingAssistant';
+import { assistantEvent } from '../services/listingAssistant';
 
 type CreateForm = {
   title: string; description: string; categoryId: string; startingPrice: string; stepPrice: string; buyNowPrice: string;
@@ -34,6 +36,7 @@ export default function CreateAuction() {
   const [formError, setFormError] = useState('');
   const formMessage = formError || (categoriesQuery.isError ? 'Categories could not be loaded. Refresh the page.' : '');
   const [loading, setLoading] = useState(false);
+  const [aiDraftUsed, setAiDraftUsed] = useState<string | null>(null);
   const [form, setForm] = useState<CreateForm>({ title: '', description: '', categoryId: '', startingPrice: '', stepPrice: '', buyNowPrice: '', endTime: '', autoExtend: true, allowNewbies: true, images: [] });
   const set = (k: keyof CreateForm) => (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
     setForm((f) => ({ ...f, [k]: e.target.type === 'checkbox' ? (e.target as HTMLInputElement).checked : e.target.value }));
@@ -64,7 +67,8 @@ export default function CreateAuction() {
       payload.append('autoExtend', String(form.autoExtend));
       payload.append('allowNewbies', String(form.allowNewbies));
       form.images.forEach((img) => payload.append('images', img.file));
-      await auctionService.create(payload);
+      const created = await auctionService.create(payload);
+      if (aiDraftUsed) void assistantEvent(aiDraftUsed, 'published', created.auction?.id);
       nav.home();
     } catch (err) {
       setFormError((err as ApiError).message || 'The listing could not be created.');
@@ -116,6 +120,8 @@ export default function CreateAuction() {
           </ul>
           {errors.images && <p className="text-sm font-medium text-(--danger)">{errors.images}</p>}
         </Section>
+
+        <ListingAssistant photos={form.images} categories={categories.flatMap(c => [{ id: c.id, name: c.name }, ...(c.subcategories || [])])} values={{ title: form.title, description: form.description, categoryId: form.categoryId }} onApply={(field, value) => setForm(f => ({ ...f, [field]: value }))} onDraftUsed={setAiDraftUsed} />
 
         <Section title="Item details">
           <Field label="Title" error={errors.title}><input type="text" maxLength={255} value={form.title} onChange={set('title')} /></Field>

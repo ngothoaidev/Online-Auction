@@ -1,4 +1,5 @@
 import { useEditor, EditorContent } from '@tiptap/react';
+import { useEffect } from 'react';
 import type { Editor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { 
@@ -135,6 +136,10 @@ export default function RichTextEditor({ value, onChange, labelledBy, label }: {
       },
     },
   });
+
+  useEffect(() => {
+    if (editor && editor.getHTML() !== value) editor.commands.setContent(value, { emitUpdate: false });
+  }, [editor, value]);
 
   return (
     <div className="rounded-lg border overflow-hidden transition-colors focus-within:ring-2 focus-within:ring-(--accent)" 
