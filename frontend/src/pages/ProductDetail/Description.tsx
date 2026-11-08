@@ -1,4 +1,5 @@
-import { useState, useEffect, lazy, Suspense } from 'react';
+import { useState, lazy, Suspense } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useFeedback } from '../../components/ui/Feedback';
 import SafeHtml from '../../components/SafeHtml';
 import { Button, EmptyState } from '../../components/ui';
@@ -8,11 +9,13 @@ const RichTextEditor = lazy(() => import('../../components/RichTextEditor')); //
 
 export default function Description({ productId, isOwner = false }: { productId: number | string; isOwner?: boolean }) {
   const { notify } = useFeedback();
-  const [content, setContent] = useState("");
+  const queryClient = useQueryClient();
+  const key = ['auction', String(productId), 'description'];
+  const query = useQuery({ queryKey: key, queryFn: () => auctionService.getDescription(productId) });
+  const content: string = query.data?.description || "<p>No description provided for this item.</p>";
+  const loading = query.isPending && !query.isError;
+  const failed = query.isError && query.data === undefined; // and no Edit: saving now would replace the real description
   const [newContent, setNewContent] = useState(""); // Only for NEW additions
-  const [loading, setLoading] = useState(true);
-  const [failed, setFailed] = useState(false);
-  const [attempt, setAttempt] = useState(0);
   const [saving, setSaving] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
 
@@ -21,26 +24,6 @@ export default function Description({ productId, isOwner = false }: { productId:
     const d = new Date(date);
     return `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
   };
-
-  // Fetch dữ liệu thật từ Backend
-  useEffect(() => {
-    let cancelled = false;
-    const fetchDesc = async () => {
-        setLoading(true);
-        setFailed(false);
-        try {
-            const data = await auctionService.getDescription(productId);
-            if (!cancelled) setContent(data?.description || "<p>No description provided for this item.</p>");
-        } catch (err) {
-            console.error("Error fetching description:", err);
-            if (!cancelled) setFailed(true); // and no Edit: saving now would replace the real description
-        } finally {
-            if (!cancelled) setLoading(false);
-        }
-    };
-    if (productId) fetchDesc();
-    return () => { cancelled = true; };
-  }, [productId, attempt]);
 
   const handleEditButton = () => {
     setNewContent(""); // Start with empty editor for new content
@@ -65,7 +48,7 @@ export default function Description({ productId, isOwner = false }: { productId:
       const updatedContent = `${timestamp}${newContent}<hr style="margin: 1.5em 0; border-color: var(--border);" />${content}`;
       
       await auctionService.updateDescription(productId, updatedContent);
-      setContent(updatedContent);
+      queryClient.setQueryData(key, { description: updatedContent });
       setNewContent("");
       setIsEditing(false);
     } catch (err) {
@@ -151,7 +134,7 @@ export default function Description({ productId, isOwner = false }: { productId:
       )}
 
       {failed && (
-        <EmptyState title="The description could not be loaded" action={<Button variant="secondary" onClick={() => setAttempt((n) => n + 1)}>Try again</Button>} />
+        <EmptyState title="The description could not be loaded" action={<Button variant="secondary" onClick={() => query.refetch()}>Try again</Button>} />
       )}
 
       {/* View Mode */}

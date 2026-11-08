@@ -1,5 +1,7 @@
 import { useFeedback } from '../../components/ui/Feedback';
 import { useState, useEffect } from "react";
+import { useQuery, useQueryClient, keepPreviousData } from "@tanstack/react-query";
+import { apiFetch } from "../../services/apiClient";
 import { Link } from 'react-router-dom';
 import { Button, Dialog } from '../../components/ui';
 import { Search, Eye, Ban, CheckCircle, UserPlus, Filter, ChevronLeft, ChevronRight, X, User } from "lucide-react";
@@ -10,15 +12,9 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 export default function UserList() {
   const { confirm, notify } = useFeedback();
-  const [users, setUsers] = useState<AdminUser[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [stats, setStats] = useState<AdminUserStats | null>(null);
   
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [totalCount, setTotalCount] = useState(0);
   const limit = 10;
 
   // Filters
@@ -42,67 +38,23 @@ export default function UserList() {
     return () => clearTimeout(timer);
   }, [searchTerm]);
 
-  // Fetch users
-  useEffect(() => {
-    fetchUsers();
-  }, [currentPage, debouncedSearch, roleFilter, statusFilter]);
-
-  // Fetch stats
-  useEffect(() => {
-    fetchStats();
-  }, []);
-
-  const fetchUsers = async () => {
-    try {
-      setLoading(true);
-      const token = localStorage.getItem('authToken');
-      
-      const params = new URLSearchParams({
-        page: String(currentPage),
-        limit: String(limit),
-        search: debouncedSearch,
-        role: roleFilter,
-        status: statusFilter
-      });
-
-      const response = await fetch(`${API_URL}/users?${params}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch users');
-      }
-
-      const data = await response.json();
-      setUsers(data.users);
-      setTotalPages(data.pagination.totalPages);
-      setTotalCount(data.pagination.totalCount);
-    } catch (err) {
-      setError((err as ApiError).message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchStats = async () => {
-    try {
-      const token = localStorage.getItem('authToken');
-      const response = await fetch(`${API_URL}/users/stats`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setStats(data.stats);
-      }
-    } catch (err) {
-      console.error('Failed to fetch stats:', err);
-    }
-  };
+  const queryClient = useQueryClient();
+  const params = new URLSearchParams({ page: String(currentPage), limit: String(limit), search: debouncedSearch, role: roleFilter, status: statusFilter });
+  const usersQuery = useQuery({
+    queryKey: ['admin', 'users', params.toString()],
+    queryFn: () => apiFetch<{ users: AdminUser[]; pagination: { totalPages: number; totalCount: number } }>(`/users?${params}`, { auth: 'required' }),
+    placeholderData: keepPreviousData,
+  });
+  const users = usersQuery.data?.users ?? [];
+  const totalPages = usersQuery.data?.pagination.totalPages ?? 1;
+  const totalCount = usersQuery.data?.pagination.totalCount ?? 0;
+  const loading = usersQuery.isFetching;
+  const error = usersQuery.isError ? (usersQuery.error as ApiError).message : '';
+  const { data: stats = null } = useQuery({
+    queryKey: ['admin', 'users', 'stats'],
+    queryFn: async () => (await apiFetch<{ stats: AdminUserStats }>('/users/stats', { auth: 'required' })).stats,
+  });
+  const refreshUsers = () => queryClient.invalidateQueries({ queryKey: ['admin', 'users'] }); // the page and the stats
 
   const fetchUserDetails = async (userId: number) => {
     try {
@@ -141,8 +93,7 @@ export default function UserList() {
       });
 
       if (response.ok) {
-        await fetchUsers();
-        await fetchStats();
+        await refreshUsers();
         setShowUserModal(false);
       } else {
         const data = await response.json();
@@ -172,8 +123,7 @@ export default function UserList() {
       });
 
       if (response.ok) {
-        await fetchUsers();
-        await fetchStats();
+        await refreshUsers();
         setShowUserModal(false);
       } else {
         const data = await response.json();

@@ -10,8 +10,8 @@ import type { ApiError } from '../../services/apiClient';
 import type { OrderView } from '../../types/api';
 
 /** Seller cancels an unpaid order, with a reason. */
-export default function CancelOrderDialog({ order, open, onClose, onOrder }: {
-  order: OrderView; open: boolean; onClose: () => void; onOrder: (order: OrderView) => void;
+export default function CancelOrderDialog({ order, open, onClose, onChanged }: {
+  order: OrderView; open: boolean; onClose: () => void; onChanged: () => void;
 }) {
   const { notify } = useFeedback();
   const [reason, setReason] = useState('');
@@ -27,7 +27,8 @@ export default function CancelOrderDialog({ order, open, onClose, onOrder }: {
     }
     try {
       setSubmitting(true);
-      onOrder((await orderService.cancelOrder(order.id, validation.data)).order);
+      await orderService.cancelOrder(order.id, validation.data);
+      onChanged();
       onClose();
     } catch (err) {
       notify((err as ApiError).message, 'error');

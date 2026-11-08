@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { act, render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Routes, Route } from 'react-router-dom'
 
@@ -8,7 +8,6 @@ vi.mock('../../src/services/apiClient', () => ({ apiFetch: (...a) => apiFetch(..
 
 import NotificationsLink from '../../src/components/Header/NotificationsLink'
 import Notifications from '../../src/pages/Notifications/index'
-import { CHANGED } from '../../src/services/notificationService'
 
 const items = [
   { id: 2, kind: 'outbid', title: 'You were outbid on "Brass sextant"', body: 'The current price is 3.100 ₫.', link: '/auction/5', createdAt: new Date().toISOString(), read: false },
@@ -27,10 +26,11 @@ beforeEach(() => {
 
 describe('NotificationsLink', () => {
   it('puts the unread count in the accessible name and refreshes after a local read', async () => {
-    render(<MemoryRouter><NotificationsLink /></MemoryRouter>)
+    render(<MemoryRouter initialEntries={['/notifications']}><NotificationsLink /><Notifications /></MemoryRouter>)
     expect(await screen.findByRole('link', { name: 'Notifications, 3 unread' })).toHaveAttribute('href', '/notifications')
-    apiFetch.mockImplementation(async () => ({ unread: 0 }))
-    act(() => { window.dispatchEvent(new Event(CHANGED)) })
+    const markAll = await screen.findByRole('button', { name: 'Mark all as read' })
+    apiFetch.mockImplementation(async (path) => (path === '/notifications' ? { items, unread: 0 } : { unread: 0 }))
+    await userEvent.click(markAll)
     expect(await screen.findByRole('link', { name: 'Notifications' })).toBeInTheDocument()
   })
 })

@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { reviewService } from '../../services/reviewService';
 import Pagination from '../../components/Pagination';
 import { Button, EmptyState } from '../../components/ui';
@@ -9,58 +10,31 @@ import type { ReviewFilters } from '../../services/reviewService';
 import type { ReviewRow } from '../../types/api';
 
 const Reviews = () => {
-  const [reviews, setReviews] = useState<ReviewRow[]>([]);
-  const [stats, setStats] = useState({
-    totalReviews: 0,
-    positiveReviews: 0,
-    negativeReviews: 0,
-    positivePercentage: null,
-  });
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [pagination, setPagination] = useState({
-    page: 1,
-    limit: 20,
-    total: 0,
-    totalPages: 0,
-  });
+  const [page, setPage] = useState(1);
   const [filters, setFilters] = useState({
     reviewerId: '',
     targetId: '',
     auctionId: '',
   });
 
-  useEffect(() => {
-    fetchReviews();
-  }, [pagination.page, filters]);
-
-  const fetchReviews = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      const filterParams: ReviewFilters = {
-        page: pagination.page,
-        limit: pagination.limit,
-      };
-
+  const query = useQuery({
+    queryKey: ['reviews', 'all', filters, page],
+    queryFn: async () => {
+      const filterParams: ReviewFilters = { page, limit: 20 };
       if (filters.reviewerId) filterParams.reviewerId = filters.reviewerId;
       if (filters.targetId) filterParams.targetId = filters.targetId;
       if (filters.auctionId) filterParams.auctionId = filters.auctionId;
-
       const response = await reviewService.getReviews(filterParams);
-
-      if (response.success) {
-        setReviews(response.data.reviews);
-        setPagination(response.data.pagination);
-        setStats(response.data.stats);
-      }
-    } catch (err) {
-      setError((err as ApiError).message || 'Không thể tải đánh giá');
-    } finally {
-      setLoading(false);
-    }
-  };
+      if (!response.success) throw new Error('Không thể tải đánh giá');
+      return response.data;
+    },
+    placeholderData: keepPreviousData,
+  });
+  const reviews: ReviewRow[] = query.data?.reviews ?? [];
+  const stats = query.data?.stats ?? { totalReviews: 0, positiveReviews: 0, negativeReviews: 0, positivePercentage: null };
+  const pagination = query.data?.pagination ?? { page, limit: 20, total: 0, totalPages: 0 };
+  const loading = query.isFetching;
+  const error = query.isError ? (query.error as ApiError).message || 'Không thể tải đánh giá' : null;
 
   const handleFilterChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -68,7 +42,7 @@ const Reviews = () => {
       ...prev,
       [name]: value,
     }));
-    setPagination((prev) => ({ ...prev, page: 1 }));
+    setPage(1);
   };
 
   const clearFilters = () => {
@@ -77,7 +51,7 @@ const Reviews = () => {
       targetId: '',
       auctionId: '',
     });
-    setPagination((prev) => ({ ...prev, page: 1 }));
+    setPage(1);
   };
 
   const formatDate = (dateString: string) => {
@@ -157,7 +131,7 @@ const Reviews = () => {
       </div>
 
       {/* Error Message */}
-      {error && <EmptyState title={error} action={<Button onClick={fetchReviews}>Thử lại</Button>} />}
+      {error && <EmptyState title={error} action={<Button onClick={() => query.refetch()}>Thử lại</Button>} />}
 
       {/* Reviews List */}
       <div className="reviews-list">
@@ -215,7 +189,7 @@ const Reviews = () => {
         <Pagination
           currentPage={pagination.page}
           totalPages={pagination.totalPages}
-          onPageChange={(page) => setPagination((prev) => ({ ...prev, page }))}
+          onPageChange={setPage}
         />
       )}
     </div>

@@ -1,15 +1,15 @@
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useParams, useSearchParams } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 
 import ProfileSidebar from "./ProfileSidebar";
 import ProductGrid from "../../components/ProductGrid"; 
 import FilterBar from "../../components/Filter/FilterBar";
-import userService from "../../services/userService";
 import auctionService  from "../../services/auctionService";
+import { useProfile } from "../../services/queries";
+import type { ApiError } from "../../services/apiClient";
 import type { CatalogAuction, CountKey, UserProfile } from "../../types/api";
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 export default function Profile() {
   const { user: authUser, logout } = useAuth();
@@ -20,74 +20,26 @@ export default function Profile() {
   const category = searchParams.get("category") || "All Categories";
 
   const isOwnProfile = Boolean(authUser && authUser.username === username);
-  const [userData, setUserData] = useState<UserProfile | null>(null);
-  const [loadingProfile, setLoadingProfile] = useState(true);
-
-  const [tabData, setTabData] = useState<CatalogAuction[]>([]);
-  const [loadingTab, setLoadingTab] = useState(false);
-
+  const profile = useProfile(username);
+  const userData: UserProfile | null = profile.data ?? null;
+  const loadingProfile = profile.isPending && profile.fetchStatus !== 'idle';
   useEffect(() => {
-    const viewingOwnProfile = authUser && authUser.username === username;
+    // an invalid token while viewing one's own profile: sign out
+    if (isOwnProfile && (profile.error as ApiError | null)?.status === 401) logout();
+  }, [profile.error, isOwnProfile, logout]);
 
-    const fetchProfile = async () => {
-      setLoadingProfile(true);
-      try {
-        const response = await fetch(`${API_URL}/users/profile?username=${username}`);
-
-        if (!response) return;
-
-        if (response.ok) {
-          const data = await response.json();
-          setUserData(data);
-        } else if (response.status === 401 && viewingOwnProfile) {
-          // If the token is invalid while viewing own profile, log out
-          logout();
-        } else {
-          console.error("Failed to fetch profile");
-          setUserData(null);
-        }
-      } catch (error) {
-        console.error("Error fetching profile:", error);
-        setUserData(null);
-      } finally {
-        setLoadingProfile(false);
-      }
-    };
-
-    fetchProfile();
-  }, [username]);
-
-  useEffect(() => {
-    if (!userData || !userData.id) return;
-
-    const fetchTabData = async () => {
-      setLoadingTab(true);
-      try {
-        
-        const response = await auctionService.getTabAuctions({
-          username,
-          status: activeTab,
-          category,
-        });
-        
-        if (response.ok) {
-            const data = await response.json();
-            console.log("Tab data: ", data);
-            setTabData(Array.isArray(data) ? data : (data.data || []));
-        } else {
-            console.error(`Failed to fetch data for tab: ${activeTab}`);
-            setTabData([]);
-        }
-      } catch (error) {
-        console.error("Error fetching tab data:", error);
-        setTabData([]);
-      } finally {
-        setLoadingTab(false);
-      }
-    };
-
-    fetchTabData();
-  }, [activeTab, category, userData]);
+  const tab = useQuery({
+    queryKey: ['profile', username, 'tab', activeTab, category],
+    queryFn: async () => {
+      const response = await auctionService.getTabAuctions({ username, status: activeTab, category });
+      if (!response.ok) throw new Error(`Failed to fetch data for tab: ${activeTab}`);
+      const data = await response.json();
+      return (Array.isArray(data) ? data : data.data || []) as CatalogAuction[];
+    },
+    enabled: Boolean(userData?.id),
+  });
+  const tabData = tab.data ?? [];
+  const loadingTab = tab.isFetching && !tab.data;
 
   const handleTabChange = (newTabId: string) => {
     setSearchParams(prev => {

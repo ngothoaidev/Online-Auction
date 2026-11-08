@@ -1,32 +1,19 @@
-import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Bell } from 'lucide-react';
-import notificationService, { CHANGED } from '../../services/notificationService';
+import { useQuery } from '@tanstack/react-query';
+import notificationService from '../../services/notificationService';
 
 const POLL_MS = 30_000;
 
 /** Bell with the unread count; the count is in the accessible name, the badge is decoration. Refreshes on poll, focus and local reads. */
 export default function NotificationsLink() {
-  const [unread, setUnread] = useState(0);
-
-  useEffect(() => {
-    let controller: AbortController | null = null;
-    const load = () => {
-      controller?.abort();
-      controller = new AbortController();
-      notificationService.unreadCount(controller.signal).then((r) => setUnread(r.unread)).catch(() => {});
-    };
-    load();
-    const timer = setInterval(load, POLL_MS);
-    window.addEventListener('focus', load);
-    window.addEventListener(CHANGED, load);
-    return () => {
-      controller?.abort();
-      clearInterval(timer);
-      window.removeEventListener('focus', load);
-      window.removeEventListener(CHANGED, load);
-    };
-  }, []);
+  const { data } = useQuery({
+    queryKey: ['notifications', 'unread'],
+    queryFn: ({ signal }) => notificationService.unreadCount(signal),
+    refetchInterval: POLL_MS,
+    refetchOnWindowFocus: 'always',
+  });
+  const unread = data?.unread ?? 0;
 
   const label = unread > 0 ? `Notifications, ${unread} unread` : 'Notifications';
   return (

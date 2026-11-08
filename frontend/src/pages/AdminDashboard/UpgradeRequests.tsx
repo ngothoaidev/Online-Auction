@@ -1,5 +1,7 @@
 import { useFeedback } from '../../components/ui/Feedback';
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { apiFetch } from "../../services/apiClient";
 import { CheckCircle, XCircle, Eye, Star, Trophy, Clock, RefreshCw } from "lucide-react";
 import type { ApiError } from '../../services/apiClient';
 import type { SellerRequestRow } from "../../types/api";
@@ -8,40 +10,18 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 export default function UpgradeRequests() {
   const { confirm, notify } = useFeedback();
-  const [requests, setRequests] = useState<SellerRequestRow[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const queryClient = useQueryClient();
   const [filterStatus, setFilterStatus] = useState("pending");
   const [actionLoading, setActionLoading] = useState<number | null>(null);
-
-  // Fetch requests from backend
-  const fetchRequests = async () => {
-    setLoading(true);
-    setError('');
-    try {
-      const token = localStorage.getItem('authToken');
-      const response = await fetch(`${API_URL}/seller/requests`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch requests');
-      }
-
-      const data = await response.json();
-      setRequests(data.requests || []);
-    } catch (err) {
-      setError((err as ApiError).message || 'Failed to load requests');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchRequests();
-  }, []);
+  const query = useQuery({
+    queryKey: ['admin', 'seller-requests'],
+    queryFn: async () => (await apiFetch<{ requests?: SellerRequestRow[] }>('/seller/requests', { auth: 'required' })).requests ?? [],
+  });
+  const requests = query.data ?? [];
+  const loading = query.isFetching;
+  const error = query.isError ? (query.error as ApiError).message || 'Failed to load requests' : '';
+  const setStatus = (id: number, status: 'approved' | 'rejected') =>
+    queryClient.setQueryData<SellerRequestRow[]>(['admin', 'seller-requests'], (rows) => rows?.map((req) => (req.id === id ? { ...req, status } : req)));
 
   const filteredRequests = requests.filter(req => 
     filterStatus === "all" || req.status === filterStatus
@@ -68,10 +48,7 @@ export default function UpgradeRequests() {
         throw new Error(data.message || 'Failed to approve request');
       }
 
-      // Update local state
-      setRequests(requests.map(req =>
-        req.id === id ? { ...req, status: "approved" as const } : req
-      ));
+      setStatus(id, 'approved');
     } catch (err) {
       notify((err as ApiError).message, 'error');
     } finally {
@@ -100,10 +77,7 @@ export default function UpgradeRequests() {
         throw new Error(data.message || 'Failed to reject request');
       }
 
-      // Update local state
-      setRequests(requests.map(req =>
-        req.id === id ? { ...req, status: "rejected" as const } : req
-      ));
+      setStatus(id, 'rejected');
     } catch (err) {
       notify((err as ApiError).message, 'error');
     } finally {
@@ -136,7 +110,7 @@ export default function UpgradeRequests() {
         </div>
         <div className="flex items-center gap-4">
           <button
-            onClick={fetchRequests}
+            onClick={() => query.refetch()}
             disabled={loading}
             aria-label="Refresh requests"
             className="p-2 rounded-lg hover:bg-[var(--bg-hover)] transition-colors"

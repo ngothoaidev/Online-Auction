@@ -1,14 +1,13 @@
 import { apiFetch } from './apiClient';
+import type { AppNotification } from '../types/api';
 
-// In-app notifications of the signed-in user. CHANGED is broadcast after a local read so the header count refreshes at once.
-export const CHANGED = 'notifications:changed';
-const changed = <T,>(r: T) => { window.dispatchEvent(new Event(CHANGED)); return r; };
-
+// In-app notifications of the signed-in user. Both reads live under the ['notifications'] query key, so a local read
+// that invalidates it refreshes the page and the header count together.
 const notificationService = {
-  list: (signal?: AbortSignal) => apiFetch('/notifications', { auth: 'required', signal }),
-  unreadCount: (signal?: AbortSignal) => apiFetch('/notifications/unread-count', { auth: 'required', signal }),
-  markRead: (id: number) => apiFetch(`/notifications/${id}/read`, { method: 'POST', auth: 'required' }).then(changed),
-  markAllRead: () => apiFetch('/notifications/read-all', { method: 'POST', auth: 'required' }).then(changed),
+  list: (signal?: AbortSignal) => apiFetch<{ items: AppNotification[]; unread: number }>('/notifications', { auth: 'required', signal }),
+  unreadCount: (signal?: AbortSignal) => apiFetch<{ unread: number }>('/notifications/unread-count', { auth: 'required', signal }),
+  markRead: (id: number) => apiFetch(`/notifications/${id}/read`, { method: 'POST', auth: 'required' }),
+  markAllRead: () => apiFetch('/notifications/read-all', { method: 'POST', auth: 'required' }),
 };
 
 export default notificationService;

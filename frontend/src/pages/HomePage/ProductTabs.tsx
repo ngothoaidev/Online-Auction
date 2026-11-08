@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 import AuctionCard from '../../components/AuctionCard';
@@ -6,6 +7,7 @@ import { EmptyState, Skeleton, Button } from '../../components/ui';
 import auctionService from '../../services/auctionService';
 import { searchUrl, TAB_SEARCH_SORT } from '../../utils/searchUrl';
 import type { CatalogAuction } from '../../types/api';
+import { loadStatus } from '../../services/queries';
 
 const TABS = [
   { id: 'endingSoon', label: 'Ending soon' },
@@ -16,17 +18,11 @@ const TABS = [
 /** The three buttons filter the SAME list (aria-pressed), so they are toggle buttons rather than a tablist. */
 export default function ProductTabs() {
   const [activeTab, setActiveTab] = useState('endingSoon');
-  const [state, setState] = useState<{ status: 'loading' | 'ready' | 'error'; items: CatalogAuction[] }>({ status: 'loading', items: [] });
-  const [attempt, setAttempt] = useState(0);
-
-  useEffect(() => {
-    let cancelled = false;
-    setState((s) => ({ ...s, status: 'loading' }));
-    auctionService.getTopAuctions({ sortBy: activeTab, limit: 5 })
-      .then((items) => { if (!cancelled) setState({ status: 'ready', items: Array.isArray(items) ? items : [] }); })
-      .catch(() => { if (!cancelled) setState({ status: 'error', items: [] }); });
-    return () => { cancelled = true; };
-  }, [activeTab, attempt]);
+  const query = useQuery({ queryKey: ['auctions', 'top', activeTab, 5], queryFn: () => auctionService.getTopAuctions({ sortBy: activeTab, limit: 5 }) });
+  const state = {
+    status: loadStatus(query),
+    items: (Array.isArray(query.data) ? query.data : []) as CatalogAuction[],
+  };
 
   const label = TABS.find((t) => t.id === activeTab)?.label ?? '';
 
@@ -57,7 +53,7 @@ export default function ProductTabs() {
           </div>
         )}
         {state.status === 'error' && (
-          <EmptyState title="Lots could not be loaded" action={<Button onClick={() => setAttempt((n) => n + 1)}>Try again</Button>}>Check your connection and try again.</EmptyState>
+          <EmptyState title="Lots could not be loaded" action={<Button onClick={() => query.refetch()}>Try again</Button>}>Check your connection and try again.</EmptyState>
         )}
         {state.status === 'ready' && state.items.length === 0 && (
           <EmptyState title="No lots yet" action={<Link className="font-semibold text-(--brand) underline" to="/search">Browse all lots</Link>}>Nothing is open for bidding right now.</EmptyState>

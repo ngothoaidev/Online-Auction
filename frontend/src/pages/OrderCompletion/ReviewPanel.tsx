@@ -10,7 +10,7 @@ import type { ApiError } from '../../services/apiClient';
 import type { OrderView } from '../../types/api';
 
 /** Step 4: each side rates the other once; the order completes when both have. */
-export default function ReviewPanel({ order, isBuyer, reload }: { order: OrderView; isBuyer: boolean; reload: () => Promise<void> }) {
+export default function ReviewPanel({ order, isBuyer, onChanged }: { order: OrderView; isBuyer: boolean; onChanged: () => Promise<void> }) {
   const { notify } = useFeedback();
   const [form, setForm] = useState({ rating: 1, comment: '' });
   const [submitting, setSubmitting] = useState(false);
@@ -28,7 +28,7 @@ export default function ReviewPanel({ order, isBuyer, reload }: { order: OrderVi
     try {
       setSubmitting(true);
       await orderService.submitReview(order.id, validation.data);
-      await reload();
+      await onChanged();
     } catch (err) {
       notify((err as ApiError).message, 'error');
     } finally {

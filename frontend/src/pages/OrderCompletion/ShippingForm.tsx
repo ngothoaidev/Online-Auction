@@ -15,7 +15,7 @@ import type { Proof } from './ProofField';
  * Seller, step 2: check the buyer's payment and ship. pending_confirmation = confirm a manual payment and ship;
  * pending_delivery = the gateway already recorded the payment, so only ship.
  */
-export default function ShippingForm({ order, onOrder, reload }: { order: OrderView; onOrder: (order: OrderView) => void; reload: () => void }) {
+export default function ShippingForm({ order, onChanged }: { order: OrderView; onChanged: () => void }) {
   const { notify } = useFeedback();
   const [proof, setProof] = useState<Proof>({ assetId: '', preview: '' });
   const [form, setForm] = useState({ trackingNumber: '', shippingNotes: '' });
@@ -32,11 +32,8 @@ export default function ShippingForm({ order, onOrder, reload }: { order: OrderV
     }
     try {
       setSubmitting(true);
-      const result = shipOnly
-        ? await orderService.submitShipping(order.id, validation.data)
-        : await orderService.confirmPayment(order.id, validation.data);
-      onOrder(result.order);
-      reload();
+      await (shipOnly ? orderService.submitShipping(order.id, validation.data) : orderService.confirmPayment(order.id, validation.data));
+      onChanged();
     } catch (err) {
       notify((err as ApiError).message, 'error');
     } finally {

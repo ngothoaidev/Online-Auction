@@ -11,7 +11,7 @@ import type { OrderView } from '../../types/api';
 import type { Proof } from './ProofField';
 
 /** Buyer, manual channel: receipt + shipping address + phone. */
-export default function PaymentForm({ order, onOrder }: { order: OrderView; onOrder: (order: OrderView) => void }) {
+export default function PaymentForm({ order, onChanged }: { order: OrderView; onChanged: () => void }) {
   const { notify } = useFeedback();
   const [proof, setProof] = useState<Proof>({ assetId: '', preview: '' });
   const [form, setForm] = useState({ shippingAddress: '', buyerPhone: '', notes: '' });
@@ -27,7 +27,8 @@ export default function PaymentForm({ order, onOrder }: { order: OrderView; onOr
     }
     try {
       setSubmitting(true);
-      onOrder((await orderService.submitPayment(order.id, validation.data)).order);
+      await orderService.submitPayment(order.id, validation.data);
+      onChanged();
     } catch (err) {
       notify((err as ApiError).message, 'error');
     } finally {

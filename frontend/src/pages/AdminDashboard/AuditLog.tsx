@@ -1,5 +1,7 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { apiFetch } from '../../services/apiClient';
+import { loadStatus } from '../../services/queries';
 import { Button, EmptyState, Field, Skeleton } from '../../components/ui';
 import type { AuditEntry } from '../../types/api';
 
@@ -16,17 +18,12 @@ function changes(before: Record<string, unknown> | null, after: Record<string, u
 /** Read-only, append-only record of admin actions (who, when, what, why). Entries are never edited. */
 export default function AuditLog() {
   const [type, setType] = useState('');
-  const [state, setState] = useState<{ loading: boolean; error: boolean; items: AuditEntry[] }>({ loading: true, error: false, items: [] });
-
-  const load = useCallback(async () => {
-    try {
-      const r = await apiFetch(`/admin/audit${type ? `?targetType=${type}` : ''}`, { auth: 'required' });
-      setState({ loading: false, error: false, items: r.items });
-    } catch {
-      setState({ loading: false, error: true, items: [] });
-    }
-  }, [type]);
-  useEffect(() => { load(); }, [load]);
+  const query = useQuery({
+    queryKey: ['admin', 'audit', type],
+    queryFn: () => apiFetch<{ items: AuditEntry[] }>(`/admin/audit${type ? `?targetType=${type}` : ''}`, { auth: 'required' }),
+  });
+  const status = loadStatus(query);
+  const state = { loading: status === 'loading', error: status === 'error', items: query.data?.items ?? [] };
 
   return (
     <section aria-labelledby="audit-title" className="space-y-4">
@@ -35,13 +32,13 @@ export default function AuditLog() {
         <p className="text-sm text-(--muted)">Every admin action, newest first. Entries cannot be edited or deleted.</p>
       </div>
       <Field label="Target" className="max-w-xs">
-        <select value={type} onChange={(e) => { setState((s) => ({ ...s, loading: true })); setType(e.target.value); }}>
+        <select value={type} onChange={(e) => setType(e.target.value)}>
           {TYPES.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
         </select>
       </Field>
 
       {state.loading && <div aria-busy="true" className="space-y-2">{[0, 1, 2].map((i) => <Skeleton key={i} className="h-12" />)}</div>}
-      {!state.loading && state.error && <EmptyState title="The audit log could not be loaded" action={<Button onClick={() => { setState((s) => ({ ...s, loading: true })); load(); }}>Try again</Button>} />}
+      {!state.loading && state.error && <EmptyState title="The audit log could not be loaded" action={<Button onClick={() => query.refetch()}>Try again</Button>} />}
       {!state.loading && !state.error && state.items.length === 0 && <EmptyState title="No admin actions recorded yet" />}
       {!state.loading && !state.error && state.items.length > 0 && (
         <div className="overflow-x-auto rounded-(--radius-card) border border-(--line) bg-(--surface)" tabIndex={0} role="region" aria-labelledby="audit-title">

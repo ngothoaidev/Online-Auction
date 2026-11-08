@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useRef } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import auctionService from '../../services/auctionService';
 import { formatBidderName, formatTimeAgo } from '../../utils/format';
@@ -6,6 +6,8 @@ import { formatVnd } from '../../utils/money';
 import { Button, Dialog, EmptyState, StatusBadge } from '../../components/ui';
 import type { ApiError } from '../../services/apiClient';
 import type { PublicBid } from '../../types/api';
+import { useQuery, keepPreviousData } from '@tanstack/react-query';
+import { loadStatus } from '../../services/queries';
 
 const FILTERS = [['all', 'All'], ['mine', 'Mine'], ['recent', 'Last hour']];
 
@@ -16,19 +18,16 @@ export default function BidHistory({ productId, sellerId, refreshKey = 0, active
   const { user } = useAuth() ?? {};
   const me = user?.userId ?? user?.id;
   const [filter, setFilter] = useState('all');
-  const [state, setState] = useState<{ status: 'loading' | 'ready' | 'error'; rows: PublicBid[] }>({ status: 'loading', rows: [] });
-  const [attempt, setAttempt] = useState(0);
   const [reject, setReject] = useState<{ row: PublicBid; pending?: boolean; error?: string } | null>(null);
   const rejectBtn = useRef<HTMLButtonElement>(null);
 
-  useEffect(() => {
-    let cancelled = false;
-    setState((s) => ({ ...s, status: s.rows.length ? 'ready' : 'loading' }));
-    auctionService.getBidHistory(productId, filter)
-      .then((rows) => { if (!cancelled) setState({ status: 'ready', rows: Array.isArray(rows) ? rows : [] }); })
-      .catch(() => { if (!cancelled) setState({ status: 'error', rows: [] }); });
-    return () => { cancelled = true; };
-  }, [productId, filter, user, refreshKey, attempt]);
+  // refreshKey is the lot version from the live stream; `me` changes what "mine" means. Rows stay on screen while they refresh.
+  const query = useQuery({
+    queryKey: ['auction', String(productId), 'bids', filter, me ?? null, refreshKey],
+    queryFn: () => auctionService.getBidHistory(productId, filter),
+    placeholderData: keepPreviousData,
+  });
+  const state = { status: loadStatus(query), rows: (Array.isArray(query.data) ? query.data : []) as PublicBid[] };
 
   const isSeller = me !== undefined && me === Number(sellerId);
 
@@ -60,7 +59,7 @@ export default function BidHistory({ productId, sellerId, refreshKey = 0, active
 
       <div className="mt-4" aria-live="polite" aria-busy={state.status === 'loading'}>
         {state.status === 'loading' && <p className="py-8 text-center text-sm text-(--muted)">Loading bid history…</p>}
-        {state.status === 'error' && <EmptyState title="Bid history could not be loaded" action={<Button variant="secondary" onClick={() => setAttempt((n) => n + 1)}>Try again</Button>} />}
+        {state.status === 'error' && <EmptyState title="Bid history could not be loaded" action={<Button variant="secondary" onClick={() => query.refetch()}>Try again</Button>} />}
         {state.status === 'ready' && state.rows.length === 0 && <EmptyState title="No bids yet">{filter === 'mine' ? 'You have not bid on this lot.' : 'Be the first to bid.'}</EmptyState>}
         {state.status === 'ready' && state.rows.length > 0 && (
           <div className="max-h-[480px] overflow-auto" tabIndex={0} role="region" aria-labelledby="bid-history-title">

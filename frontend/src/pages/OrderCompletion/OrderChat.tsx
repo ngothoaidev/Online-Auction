@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useFeedback } from '../../components/ui/Feedback';
 import orderService from '../../services/orderService';
 import { chatMessageSchema } from '../../schemas/order.schemas';
@@ -15,26 +16,24 @@ const ChatAvatar = ({ user }: { user?: { avatarUrl?: string | null; username?: s
 /** Buyer-seller chat for one order. */
 export default function OrderChat({ orderId, userId, title }: { orderId: number; userId: number | undefined; title: string }) {
   const { notify } = useFeedback();
-  const [messages, setMessages] = useState<OrderMessage[]>([]);
+  const queryClient = useQueryClient();
+  const key = ['order', orderId, 'messages'];
+  const { data } = useQuery({
+    queryKey: key,
+    queryFn: async () => {
+      const r = await orderService.getMessages(orderId);
+      orderService.markMessagesRead(orderId).catch(() => {});
+      return (r.messages || []) as OrderMessage[];
+    },
+  });
+  const messages = data ?? [];
   const [draft, setDraft] = useState('');
   const [sending, setSending] = useState(false);
   const box = useRef<HTMLDivElement>(null);
 
-  const load = async () => {
-    try {
-      const data = await orderService.getMessages(orderId);
-      setMessages(data.messages || []);
-      orderService.markMessagesRead(orderId).catch(() => {});
-    } catch (err) {
-      console.error('Error loading messages:', err);
-    }
-  };
-
-  useEffect(() => { load(); }, [orderId]);
-
   useEffect(() => {
     if (box.current) box.current.scrollTop = box.current.scrollHeight; // newest message in view, inside the chat box only
-  }, [messages]);
+  }, [data]);
 
   const send = async (e: FormEvent) => {
     e.preventDefault();
@@ -48,7 +47,7 @@ export default function OrderChat({ orderId, userId, title }: { orderId: number;
       setSending(true);
       await orderService.sendMessage(orderId, validation.data.message);
       setDraft('');
-      await load();
+      await queryClient.invalidateQueries({ queryKey: key });
     } catch (err) {
       notify((err as ApiError).message || 'Failed to send message', 'error');
     } finally {

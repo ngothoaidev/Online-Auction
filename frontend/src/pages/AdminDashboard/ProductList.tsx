@@ -1,25 +1,23 @@
 import { useFeedback } from '../../components/ui/Feedback';
 import { useState, useEffect, useRef } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { apiFetch } from "../../services/apiClient";
 import { Eye, Trash2, Filter, ChevronDown } from "lucide-react";
 import Pagination from "../../components/Pagination";
 import { formatVnd } from '../../utils/money';
 import type { ApiError } from '../../services/apiClient';
 import type { PriceRange } from "../../components/Filter/types";
-import type { CatalogAuction, CategoryNode } from "../../types/api";
+import type { CatalogAuction } from "../../types/api";
+import { useCategories } from "../../services/queries";
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 export default function ProductList() {
   const { confirm, notify } = useFeedback();
-  const [products, setProducts] = useState<CatalogAuction[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const queryClient = useQueryClient();
   
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [totalItems, setTotalItems] = useState(0);
-  const itemsPerPage = 12;
   // Filters
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [priceRange, setPriceRange] = useState<PriceRange>({ min: "", max: "" });
@@ -28,69 +26,26 @@ export default function ProductList() {
   
   // Dropdown states
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
-  const [categories, setCategories] = useState<CategoryNode[]>([]);
+  const { data: categories = [] } = useCategories();
   const barRef = useRef<HTMLDivElement>(null);
 
-  // Fetch categories
-  useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        const response = await fetch(`${API_URL}/categories`);
-        if (response.ok) {
-          const data = await response.json();
-          setCategories(data || []);
-        }
-      } catch (err) {
-        console.error("Failed to fetch categories:", err);
-      }
-    };
-    fetchCategories();
-  }, []);
-
-  // Fetch products
-  useEffect(() => {
-    const fetchProducts = async () => {
-      setLoading(true);
-      setError(null);
-      
-      try {
-        const params = new URLSearchParams();
-        params.set("page", currentPage.toString());
-        
-        if (selectedCategory) {
-          params.set("category", selectedCategory);
-        }
-        if (priceRange.min) {
-          params.set("minPrice", String(priceRange.min));
-        }
-        if (priceRange.max) {
-          params.set("maxPrice", String(priceRange.max));
-        }
-        if (orderBy && orderBy !== "default") {
-          params.set("sortBy", orderBy);
-        }
-        if (statusFilter && statusFilter !== "all") {
-          params.set("status", statusFilter);
-        }
-        
-        const response = await fetch(`${API_URL}/search?${params.toString()}`);
-        if (!response.ok) throw new Error('Failed to fetch products');
-        
-        const responseData = await response.json();
-        
-        setProducts(responseData.data || []);
-        setTotalPages(responseData.metadata?.totalPages || 1);
-        setTotalItems(responseData.metadata?.totalItems || 0);
-      } catch (err) {
-        console.error("Error fetching products:", err);
-        setError((err as ApiError).message);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchProducts();
-  }, [currentPage, selectedCategory, priceRange, orderBy, statusFilter]);
+  // Products: the public search endpoint with the admin's filters
+  const params = new URLSearchParams({ page: String(currentPage) });
+  if (selectedCategory) params.set("category", selectedCategory);
+  if (priceRange.min) params.set("minPrice", String(priceRange.min));
+  if (priceRange.max) params.set("maxPrice", String(priceRange.max));
+  if (orderBy && orderBy !== "default") params.set("sortBy", orderBy);
+  if (statusFilter && statusFilter !== "all") params.set("status", statusFilter);
+  const productsKey = ['admin', 'products', params.toString()];
+  const productsQuery = useQuery({
+    queryKey: productsKey,
+    queryFn: () => apiFetch<{ data?: CatalogAuction[]; metadata?: { totalPages?: number; totalItems?: number } }>(`/search?${params.toString()}`, { auth: 'none' }),
+  });
+  const products = productsQuery.data?.data ?? [];
+  const totalPages = productsQuery.data?.metadata?.totalPages || 1;
+  const totalItems = productsQuery.data?.metadata?.totalItems || 0;
+  const loading = productsQuery.isFetching && !productsQuery.data;
+  const error = productsQuery.isError ? (productsQuery.error as ApiError).message : null;
 
   // Handle click outside to close dropdowns
   useEffect(() => {
@@ -129,7 +84,7 @@ export default function ProductList() {
       if (!response.ok) throw new Error('Failed to delete product');
       
       // Refresh the list
-      setProducts(products.map(p => (p.id === id ? { ...p, status: 'cancelled' as const } : p)));
+      queryClient.setQueryData<typeof productsQuery.data>(productsKey, (d) => d && { ...d, data: d.data?.map((p) => (p.id === id ? { ...p, status: 'cancelled' as const } : p)) });
     } catch (err) {
       notify((err as ApiError).message || 'Could not cancel the listing', 'error');
     }

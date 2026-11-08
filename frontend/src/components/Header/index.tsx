@@ -13,6 +13,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import './Header.css';
 import type { FormEvent } from 'react';
 import type { CategoryNode } from '../../types/api';
+import { useCategories } from '../../services/queries';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
@@ -27,18 +28,9 @@ export default function Header() {
   const nav = useNav();
   const { user, logout } = useAuth();
   const [searchParams] = useSearchParams();
-  const [categories, setCategories] = useState<CategoryNode[]>([]);
+  const { data: categories = [] } = useCategories();
   const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '');
   const [menu, setMenu] = useState({ open: false, focusSearch: false });
-
-  useEffect(() => {
-    let cancelled = false;
-    fetch(`${API_URL}/categories`)
-      .then((r) => (r.ok ? r.json() : []))
-      .then((data) => { if (!cancelled) setCategories(Array.isArray(data) ? data : []); })
-      .catch(() => {});
-    return () => { cancelled = true; };
-  }, []);
 
   useEffect(() => { setSearchQuery(searchParams.get('q') || ''); }, [searchParams]);
 

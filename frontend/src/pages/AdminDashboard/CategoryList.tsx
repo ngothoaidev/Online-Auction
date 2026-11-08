@@ -1,5 +1,7 @@
 import { useFeedback } from '../../components/ui/Feedback';
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { apiFetch } from "../../services/apiClient";
 import { Plus, Edit2, Trash2, Package, ChevronDown, ChevronRight, FolderPlus } from "lucide-react";
 import { categorySchema } from '../../schemas/admin.schemas';
 import { validateForm } from '../../utils/validation';
@@ -12,9 +14,14 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 export default function CategoryList() {
   const { confirm, notify } = useFeedback();
-  const [categories, setCategories] = useState<AdminCategory[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const queryClient = useQueryClient();
+  // ['categories', 'admin'] sits under ['categories'], so one invalidation also refreshes the public tree (header, filters)
+  const query = useQuery({ queryKey: ['categories', 'admin'], queryFn: () => apiFetch<AdminCategory[]>('/categories/admin', { auth: 'required' }) });
+  const categories = query.data ?? [];
+  const loading = query.isFetching && !query.data;
+  const [actionError, setError] = useState('');
+  const error = actionError || (query.isError ? (query.error as ApiError).message || 'Failed to load categories' : '');
+  const fetchCategories = () => queryClient.invalidateQueries({ queryKey: ['categories'] });
   const [actionLoading, setActionLoading] = useState<number | null>(null);
   const [expandedCategories, setExpandedCategories] = useState<Record<number, boolean>>({});
   
@@ -30,34 +37,6 @@ export default function CategoryList() {
   const [newCategoryDescription, setNewCategoryDescription] = useState('');
   const [modalLoading, setModalLoading] = useState(false);
   const [modalError, setModalError] = useState('');
-
-  const fetchCategories = async () => {
-    setLoading(true);
-    setError('');
-    try {
-      const token = localStorage.getItem('authToken');
-      const response = await fetch(`${API_URL}/categories/admin`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch categories');
-      }
-
-      const data = await response.json();
-      setCategories(data || []);
-    } catch (err) {
-      setError((err as ApiError).message || 'Failed to load categories');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchCategories();
-  }, []);
 
   // Toggle category expansion
   const toggleExpand = (categoryId: number) => {

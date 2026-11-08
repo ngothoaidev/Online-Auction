@@ -1,40 +1,39 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useSearchParams, Link } from 'react-router-dom';
 import { SlidersHorizontal } from 'lucide-react';
 import AuctionCard from '../../components/AuctionCard';
 import Pagination from '../../components/Pagination';
 import FilterPanel from './FilterPanel';
 import { Button, Dialog, EmptyState, Skeleton } from '../../components/ui';
-import { apiFetch, isAbort } from '../../services/apiClient';
+import { apiFetch } from '../../services/apiClient';
 import type { CatalogAuction, CategoryNode } from '../../types/api';
+import { loadStatus, useCategories } from '../../services/queries';
 
 const FILTER_KEYS = ['category', 'minPrice', 'maxPrice', 'sortBy'];
 
 export default function SearchPage() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const [categories, setCategories] = useState<CategoryNode[]>([]);
+  const { data: categories = [] } = useCategories();
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const [state, setState] = useState<{ status: 'loading' | 'ready' | 'error'; items: CatalogAuction[]; totalPages: number; totalItems: number; message?: string }>({ status: 'loading', items: [], totalPages: 1, totalItems: 0 });
-  const [attempt, setAttempt] = useState(0);
 
   const query = searchParams.get('q') || '';
   const category = searchParams.get('category') || '';
   const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10) || 1);
   const paramString = searchParams.toString();
 
-  useEffect(() => {
-    apiFetch('/categories', { auth: 'none' }).then((d) => setCategories(Array.isArray(d) ? d : [])).catch(() => {});
-  }, []);
-
-  // One request per URL state; an older response can never overwrite a newer one (AbortController).
-  useEffect(() => {
-    const controller = new AbortController();
-    setState((s) => ({ ...s, status: 'loading' }));
-    apiFetch(`/search?${paramString}`, { signal: controller.signal })
-      .then((res) => { if (!controller.signal.aborted) setState({ status: 'ready', items: res.data ?? [], totalPages: res.metadata?.totalPages ?? 1, totalItems: res.metadata?.totalItems ?? 0 }); })
-      .catch((error) => { if (!controller.signal.aborted && !isAbort(error)) setState({ status: 'error', items: [], totalPages: 1, totalItems: 0, message: (error as Error).message }); });
-    return () => controller.abort();
-  }, [paramString, attempt]);
+  // One cache entry per URL state: an older response can never overwrite a newer one, and leaving a page aborts its request.
+  const search = useQuery({
+    queryKey: ['search', paramString],
+    queryFn: ({ signal }) => apiFetch<{ data?: CatalogAuction[]; metadata?: { totalPages?: number; totalItems?: number } }>(`/search?${paramString}`, { signal }),
+  });
+  const state = {
+    status: loadStatus(search),
+    items: search.data?.data ?? [],
+    totalPages: search.data?.metadata?.totalPages ?? 1,
+    totalItems: search.data?.metadata?.totalItems ?? 0,
+    message: search.error?.message,
+  };
 
   const apply = useCallback((draft: Record<string, string | undefined>) => {
     const next = new URLSearchParams(searchParams);
@@ -85,7 +84,7 @@ export default function SearchPage() {
             </div>
           )}
           {state.status === 'error' && (
-            <EmptyState title="Search failed" action={<Button onClick={() => setAttempt((n) => n + 1)}>Try again</Button>}>{state.message || 'Please try again.'}</EmptyState>
+            <EmptyState title="Search failed" action={<Button onClick={() => search.refetch()}>Try again</Button>}>{state.message || 'Please try again.'}</EmptyState>
           )}
           {state.status === 'ready' && state.items.length === 0 && (
             <EmptyState title="No lots match" action={<Button variant="secondary" onClick={reset}>Clear filters</Button>}>Try a broader search or remove a filter.</EmptyState>

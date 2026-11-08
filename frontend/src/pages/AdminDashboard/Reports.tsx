@@ -1,6 +1,8 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { apiFetch } from '../../services/apiClient';
+import { loadStatus } from '../../services/queries';
 import { Button, EmptyState, Skeleton, StatusBadge } from '../../components/ui';
 import { useFeedback } from '../../components/ui/Feedback';
 import { formatTimeAgo } from '../../utils/format';
@@ -16,18 +18,14 @@ const TONE: Record<string, Tone> = { open: 'warning', actioned: 'danger', dismis
 export default function Reports() {
   const { confirm, notify } = useFeedback();
   const [status, setStatus] = useState('open');
-  const [state, setState] = useState<{ loading: boolean; error: boolean; items: ReportRow[] }>({ loading: true, error: false, items: [] });
   const [busy, setBusy] = useState<number | null>(null);
 
-  const load = useCallback(async () => {
-    try {
-      const r = await apiFetch(`/admin/reports?status=${status}`, { auth: 'required' });
-      setState({ loading: false, error: false, items: r.items });
-    } catch {
-      setState({ loading: false, error: true, items: [] });
-    }
-  }, [status]);
-  useEffect(() => { load(); }, [load]);
+  const query = useQuery({
+    queryKey: ['admin', 'reports', status],
+    queryFn: () => apiFetch<{ items: ReportRow[] }>(`/admin/reports?status=${status}`, { auth: 'required' }),
+  });
+  const load = loadStatus(query);
+  const state = { loading: load === 'loading', error: load === 'error', items: query.data?.items ?? [] };
 
   const resolve = async (report: ReportRow, action: 'dismiss' | 'cancel_listing') => {
     const cancel = action === 'cancel_listing';
@@ -47,7 +45,7 @@ export default function Reports() {
         method: 'POST', auth: 'required', body: { action, note: decision.reason }, headers: { 'Idempotency-Key': crypto.randomUUID() },
       });
       notify(r.message);
-      await load();
+      await query.refetch();
     } catch (err) {
       notify((err as ApiError).message || 'Could not resolve the report', 'error');
     } finally {
@@ -63,12 +61,12 @@ export default function Reports() {
       </div>
       <div role="group" aria-label="Filter by status" className="flex flex-wrap gap-2">
         {FILTERS.map(([value, label]) => (
-          <Button key={value} size="sm" variant={status === value ? 'primary' : 'secondary'} aria-pressed={status === value} onClick={() => { if (value !== status) { setState((s) => ({ ...s, loading: true })); setStatus(value); } }}>{label}</Button>
+          <Button key={value} size="sm" variant={status === value ? 'primary' : 'secondary'} aria-pressed={status === value} onClick={() => setStatus(value)}>{label}</Button>
         ))}
       </div>
 
       {state.loading && <div aria-busy="true" className="space-y-2">{[0, 1, 2].map((i) => <Skeleton key={i} className="h-14" />)}</div>}
-      {!state.loading && state.error && <EmptyState title="Reports could not be loaded" action={<Button onClick={() => { setState((s) => ({ ...s, loading: true })); load(); }}>Try again</Button>} />}
+      {!state.loading && state.error && <EmptyState title="Reports could not be loaded" action={<Button onClick={() => query.refetch()}>Try again</Button>} />}
       {!state.loading && !state.error && state.items.length === 0 && <EmptyState title="No reports here">Nothing to review for this filter.</EmptyState>}
       {!state.loading && !state.error && state.items.length > 0 && (
         <div className="overflow-x-auto rounded-(--radius-card) border border-(--line) bg-(--surface)" tabIndex={0} role="region" aria-labelledby="reports-title">
