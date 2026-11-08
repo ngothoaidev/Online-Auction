@@ -6,6 +6,7 @@ import orderService from '../../services/orderService';
 import { formatDeadline } from '../../utils/format';
 import { formatVnd } from '../../utils/money';
 import MockPaymentPanel from './MockPaymentPanel';
+import StripePaymentPanel from './StripePaymentPanel';
 import PaymentForm from './PaymentForm';
 import ShippingForm from './ShippingForm';
 import ReceiptPanel from './ReceiptPanel';
@@ -159,9 +160,9 @@ export default function OrderCompletion() {
         {/* Payment mode + deadline: this site never holds money */}
         {status === 'pending_payment' && (
           <div role="note" className="mb-6 rounded-2xl border border-(--line) bg-(--surface-sunken) p-4 text-sm text-(--ink)">
-            {lockedMode === 'mock'
-              ? <p><strong>Mock gateway (demo).</strong> This order is paid through a simulated gateway. No real money moves.</p>
-              : <p>Payment goes directly from the buyer to the seller. This site does not process or hold payments.</p>}
+            {lockedMode === 'mock' && <p><strong>Mock gateway (demo).</strong> This order is paid through a simulated gateway. No real money moves.</p>}
+            {lockedMode === 'stripe' && <p><strong>Stripe test mode.</strong> This order is paid by card on Stripe's checkout page with test cards. No real money moves.</p>}
+            {!lockedMode && <p>Payment goes directly from the buyer to the seller. This site does not process or hold payments.</p>}
           </div>
         )}
 
@@ -191,7 +192,8 @@ export default function OrderCompletion() {
                 <p className="mt-1 text-sm text-(--muted)">An order is paid one way only. You can switch until you submit.</p>
                 <div className="mt-4 grid gap-3 sm:grid-cols-2">
                   {[['manual', 'Pay the seller directly', 'Bank transfer or cash, then upload your receipt here.'],
-                    ['mock', 'Mock gateway (demo)', 'A simulated checkout. No real money moves.']].filter(([id]) => channels.includes(id)).map(([id, label, hint]) => (
+                    ['mock', 'Mock gateway (demo)', 'A simulated checkout. No real money moves.'],
+                    ['stripe', 'Card via Stripe (test mode)', "Stripe's checkout page with a test card. No real money moves."]].filter(([id]) => channels.includes(id)).map(([id, label, hint]) => (
                     <label key={id} className={`flex cursor-pointer gap-3 rounded-(--radius-control) border p-4 ${channel === id ? 'border-(--ink) bg-(--surface-sunken)' : 'border-(--input-border)'}`}>
                       <input type="radio" name="pay-channel" value={id} checked={channel === id} onChange={() => setChannelChoice(id)} className="mt-1" />
                       <span><span className="block font-semibold text-(--ink)">{label}</span><span className="block text-sm text-(--muted)">{hint}</span></span>
@@ -201,6 +203,7 @@ export default function OrderCompletion() {
               </fieldset>
             )}
             {status === 'pending_payment' && isBuyer && channel === 'mock' && <MockPaymentPanel order={order} payment={payment} onChanged={reload} />}
+            {status === 'pending_payment' && isBuyer && channel === 'stripe' && <StripePaymentPanel order={order} payment={payment} onChanged={reload} />}
             {status === 'pending_payment' && isBuyer && channel === 'manual' && <PaymentForm order={order} onChanged={reload} />}
             {status === 'pending_payment' && isSeller && (
               <div className={card}>

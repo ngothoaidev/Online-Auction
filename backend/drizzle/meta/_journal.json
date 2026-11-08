@@ -85,6 +85,13 @@
       "when": 1792616289878,
       "tag": "0011_worker_heartbeats",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1793338586523,
+      "tag": "0012_payment_reference_length",
+      "breakpoints": true
     }
   ]
 }

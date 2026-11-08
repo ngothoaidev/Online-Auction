@@ -12,7 +12,7 @@ buyers in two browsers to see proxy bidding and live price updates.
 
 ![Lot page](docs/images/lot.jpg)
 
-Payments are either a manual receipt upload or a mock gateway. No real money is involved.
+Payments are a manual receipt upload, a mock gateway, or card checkout through Stripe in test mode (card 4242 4242 4242 4242). No real money is involved.
 
 ## Stack
 
@@ -97,6 +97,5 @@ Integration tests only run against a database whose name ends in `_test`.
 
 ## Not done yet
 
-- A real payment provider sandbox
 - Google/Facebook login tested with production credentials
 - SSE fan-out across several API instances

@@ -23,7 +23,7 @@ export function createAttempt() {
 }
 
 /** Signature is checked on the raw bytes BEFORE parsing; returns the normalised event or throws 400. */
-export function verifyEvent(rawBody: Buffer, headers: Record<string, string | string[] | undefined>): PaymentEvent {
+export function verifyEvent(rawBody: Buffer, headers: Record<string, string | string[] | undefined>): PaymentEvent | null {
   const given = Buffer.from(String(headers["x-mock-signature"] ?? ""));
   const expected = Buffer.from(sign(rawBody));
   if (given.length !== expected.length || !crypto.timingSafeEqual(given, expected)) {
