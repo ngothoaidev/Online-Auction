@@ -1,6 +1,7 @@
 // Background worker: settlement, payment reconciliation/expiry/reminders, media cleanup and the outbox dispatcher (notifications). Separate process from the API; it never imports app.ts
 // (no Passport/OAuth needed). Safe to run several copies: every job claims work with row locks.
 import dotenv from "dotenv";
+import * as aiCleanup from './jobs/cleanupAi.ts';
 dotenv.config();
 import * as settlement from "./jobs/settleDue.ts";
 import * as paymentExpiry from "./jobs/expirePayments.ts";
@@ -20,7 +21,7 @@ import type { LogFields } from "./utils/log.ts";
 type JobReport = { due?: { settled?: number; failed?: LogFields[] }; legacy?: { settled?: number; conflicts?: LogFields[] } } | undefined;
 
 const POLL_MS = Number(process.env.WORKER_POLL_MS || 5000);
-const jobs = [settlement, paymentReconcile, paymentExpiry, paymentReminders, mediaCleanup, outbox];
+const jobs = [settlement, paymentReconcile, paymentExpiry, paymentReminders, mediaCleanup, aiCleanup, outbox];
 let stopping = false;
 let inflight = Promise.resolve();
 let lastBeat = Date.now();

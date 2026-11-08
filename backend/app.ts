@@ -1,4 +1,5 @@
 import express from "express";
+import aiRoute from './routes/ai.ts';
 import { STATUS_CODES } from "node:http";
 import cors from "cors";
 import helmet from "helmet";
@@ -84,6 +85,7 @@ app.use(authenticate);
 app.use('/media/public', servePublicMedia());
 app.use('/system', systemRoute);
 app.use('/auction', auctionRoute);
+app.use('/ai', aiRoute);
 app.use('/auth', authRoute);
 app.use('/categories', categoryRoute);
 app.use('/search', searchRoute);
