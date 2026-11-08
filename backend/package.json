@@ -3,6 +3,10 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
+    "ai:preflight": "node scripts/ai-preflight.ts",
+    "ai:score": "node scripts/ai-score.ts",
+    "ai:eval-fixtures": "node scripts/ai-eval-fixtures.ts",
+    "ai:evaluate": "node scripts/ai-evaluate.ts",
     "test": "node --test --test-concurrency=1 \"tests/**/*.test.ts\"",
     "start": "node server.ts",
     "start:render": "npm run db:migrate && (node worker.ts & node server.ts)",
@@ -38,6 +42,7 @@
     "passport-google-oauth20": "^2.0.0",
     "postgres": "^3.4.4",
     "sanitize-html": "^2.18.0",
+    "sharp": "^0.35.5",
     "stripe": "^23.0.0",
     "zod": "^3.22.4"
   },

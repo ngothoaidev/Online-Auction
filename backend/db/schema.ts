@@ -1,6 +1,24 @@
 import { pgTable, serial, varchar, text, decimal, timestamp, boolean, integer, pgEnum, date, primaryKey, foreignKey, index, bigint, jsonb, uuid, uniqueIndex } from "drizzle-orm/pg-core";
 import { relations, sql } from "drizzle-orm";
 
+// AI beta accounting uses integer cents and UTC dates. Results expire; key/hash tombstones remain.
+export const aiBudget = pgTable('ai_beta_budget', {
+  id: integer('id').primaryKey(), limitCents: integer('limit_cents').notNull(), reservedCents: integer('reserved_cents').notNull().default(0),
+});
+export const aiDailyQuota = pgTable('ai_daily_quota', {
+  userId: integer('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  day: date('day').notNull(), used: integer('used').notNull().default(0),
+}, t => [primaryKey({ columns: [t.userId, t.day] })]);
+export const aiDraftRequests = pgTable('ai_draft_requests', {
+  id: uuid('id').primaryKey(), userId: integer('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  key: varchar('idempotency_key', { length: 100 }).notNull(), inputHash: varchar('input_hash', { length: 64 }).notNull(),
+  status: varchar('status', { length: 20 }).notNull(), model: text('model').notNull(), promptVersion: text('prompt_version').notNull(),
+  result: jsonb('result'), usage: jsonb('usage'), errorCode: text('error_code'), sentAt: timestamp('sent_at', { withTimezone: true }),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(), leaseUntil: timestamp('lease_until', { withTimezone: true }).notNull(),
+  applied: boolean('applied').notNull().default(false), undone: boolean('undone').notNull().default(false), published: boolean('published').notNull().default(false),
+}, t => [uniqueIndex('ai_draft_owner_key').on(t.userId, t.key), index('ai_draft_active').on(t.status, t.leaseUntil)]);
+
 // --- ENUMS ---
 export const userRoleEnum = pgEnum('user_role', ['unauthorized', 'buyer', 'seller', 'admin']);
 export const userStatusEnum = pgEnum('user_status', ['active', 'banned']);
