@@ -7,6 +7,8 @@ notifications. Built with React, Express and PostgreSQL.
 
 **Live demo:** https://online-auction-1-a3t4.onrender.com (free Render tier, the first load after idle takes about a minute)
 
+**API reference:** https://online-auction-1-a3t4.onrender.com/api-docs.html (OpenAPI 3.1, try requests against the live API)
+
 Log in as `demo_buyer1`, `demo_buyer2` or `demo_seller` with password `Passw0rd!demo`. Open the same lot as two
 buyers in two browsers to see proxy bidding and live price updates.
 

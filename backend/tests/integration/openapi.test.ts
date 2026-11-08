@@ -29,7 +29,7 @@ test("openapi.json is a well-formed OpenAPI 3.1 document: every path parameter i
 });
 
 test("every documented GET path is a real route (not the catch-all 404)", async () => {
-  for (const path of Object.keys(spec.paths)) {
+  for (const path of Object.keys(spec.paths).filter((p) => spec.paths[p].get)) {
     const url = `${t.base}${path.replace(/\{\w+\}/g, "1")}${path === "/users/profile" ? "?username=nobody" : ""}`;
     const ac = new AbortController();
     const res = await fetch(url, { signal: ac.signal }); // resolves on headers, so the SSE path does not hang

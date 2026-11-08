@@ -1,7 +1,7 @@
 # API reference
 
 Base URL (local): `http://localhost:3000`. JSON in and out unless stated.
-The public read endpoints are also published as OpenAPI 3.1 at `/openapi.json` on the SPA host (`frontend/public/openapi.json`, checked against the real routes by `backend/tests/integration/openapi.test.js`).
+The public read endpoints, sign-in and bidding are also published as OpenAPI 3.1 at `/openapi.json` on the SPA host, with an interactive reference at `/api-docs.html` (`frontend/public/`, checked against the real routes by `backend/tests/integration/openapi.test.ts`).
 
 ## Conventions
 

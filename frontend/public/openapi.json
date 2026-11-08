@@ -1,10 +1,10 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "Aurum Auctions public API",
+    "title": "Aurum Auctions API",
     "version": "1.0.0",
-    "summary": "Read-only catalog of an online auction for collectibles.",
-    "description": "Public, unauthenticated read endpoints: categories, search, lot details, bid history, public profiles and reviews. Money values are strings of integer VND. Every error is JSON: { code, message, requestId, details? }. Authenticated commands (bidding, listings, orders) are not part of this public spec."
+    "summary": "Catalog reads plus sign-in and bidding for an online auction of collectibles.",
+    "description": "Public read endpoints (categories, search, lots, bid history, profiles, reviews) and the main signed-in flow: sign in, read the session user, place a bid. Money values are strings of integer VND. Every error is JSON: { code, message, requestId, details? }. Demo login: demo_buyer1 / Passw0rd!demo. The full route list is in docs/api.md."
   },
   "servers": [
     { "url": "https://online-auction-uf4s.onrender.com", "description": "Production" },
@@ -14,9 +14,79 @@
     { "name": "catalog" },
     { "name": "lots" },
     { "name": "people" },
-    { "name": "health" }
+    { "name": "health" },
+    { "name": "auth" },
+    { "name": "bidding" }
   ],
   "paths": {
+    "/auth/login": {
+      "post": {
+        "tags": ["auth"],
+        "operationId": "login",
+        "summary": "Sign in with username or email",
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": {
+            "schema": { "type": "object", "required": ["identifier", "password"], "properties": { "identifier": { "type": "string" }, "password": { "type": "string" } } },
+            "example": { "identifier": "demo_buyer1", "password": "Passw0rd!demo" }
+          } }
+        },
+        "responses": {
+          "200": { "description": "Token and session user", "content": { "application/json": { "schema": { "type": "object", "properties": { "token": { "type": "string" }, "user": { "$ref": "#/components/schemas/SessionUser" } } } } } },
+          "400": { "$ref": "#/components/responses/Error" },
+          "401": { "$ref": "#/components/responses/Error" },
+          "429": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/auth/me": {
+      "get": {
+        "tags": ["auth"],
+        "operationId": "getSessionUser",
+        "summary": "The signed-in user (same shape as login's user)",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": { "description": "Session user", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SessionUser" } } } },
+          "401": { "$ref": "#/components/responses/Error" },
+          "403": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/auction/{id}/bid": {
+      "post": {
+        "tags": ["bidding"],
+        "operationId": "placeBid",
+        "summary": "Place or raise a private maximum (proxy bidding)",
+        "description": "`amount` is your maximum; the visible price only rises as far as needed to lead. `outbid` is a 200: the bid was accepted but another maximum is higher. Needs a verified account that does not own the lot. Refusals carry a stable code, e.g. BID_TOO_LOW with details.minimumNextBid, AUCTION_ENDED.",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/LotId" }, { "$ref": "#/components/parameters/IdempotencyKey" }],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": {
+            "schema": { "type": "object", "required": ["amount"], "properties": { "amount": { "type": "string", "pattern": "^[0-9]{1,15}$" } } },
+            "example": { "amount": "2000000" }
+          } }
+        },
+        "responses": {
+          "200": { "description": "Bid accepted", "content": { "application/json": { "schema": { "type": "object", "properties": {
+            "outcome": { "type": "string", "enum": ["success", "updated", "outbid"] },
+            "isLeading": { "type": "boolean" },
+            "yourMaximum": { "type": "string" },
+            "currentPrice": { "type": "string" },
+            "minimumNextBid": { "type": "string" },
+            "version": { "type": "integer" },
+            "endTime": { "type": "string", "format": "date-time" },
+            "serverTime": { "type": "string", "format": "date-time" }
+          } } } } },
+          "400": { "$ref": "#/components/responses/Error" },
+          "401": { "$ref": "#/components/responses/Error" },
+          "403": { "$ref": "#/components/responses/Error" },
+          "404": { "$ref": "#/components/responses/Error" },
+          "409": { "$ref": "#/components/responses/Error" },
+          "429": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
     "/categories": {
       "get": {
         "tags": ["catalog"],
@@ -204,10 +274,28 @@
     }
   },
   "components": {
+    "securitySchemes": {
+      "bearerAuth": { "type": "http", "scheme": "bearer", "bearerFormat": "JWT", "description": "The token from POST /auth/login" }
+    },
     "parameters": {
-      "LotId": { "name": "id", "in": "path", "required": true, "description": "Lot (auction) id", "schema": { "type": "integer", "minimum": 1 } }
+      "LotId": { "name": "id", "in": "path", "required": true, "description": "Lot (auction) id", "schema": { "type": "integer", "minimum": 1 } },
+      "IdempotencyKey": { "name": "Idempotency-Key", "in": "header", "description": "Retry-safe key (8-100 of [A-Za-z0-9._:-]); the same key and body replays the stored result", "schema": { "type": "string", "minLength": 8, "maxLength": 100 } }
     },
     "schemas": {
+      "SessionUser": {
+        "type": "object",
+        "required": ["userId", "username", "email", "role"],
+        "properties": {
+          "userId": { "type": "integer" },
+          "username": { "type": "string" },
+          "email": { "type": "string", "format": "email" },
+          "fullName": { "type": ["string", "null"] },
+          "role": { "type": "string", "enum": ["unauthorized", "buyer", "seller", "admin"] },
+          "status": { "type": "string" },
+          "isVerified": { "type": "boolean" },
+          "imgUrl": { "type": ["string", "null"] }
+        }
+      },
       "Category": {
         "type": "object",
         "properties": {
