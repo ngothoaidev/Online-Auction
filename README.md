@@ -87,7 +87,11 @@ npm ci
 npm run dev        # http://localhost:5173
 ```
 
-## Tests
+## AI listing assistant (disabled by default)
+
+Sellers can generate optional English/Vietnamese drafts from selected photos and notes, review evidence/questions, and apply or undo fields before publishing. The backend supports Amazon Bedrock Nova Lite with a permanent $5 beta reservation ledger. No AWS inference runs until explicitly configured and enabled. Setup, credit/model preflight, API and evaluation gates: [docs/ai-listing.md](docs/ai-listing.md).
+
+## Test commands
 
 ```bash
 cd backend && npm run lint && npm run test:unit && npm run test:integration   # needs the db container
