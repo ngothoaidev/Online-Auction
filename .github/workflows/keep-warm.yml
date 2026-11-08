@@ -1,0 +1,13 @@
+# Render's free web service sleeps after ~15 idle minutes; ping it so the live demo answers at once.
+# GitHub may delay scheduled runs by a few minutes, which is fine here.
+name: keep-warm
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - run: curl -fsS --max-time 90 --retry 2 https://online-auction-uf4s.onrender.com/health/live

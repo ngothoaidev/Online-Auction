@@ -9,6 +9,7 @@ import { AuthProvider } from './contexts/AuthContext';
 import { FeedbackProvider } from './components/ui/Feedback';
 import { WatchlistProvider } from './contexts/WatchlistContext';
 import ScrollToTop from './components/ScrollToTop'
+import ServerWakeNotice from './components/ServerWakeNotice';
 import App from './App'
 import AppErrorBoundary from './components/AppErrorBoundary';
 import './styles/main.css';
@@ -20,6 +21,7 @@ createRoot(document.getElementById('root')!).render(
     <QueryClientProvider client={queryClient}>
     <BrowserRouter>
       <ScrollToTop />
+      <ServerWakeNotice />
       <ThemeProvider>
         <AuthProvider>
 
