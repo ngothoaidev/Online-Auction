@@ -10,6 +10,7 @@ import { FeedbackProvider } from './components/ui/Feedback';
 import { WatchlistProvider } from './contexts/WatchlistContext';
 import ScrollToTop from './components/ScrollToTop'
 import App from './App'
+import AppErrorBoundary from './components/AppErrorBoundary';
 import './styles/main.css';
 
 installSessionGuard();
@@ -24,7 +25,7 @@ createRoot(document.getElementById('root')!).render(
 
           <FeedbackProvider>
           <WatchlistProvider>
-            <App />
+            <AppErrorBoundary><App /></AppErrorBoundary>
 
           </WatchlistProvider>
           </FeedbackProvider>
