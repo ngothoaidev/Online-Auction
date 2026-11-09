@@ -6,7 +6,7 @@ import { draftOutput } from '../validation/ai.ts';
 type Sample = { id: string; locale: 'en' | 'vi'; notes: string; images: string[]; expectedFacts: string[]; unknowns: string[]; acceptableCategoryIds: number[]; tokenEnv?: string };
 const [manifestPath, outputPath] = process.argv.slice(2);
 if (!manifestPath || !outputPath) throw new Error('Usage: AI_EVAL_TOKEN=... AI_EVAL_URL=http://localhost:3000 node scripts/ai-evaluate.ts manifest.json storage/ai-evaluation/report.json');
-if (!process.argv.includes('--allow-metered-calls')) throw new Error('Evaluation consumes the approved $5 credit budget. Add --allow-metered-calls only after preflight.');
+if (!process.argv.includes('--allow-metered-calls')) throw new Error('Evaluation consumes the selected provider beta budget. Add --allow-metered-calls only after that provider preflight.');
 const base = new URL(process.env.AI_EVAL_URL || 'http://localhost:3000');
 if (base.protocol !== 'https:' && !['localhost', '127.0.0.1'].includes(base.hostname)) throw new Error('Use HTTPS outside localhost.');
 if (!process.env.AI_EVAL_TOKEN) throw new Error('AI_EVAL_TOKEN is required, never commit it.');

@@ -13,6 +13,7 @@ export const aiDraftRequests = pgTable('ai_draft_requests', {
   id: uuid('id').primaryKey(), userId: integer('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   key: varchar('idempotency_key', { length: 100 }).notNull(), inputHash: varchar('input_hash', { length: 64 }).notNull(),
   status: varchar('status', { length: 20 }).notNull(), model: text('model').notNull(), promptVersion: text('prompt_version').notNull(),
+  provider: text('provider').notNull().default('legacy'), budgetId: integer('budget_id').notNull().default(1),
   result: jsonb('result'), usage: jsonb('usage'), errorCode: text('error_code'), sentAt: timestamp('sent_at', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(), leaseUntil: timestamp('lease_until', { withTimezone: true }).notNull(),

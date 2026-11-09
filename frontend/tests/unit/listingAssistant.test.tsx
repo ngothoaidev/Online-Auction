@@ -15,6 +15,12 @@ function Harness() {
 }
 beforeEach(() => { vi.clearAllMocks(); getCapabilities.mockResolvedValue({ enabled: true, dailyRemaining: 5 }); generateDraft.mockResolvedValue(draft); });
 describe('AI listing assistant', () => {
+  it('names ShopAIKey in the consent before sending photos or notes', async () => {
+    getCapabilities.mockResolvedValue({ enabled: true, dailyRemaining: 5, providerLabel: 'ShopAIKey' });
+    render(<Harness />);
+    expect(await screen.findByText(/Generate sends the selected photos and notes to ShopAIKey/)).toBeVisible();
+    expect(generateDraft).not.toHaveBeenCalled();
+  });
   it('does not call provider until Generate; reviews replacements and protects undo after manual edits', async () => {
     render(<Harness />);
     await screen.findByRole('button', { name: 'Generate draft' });

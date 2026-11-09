@@ -3,6 +3,8 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
+    "ai:shopaikey-models": "node scripts/ai-shopaikey-models.ts",
+    "ai:shopaikey-preflight": "node scripts/ai-shopaikey-preflight.ts",
     "ai:preflight": "node scripts/ai-preflight.ts",
     "ai:score": "node scripts/ai-score.ts",
     "ai:eval-fixtures": "node scripts/ai-eval-fixtures.ts",

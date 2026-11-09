@@ -89,7 +89,7 @@ npm run dev        # http://localhost:5173
 
 ## AI listing assistant (disabled by default)
 
-Sellers can generate optional English/Vietnamese drafts from selected photos and notes, review evidence/questions, and apply or undo fields before publishing. The backend supports Amazon Bedrock Nova Lite with a permanent $5 beta reservation ledger. No AWS inference runs until explicitly configured and enabled. Setup, credit/model preflight, API and evaluation gates: [docs/ai-listing.md](docs/ai-listing.md).
+Sellers can generate optional English/Vietnamese drafts from selected photos and notes, review evidence/questions, and apply or undo fields before publishing. The backend supports Amazon Bedrock Nova Lite ($5 permanent beta ledger) or a configurable ShopAIKey vision model (separate $3 maximum ledger). No AWS inference runs until explicitly configured and enabled. Setup, credit/model preflight, API and evaluation gates: [docs/ai-listing.md](docs/ai-listing.md).
 
 ## Test commands
 

@@ -59,7 +59,7 @@ export default function ListingAssistant({ photos, values, onApply, onDraftUsed,
       </label>)}</div>
       <label className="mt-3 block">Seller notes<textarea aria-label="Seller notes" maxLength={2000} value={notes} onChange={e => setNotes(e.target.value)} className="mt-1 block min-h-24 w-full rounded border border-(--line) bg-(--surface) p-3" placeholder="Known condition, defects, accessories and provenance…" /></label>
       <label className="mt-3 block">Draft language <select aria-label="Draft language" value={locale} onChange={e => setLocale(e.target.value)} className="ml-2 rounded border border-(--line) bg-(--surface) p-2"><option value="en">English</option><option value="vi">Tiếng Việt</option></select></label>
-      <p className="my-3 text-sm">Generate sends the selected photos and notes to Amazon Bedrock. No request is sent until you click. {caps.data?.dailyRemaining ?? 0} calls remaining today.</p>
+      <p className="my-3 text-sm">Generate sends the selected photos and notes to {caps.data?.providerLabel || 'the AI service'}. No request is sent until you click. {caps.data?.dailyRemaining ?? 0} calls remaining today.</p>
       <Button type="button" onClick={() => { setNotice(''); mutation.mutate(); }} disabled={mutation.isPending || selected.length < 1 || selected.length > 3}>{mutation.isPending ? 'Generating draft…' : 'Generate draft'}</Button>
     </fieldset>
     {mutation.isError && <p role="alert" className="mt-3 text-(--danger)">{mutation.error.message} Your listing form is unchanged.</p>}

@@ -5,6 +5,7 @@ import fs from 'node:fs/promises';
 import { startApp } from '../helpers/app.ts';
 import type { TestApp } from '../helpers/app.ts';
 import { aiTempDir } from '../../services/aiImages.ts';
+import { configureShop } from '../helpers/shopaikey.ts';
 let app: TestApp, seller: number, other: number, token: string, otherToken: string, buyerToken: string, unverifiedToken: string, image: Buffer;
 before(async () => {
   app = await startApp({ AI_LISTING_ENABLED: 'true', AI_PROVIDER: 'fake', AI_BETA_SELLER_IDS: '1,2', AI_TEST_RATE_LIMIT: '1000' });
@@ -21,6 +22,63 @@ beforeEach(async () => {
   Object.assign(process.env, { AI_PROVIDER: 'fake', AI_LISTING_ENABLED: 'true', AI_DAILY_LIMIT: '5', AI_FAKE_MODE: '', AI_FAKE_DELAY_MS: '0', AI_TIMEOUT_MS: '25000', AI_BETA_BUDGET_USD: '5', NODE_ENV: 'test' });
 });
 after(async () => { await app.stop(); });
+test('ShopAIKey uses an independent persistent budget, replays once and never invents token usage', async () => {
+  await app.sql`INSERT INTO ai_beta_budget (id,limit_cents,reserved_cents) VALUES (1,500,500)`;
+  configureShop();
+  const original = globalThis.fetch;
+  let calls = 0;
+  globalThis.fetch = async (url, init) => {
+    if (String(url) !== 'https://api.shopaikey.com/v1/chat/completions') return original(url, init);
+    calls++;
+    return Response.json({ choices: [{ finish_reason: 'stop', message: { content: JSON.stringify({ draft: { title: 'Item', descriptionText: 'Seller reports scratches.', categoryId: null }, facts: [], questions: [], warnings: [] }) } }] });
+  };
+  try {
+    const key = crypto.randomUUID();
+    const first = await send({ key }); assert.equal(first.status, 200, JSON.stringify(first.body));
+    assert.deepEqual(await send({ key }), first); assert.equal(calls, 1);
+    const budgets = await app.sql`SELECT * FROM ai_beta_budget ORDER BY id`;
+    assert.equal(budgets[0].reserved_cents, 500); assert.equal(budgets[1].reserved_cents, 5); assert.equal(budgets[1].limit_cents, 300);
+    const [row] = await app.sql`SELECT provider,budget_id,usage FROM ai_draft_requests`;
+    assert.equal(row.provider, 'shopaikey'); assert.equal(row.budget_id, 2); assert.equal(row.usage, null);
+    assert.equal((await app.call('GET', '/ai/listing-capabilities', { token })).body.providerLabel, 'ShopAIKey');
+    process.env.AI_PROVIDER = 'fake'; assert.equal((await send({ key })).status, 409);
+  } finally { globalThis.fetch = original; }
+});
+test('ShopAIKey provider rejection retains reservation and replay never sends again', async () => {
+  configureShop(); const original = globalThis.fetch; let calls = 0;
+  globalThis.fetch = async (url, init) => {
+    if (String(url) !== 'https://api.shopaikey.com/v1/chat/completions') return original(url, init);
+    calls++; return new Response('sensitive provider body', { status: 402 });
+  };
+  try {
+    const key = crypto.randomUUID(); const first = await send({ key });
+    assert.equal(first.body.code, 'AI_PROVIDER_BALANCE'); assert.doesNotMatch(JSON.stringify(first), /sensitive provider/);
+    assert.equal((await send({ key })).status, 503); assert.equal(calls, 1);
+    assert.equal((await app.sql`SELECT reserved_cents FROM ai_beta_budget WHERE id=2`)[0].reserved_cents, 5);
+  } finally { globalThis.fetch = original; }
+});
+test('ShopAIKey shares global slots with other providers and serializes its final budget reservation', async () => {
+  configureShop(); process.env.AI_MAX_CONCURRENCY = '1';
+  const original = globalThis.fetch;
+  let entered!: () => void, release!: () => void;
+  const started = new Promise<void>(resolve => { entered = resolve; });
+  const held = new Promise<void>(resolve => { release = resolve; });
+  globalThis.fetch = async (url, init) => {
+    if (String(url) !== 'https://api.shopaikey.com/v1/chat/completions') return original(url, init);
+    entered(); await held; return new Response('', { status: 429 });
+  };
+  try {
+    const pending = send(); await started;
+    process.env.AI_PROVIDER = 'fake';
+    assert.equal((await send({ who: otherToken })).body.code, 'AI_BUSY');
+    release(); await pending;
+    configureShop(); process.env.AI_MAX_CONCURRENCY = '2';
+    await app.sql`UPDATE ai_beta_budget SET reserved_cents=295 WHERE id=2`;
+    const results = await Promise.all([send(), send({ who: otherToken })]);
+    assert.deepEqual(results.map(r => r.body.code).sort(), ['AI_BUDGET_EXHAUSTED', 'AI_PROVIDER_RATE_LIMITED'].sort());
+    assert.equal((await app.sql`SELECT reserved_cents FROM ai_beta_budget WHERE id=2`)[0].reserved_cents, 300);
+  } finally { release(); globalThis.fetch = original; process.env.AI_MAX_CONCURRENCY = '2'; }
+});
 const send = async ({ key = crypto.randomUUID(), who = token, photo = image, notes = 'Used, scratches on bracelet', locale = 'en', photos = 1 } = {}) => {
   const fd = new FormData(); fd.append('notes', notes); fd.append('locale', locale);
   for (let i = 0; i < photos; i++) fd.append('images', new Blob([new Uint8Array(photo)], { type: 'image/png' }), 'item.png');

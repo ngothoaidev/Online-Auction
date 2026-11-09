@@ -5,7 +5,7 @@ export type ListingDraft = {
   facts: { text: string; source: 'seller' | 'image'; imageIndex?: number }[];
   questions: string[]; warnings: string[];
 };
-export type Capabilities = { enabled: boolean; reason: string | null; dailyRemaining: number; maxImages: number; locales: string[] };
+export type Capabilities = { providerLabel?: string; enabled: boolean; reason: string | null; dailyRemaining: number; maxImages: number; locales: string[] };
 type Processing = { requestId: string; status: 'processing'; statusUrl: string };
 export const getCapabilities = () => apiFetch<Capabilities>('/ai/listing-capabilities', { auth: 'required' });
 export async function generateDraft(files: File[], notes: string, locale: string, key: string, signal: AbortSignal) {
