@@ -102,8 +102,18 @@ export async function generateDraft(userId: number, key: string, input: DraftInp
     const shop = c.provider === 'shopaikey' ? shopaikeyConfig() : null;
     const inputRate = shop?.inputRate ?? Number(process.env.AI_INPUT_USD_PER_MILLION), outputRate = shop?.outputRate ?? Number(process.env.AI_OUTPUT_USD_PER_MILLION);
     const estimatedCostUsd = result.usage && [inputRate, outputRate].every(n => Number.isFinite(n) && n > 0) ? (result.usage.inputTokens * inputRate + result.usage.outputTokens * outputRate) / 1000000 + (shop ? shop.imageFee * images.length + shop.requestFee : 0) : null;
-    const usage = result.usage ? { ...result.usage, estimatedCostUsd } : null;
-    await db.execute(sql`UPDATE ai_draft_requests SET status='succeeded',result=${JSON.stringify(body)}::jsonb,usage=${JSON.stringify(usage)}::jsonb WHERE id=${id} AND status='running'`);
+    // Successful ShopAIKey responses with bounded usage settle at the reviewed effective rates,
+    // rounded up to a whole cent. Unknown usage/errors keep the entire original reservation.
+    const chargedCents = shop && estimatedCostUsd !== null && Number.isFinite(estimatedCostUsd) && estimatedCostUsd >= 0
+      ? Math.min(c.reserveCents, Math.max(1, Math.ceil(estimatedCostUsd * 100))) : c.reserveCents;
+    const refundCents = c.reserveCents - chargedCents;
+    const usage = result.usage ? { ...result.usage, estimatedCostUsd, ...(shop ? { reservedCents: c.reserveCents, chargedCents } : {}) } : null;
+    await db.transaction(async tx => {
+      if (refundCents > 0) await tx.execute(sql`SELECT id FROM ai_beta_budget WHERE id=${c.budgetId} FOR UPDATE`);
+      const completed = await tx.execute(sql`UPDATE ai_draft_requests SET status='succeeded',result=${JSON.stringify(body)}::jsonb,usage=${JSON.stringify(usage)}::jsonb WHERE id=${id} AND status='running' RETURNING id`);
+      // The status transition and release commit together; replay and expired requests cannot release twice.
+      if (refundCents > 0 && completed.length) await tx.execute(sql`UPDATE ai_beta_budget SET reserved_cents=reserved_cents-${refundCents} WHERE id=${c.budgetId}`);
+    });
     inc('ai_listing_calls_total', { outcome: 'succeeded', provider: c.provider });
     if (result.usage) {
       inc('ai_listing_tokens_total', { kind: 'input', provider: c.provider }, result.usage.inputTokens);

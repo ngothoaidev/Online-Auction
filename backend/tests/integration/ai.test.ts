@@ -57,6 +57,49 @@ test('ShopAIKey provider rejection retains reservation and replay never sends ag
     assert.equal((await app.sql`SELECT reserved_cents FROM ai_beta_budget WHERE id=2`)[0].reserved_cents, 5);
   } finally { globalThis.fetch = original; }
 });
+
+test('ShopAIKey settles successful bounded usage once, rounding up, without changing other budgets or daily quota', async () => {
+  configureShop();
+  await app.sql`INSERT INTO ai_beta_budget (id,limit_cents,reserved_cents) VALUES (1,500,300)`;
+  const original = globalThis.fetch; let calls = 0;
+  globalThis.fetch = async (url, init) => {
+    if (String(url) !== 'https://api.shopaikey.com/v1/chat/completions') return original(url, init);
+    calls++;
+    return Response.json({ choices: [{ finish_reason: 'stop', message: { content: JSON.stringify({ draft: { title: 'Item', descriptionText: 'Seller reports scratches.', categoryId: null }, facts: [], questions: [], warnings: [] }) } }], usage: { prompt_tokens: 1000, completion_tokens: 200 } });
+  };
+  try {
+    const key = crypto.randomUUID();
+    const first = await send({ key }); assert.equal(first.status, 200, JSON.stringify(first.body));
+    assert.deepEqual(await send({ key }), first); assert.equal(calls, 1);
+    const budgets = await app.sql`SELECT * FROM ai_beta_budget ORDER BY id`;
+    assert.equal(budgets[0].reserved_cents, 300); assert.equal(budgets[1].reserved_cents, 1);
+    const [row] = await app.sql`SELECT usage FROM ai_draft_requests`;
+    assert.equal(row.usage.reservedCents, 5); assert.equal(row.usage.chargedCents, 1);
+    assert.equal((await app.sql`SELECT used FROM ai_daily_quota`)[0].used, 1);
+    assert.equal((await send()).status, 200);
+    assert.equal((await app.sql`SELECT reserved_cents FROM ai_beta_budget WHERE id=2`)[0].reserved_cents, 2);
+  } finally { globalThis.fetch = original; }
+});
+
+test('ShopAIKey does not release a reservation after an in-flight request expires', async () => {
+  configureShop(); const original = globalThis.fetch;
+  let entered!: () => void, release!: () => void;
+  const started = new Promise<void>(resolve => { entered = resolve; });
+  const held = new Promise<void>(resolve => { release = resolve; });
+  globalThis.fetch = async (url, init) => {
+    if (String(url) !== 'https://api.shopaikey.com/v1/chat/completions') return original(url, init);
+    entered(); await held;
+    return Response.json({ choices: [{ finish_reason: 'stop', message: { content: JSON.stringify({ draft: { title: 'Item', descriptionText: 'Seller reports scratches.', categoryId: null }, facts: [], questions: [], warnings: [] }) } }], usage: { prompt_tokens: 1000, completion_tokens: 200 } });
+  };
+  try {
+    const pending = send(); await started;
+    const [row] = await app.sql`UPDATE ai_draft_requests SET lease_until=now()-interval '1 second' RETURNING id`;
+    assert.equal((await app.call('GET', `/ai/listing-draft/${row.id}`, { token })).status, 504);
+    release(); await pending;
+    assert.equal((await app.sql`SELECT reserved_cents FROM ai_beta_budget WHERE id=2`)[0].reserved_cents, 5);
+    assert.equal((await app.sql`SELECT status FROM ai_draft_requests`)[0].status, 'unknown');
+  } finally { release(); globalThis.fetch = original; }
+});
 test('ShopAIKey shares global slots with other providers and serializes its final budget reservation', async () => {
   configureShop(); process.env.AI_MAX_CONCURRENCY = '1';
   const original = globalThis.fetch;
