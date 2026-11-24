@@ -59,6 +59,10 @@ jobs:
       FRONTEND_URL: http://localhost:5173
       EMAIL_TRANSPORT: local
       PAYMENT_ADAPTER: mock
+      AI_LISTING_ENABLED: "true"
+      AI_PROVIDER: fake
+      AI_BETA_SELLER_IDS: "2"
+      AI_E2E: "1"
       AUTH_RATE_LIMIT_MAX: "10000"
       BID_RATE_LIMIT_MAX: "10000"
       UPLOAD_RATE_LIMIT_MAX: "10000"

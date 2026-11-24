@@ -1,0 +1,84 @@
+# AI listing assistant: operation and verification
+
+The assistant drafts titles, descriptions and categories from 1–3 selected images and seller notes. It never creates auctions, sets prices, authenticates collectibles or publishes anything. English/Vietnamese output is selected by the seller. Applying a draft is explicit, reversible per field until manually edited, and does not alter auction rules. Changing photos, notes or language makes the draft stale. Manual publishing remains available when AI fails.
+
+## Architecture
+
+Render API → Amazon Bedrock Converse, no new cloud compute/storage. Nova Lite v1 (`amazon.nova-lite-v1:0`) in `us-east-1`, max 2048 output tokens, temperature 0.1, one invocation, 25 second timeout. No automatic provider retries or model/region fallback. The Node adapter uses HTTPS bearer authentication, not root credentials. JSON output is runtime-validated, including evidence image indexes and category membership; validation does not establish factual correctness.
+
+The upload pipeline stores multipart files in a private temporary directory, checks signatures, decodes with sharp (16 MP limit, static JPEG/PNG/WebP only), strips metadata and resizes to 1024 pixels. Temporary files are removed on completion/error; worker removes abandoned files after an hour. Draft uploads do not use Cloudinary or change the existing publish upload path.
+
+Migration `0013_ai_listing.sql` adds request records, UTC per-user/day quota and a permanent beta budget ledger. No existing auctions or order records are modified. Migrations run through the normal `db:migrate`/`start:render` entry points.
+
+## API
+
+All endpoints require an authenticated, verified seller (or admin according to existing seller middleware). Drafts and results are private to the requesting user. Responses are not cacheable by shared browsers/CDNs.
+
+- `GET /ai/listing-capabilities`: enabled/reason/providerLabel, dailyRemaining, maxImages, locales. No provider call.
+- `POST /ai/listing-draft`: multipart `images` (1–3, <=5 MiB each), `notes` (<=2000 characters), `locale` (`en`/`vi`). Required Idempotency-Key (existing 8–100 character format). No URLs or price/rule input accepted.
+- `GET /ai/listing-draft/:requestId`: owner-only result/status. Returns 202 while preparing/running, 200 with validated draft, 410 after 24h, or a fixed terminal error.
+- `POST /ai/listing-draft/:requestId/events`: bounded best-effort event (`applied`, `undone`, `published`); published includes auctionId and verifies ownership. Each event counts at most once per request, not once per field. These observational events are not payment/business audit records.
+
+Success: `{requestId,inputHash,draft:{title,descriptionText,categoryId|null},facts:[{text,source,imageIndex?}],questions,warnings}`. Plain description text is escaped into editor paragraphs. Model HTML is never trusted. Standard AppError envelopes retain the HTTP request ID separately from the draft request UUID.
+
+Codes include AI_DISABLED, AI_NOT_ELIGIBLE, AI_CONFIGURATION_REQUIRED, AI_BUSY, AI_RATE_LIMITED, AI_BUDGET_EXHAUSTED, AI_TIMEOUT, AI_OUTCOME_UNKNOWN, AI_UNAVAILABLE, AI_INVALID_OUTPUT and AI_RESULT_EXPIRED. Unsupported images use UNSUPPORTED_MEDIA; upload/input limits use VALIDATION_ERROR. In-memory ingress rate limiting is 10 requests/IP/minute; paid quota/concurrency/budget are enforced in PostgreSQL across replicas.
+
+## Accounting and uncertainty
+
+At most 5 paid attempts/seller/UTC day, one preparing/running request/seller, two globally. Limits can be lowered, not increased above the approved defaults through env. A global PostgreSQL advisory transaction lock serializes slot claims across providers; row locks serialize quota and provider-specific budget reservations. No database transaction spans the model call.
+
+Each Bedrock invocation permanently reserves 5 cents, including invalid outputs, provider errors and uncertain timeouts. The entire beta ledger is capped at 500 cents, with no monthly reset. Fake development calls also use the ledger, so use separate local/CI databases. Replay/status requests consume no paid allowance. Invalid uploads and other pre-dispatch failures consume none. The pre-dispatch accounting commit is conservative: a process crash immediately afterwards may consume a reserve even if the HTTP call never left the process.
+
+Same owner/key/input replays or returns 202. Different input returns 409. No automatic second invocation uses an existing key. A 60-second lease turns abandoned requests into terminal unknowns, and uncertain calls keep their reservations. After 24h the worker removes response content but retains key/hash metadata; users cannot reuse an expired key as a new paid attempt. Raw photos/notes are never stored in PostgreSQL or logs. Usage and low-cardinality metrics contain no raw text. Results themselves contain seller-derived text and are private, retained for at most 24h before cleanup (reads reject expired results immediately).
+
+## AWS preflight: keep disabled until verified
+
+1. Confirm AWS account plan, applicable credit balance, eligible Bedrock model/region and expiry in Billing/Credits. A credit balance alone does not prove eligibility. No account-wide no-charge guarantee is provided by this application.
+2. Verify Nova Lite v1 is available in us-east-1 without an unreviewed inference profile; verify model context and current input/output prices against official AWS docs. If unavailable, stop and revise the plan rather than change models automatically.
+3. Create a dedicated Bedrock API key with an expiration no later than the beta/credit expiry and restrict its identity to bearer calls and InvokeModel for the approved model in us-east-1. Use AWS policy validation/testing; do not attach broad BedrockFullAccess or use root credentials. Never paste the key into chat or Git. Keep it only in backend Render secrets. Key creation/permission changes must be approved at action time if performed through a UI.
+4. Supply offline preflight inputs: `AI_INPUT_USD_PER_MILLION`, `AI_OUTPUT_USD_PER_MILLION`, `AI_PRICING_SOURCE`, `AI_CREDIT_EXPIRES_AT`, `AI_CREDIT_VERIFIED_AT`, `AI_CREDIT_BALANCE_USD` (at least 5), `AI_CREDIT_APPLIES=true`, `AI_MODEL_ACCESS_VERIFIED=true`. `npm run ai:preflight` calculates a conservative cost bound using the model's full 300,000 input-token context plus 2048 output tokens. It refuses a bound above the 5-cent reserve. It does not call inference, verify your account automatically or enable AI.
+5. After reviewing the evidence, configure AI_PREFLIGHT_APPROVED=true and AI_PREFLIGHT_VERIFIED_AT from the report. Runtime refuses approvals older than seven days, expired credits, unsupported provider/model/region and missing bearer tokens. Do not approve until eligibility, pricing and retention/data handling have been reviewed. Do not enable Bedrock model invocation payload logging for this workflow.
+
+Official references: [Bedrock API keys](https://docs.aws.amazon.com/bedrock/latest/userguide/api-keys-use.html), [Nova models](https://docs.aws.amazon.com/nova/latest/userguide/what-is-nova.html), [Bedrock pricing](https://aws.amazon.com/bedrock/pricing/).
+
+## Render configuration and release
+
+Copy AI defaults from backend/.env.example. Keep AI_LISTING_ENABLED=false, AI_PROVIDER=bedrock. AWS_REGION=us-east-1; AI_MODEL_ID=amazon.nova-lite-v1:0. Set only verified seller IDs in AI_BETA_SELLER_IDS. AI_REQUEST_RESERVE_USD is informational: code always reserves five cents. AI_BETA_BUDGET_USD can only reduce the five-dollar ceiling. An existing database ledger ceiling is not expanded by changing env. There is no frontend API key or model configuration.
+
+Deploy backend with migration first, frontend second, flag off. Enable only for the evaluation allowlist after preflight. Budget for evaluation and beta is shared. Approve real-photo evaluation below before expanding the beta allowlist. Fake provider is refused in NODE_ENV=production. Its fault controls (AI_FAKE_MODE=invalid|error, AI_FAKE_DELAY_MS) are development/test only, never client inputs. CI enables fake only in its disposable E2E environment.
+
+Rollback: set AI_LISTING_ENABLED=false and redeploy/restart with that env. New calls stop; already-sent calls finish/timeout. No auction rollback is needed. Seller-applied form content remains editable. Revoke expired/compromised provider keys through AWS. AWS Budgets alerts are supplementary and do not replace the application reservation mechanism.
+
+## Evaluation and release gates
+
+`npm run ai:eval-fixtures` creates 30 original synthetic cases (15 en, 15 vi) and simple PNG illustrations under ignored backend/storage/ai-evaluation. These are pipeline/injection fixtures, NOT representative product photographs or evidence of model quality. Replace them with permitted real photos, annotate expectedFacts/unknowns/acceptableCategoryIds, and review attribution rights before running the release evaluation. Include blurry, multiple-object, contradictory and image-text injection cases in the final real-photo set.
+
+Run `npm run ai:evaluate -- storage/ai-evaluation/manifest.json storage/ai-evaluation/report.json --allow-metered-calls` only after preflight and explicit acceptance of metered calls. Set AI_EVAL_URL and AI_EVAL_TOKEN; manifest tokenEnv can select six separately allowlisted seller tokens (five cases each) to retain normal daily quotas. Alternatively remove tokenEnv and resume across days with one seller. Same sample IDs/inputs replay cached results; use a new evaluation version in IDs if intentionally paying for another run. Do not rerun old IDs after their 24h result TTL. No live evaluation is included in CI.
+
+The runner saves private output and manual review fields, stops on quota/provider failure and never infers a quality approval. Human review must establish: no fabricated authentication/precious-material/origin claims; >=95% schema-valid first outputs; >=90% accepted category suggestions; p95 <=20 seconds excluding cold starts. Review all 30 cases, not only successful ones. Document actual denominator, usage and limitations. Fill the review fields and set realPhotoRightsReviewed only after checking the final dataset. `npm run ai:score -- storage/ai-evaluation/report.json` returns a nonzero exit until every gate passes. Insufficient samples or null reviews mean the release gate remains pending. Synthetic test success is not a substitute for these gates.
+
+Metrics: ai_listing_calls_total, ai_listing_duration_ms, ai_listing_tokens_total, ai_listing_reserved_cents_total, ai_listing_estimated_cost_usd_total and ai_listing_events_total. Estimates use the verified input/output rates configured on the backend and are not the AWS invoice. Unknown/failed calls retain reserves without inventing a usage estimate. Database sent requests/reserved_cents provide durable usage and maximum reserved cost. Apply/publish events are best-effort and observational; they do not establish causality or content accuracy. Measure creation-time improvements against a manual baseline before making claims.
+
+## Validation status
+
+Automated fake-provider integration/UI/E2E tests cover permission boundaries, quota/reservation races, replay/conflict, image limits and cleanup, invalid output, timeout, expiry, manual fallback and apply/undo. See the implementation report for executed results. Real Bedrock access, credit eligibility, representative-photo evaluation and Render staging rollout must be verified separately. Default state remains disabled; no AWS resources, keys or paid inference calls are created by installing this feature.
+
+
+## ShopAIKey local setup
+
+Select `AI_PROVIDER=shopaikey` and keep `AI_LISTING_ENABLED=false`. Supply `SHOPAIKEY_API_KEY` in backend/.env only. The adapter calls the fixed `https://api.shopaikey.com/v1/chat/completions` endpoint, once, without retries/redirects/streaming. Images are private, metadata-stripped JPEG data URLs. The panel names the selected service before Generate. ShopAIKey is a third-party gateway: its privacy/retention terms must be acceptable for the seller photos and notes.
+
+1. Run `npm run ai:shopaikey-models`. This is an authenticated GET, never inference. A successful list proves that discovery accepts the key; it does not prove vision, model invocation, group routing or price.
+2. In the key dashboard verify the **actual enabled groups, priority order and balance**. Review [model prices](https://shopaikey.com/en/models) and [group rules](https://shopaikey.com/en/docs/purchase-topup). Set MODEL_ID only after reviewing its image/JSON support. Set SHOPAIKEY_MODEL_GROUP to every reachable group in order. Group selection happens in the dashboard, not by sending this label in API requests. Any account-side group changes require re-verification even when the key string is unchanged.
+3. Fill the SHOPAIKEY effective USD input/output rates per million, explicit image/request fees (zero only if confirmed), verified full billable input/context limit, pricing source, balance, evidence timestamp and capability flags. Use the **highest effective price of all reachable groups/routes**, including multipliers and any image billing. Do not use AWS credits, purchase VND exchange rates or optimistic character/token estimates as inference prices. MAX_INPUT_TOKENS is the verified model bound used for reserving cost, not an input truncation setting sent to the gateway.
+4. Choose SHOPAIKEY_REQUEST_RESERVE_USD in whole cents at least equal to `(maxInputTokens * inputRate + 2048 * outputRate)/1e6 + 3 * imageFee + requestFee`. `npm run ai:shopaikey-preflight` checks this offline and prints the approval fingerprint/timestamp. It does not prove factual output quality, call a model or turn the feature on. Capability flags attest reviewed provider documentation/availability; the subsequent metered evaluation still has to demonstrate quality.
+5. Copy its three approval values into .env, add the verified seller IDs to AI_BETA_SELLER_IDS, then enable AI_LISTING_ENABLED and restart the backend. `npm run db:migrate` is required before starting. Run the same application-mediated evaluation/smoke test with explicit metered-call acceptance, not an unmetered direct adapter call. Leave disabled when evidence is missing. Preflight approval expires after seven days and is invalidated by changes to key, model, group label, price, fees, formats or budget settings.
+
+ShopAIKey uses ledger ID 2, a permanent **maximum $3.00** beta budget. The configured reserve applies to every sent attempt, including errors/unknown outcomes. Migration 0014 adds provider/budget attribution, preserves historical rows as `legacy`/budget 1 and never resets the existing AWS ledger. Daily quotas and global processing slots remain shared. Do not delete budgets to replenish them, run multiple production databases against the same budget, or increase the cap without a new budget decision. Account-side price changes and usage outside this feature cannot be limited by this ledger.
+
+The JSON mode defaults to prompt-only; opt into json_object only after confirming support. Some models require max_completion_tokens or reject temperature, so these are explicit fingerprint-bound settings. Truncated/tool/refusal/non-JSON results fail without a repair call. Missing or invalid usage remains null in the database/metrics, and the full reservation is retained. Provider auth, balance and throttling errors have fixed safe codes; upstream response bodies are never exposed.
+
+Local verification on 2026-11-09: authenticated model discovery returned HTTP 200, including gpt-4o-mini, gpt-4o-mini-2024-07-18 and gpt-4.1-mini. Operator reported groups Cheap API x1.2, OpenAI Medium x3, Cheap API S2 x3. Exact balance and worst-route model prices/context/fees remain unverified. No model is selected or paid ShopAIKey inference attempted by this implementation. Keep the feature disabled until these inputs are established.
+
+
+ShopAIKey implementation verification (2026-11-09): backend unit 42 passed; full integration 182 passed before the final added cross-provider race test, then final AI integration suite 15 passed; frontend 164 passed. Backend/frontend typecheck, backend lint and frontend build passed; frontend lint has 14 existing warnings and no errors. Migration 0014 applied to the isolated local demo database. Authenticated discovery returned 170 model IDs. No paid ShopAIKey inference, real-photo quality approval or Render deployment was performed. The local ignored env selects shopaikey with AI_LISTING_ENABLED=false; key is retained privately, group label recorded, unknown model/prices/reserve/balance left blank.
